@@ -1,0 +1,3 @@
+source <(fzf --zsh)
+
+# remove vi and and add lunarvim alias for both vi and vim
