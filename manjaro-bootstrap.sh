@@ -5,7 +5,7 @@ sudo pacman-mirrors --geoip
 # :: Repository extra for ghidra
 #    1) jdk-openjdk  2) jdk17-openjdk  3) jdk21-openjdk
 
-sudo pacman -Syyu --needed alacritty base-devel cairo-dock cairo-dock-plug-ins discord git ghidra kitty keepassxc neovim nyxt obsidian python-pynvim postman-bin qbittorrent radare2 wezterm wireshark-qt
+sudo pacman -Syyu --needed alacritty base-devel bat btop     cairo-dock cairo-dock-plug-ins discord git ghidra kitty keepassxc neovim nyxt obsidian python-pynvim postman-bin qbittorrent radare2 tldr wezterm wireshark-qt
 git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
 
 # rustup prompt
