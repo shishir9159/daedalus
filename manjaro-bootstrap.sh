@@ -13,7 +13,7 @@ git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 sudo pacman -Rsn cups cups-pdf elisa gutenprint gwenview kate kcalc kdeconnect kfind khelpcenter kfind manjaro-hello manjaro-printer nano nano-syntax-highlighting skanlite system-config-printer vi yakuake
 sudo pacman -Rsn $(sudo pacman -Qdtq)
-yay -Syyu anki conan imhex miniconda3 nomacs raindrop swww visual-studio-code-bin
+yay -Syyu anki bruno conan imhex miniconda3 nomacs raindrop swww visual-studio-code-bin
 
 sudo ln -s /opt/miniconda3/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 conda config --set auto_activate_base false
