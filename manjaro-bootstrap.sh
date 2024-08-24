@@ -1,3 +1,5 @@
+# If the $XDG_DATA_HOME env variable is set, then $XDG_DATA_HOME/pnpm/global
+
 # prompt yes with golang automation
 
 sudo pacman-mirrors --geoip
@@ -18,12 +20,25 @@ yay -Syyu anki bruno conan imhex miniconda3 nomacs raindrop swww visual-studio-c
 sudo ln -s /opt/miniconda3/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 conda config --set auto_activate_base false
 
+
 # remove Bangla from Manjaro Settings Manager -> Locale
 
 # jetbrains toolbox
 
 # n
-curl -L https://bit.ly/n-install | N_PREFIX=~/.n bash -s -- -y
+# curl -L https://bit.ly/n-install | N_PREFIX=~/.n bash -s -- -y
+
+#fnm
+curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+fnm completions --shell zsh
+
+# install the latest version with npm
+fnm use --install-if-missing 22
+
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+# add ~/.local/share/pnpm/global to the PATH
+
+pnpm install -g neovim tree-sitter-cli
 
 sudo pip3 install patch-ng --break-system-packages
 

@@ -1,3 +1,11 @@
 source <(fzf --zsh)
 
 # remove vi and and add lunarvim alias for both vi and vim
+
+
+# fnm
+FNM_PATH="/home/carmack/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="/home/carmack/.local/share/fnm:$PATH"
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
