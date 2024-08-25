@@ -1,5 +1,9 @@
 source <(fzf --zsh)
 
+XDG_DATA_HOME = ~/.local/share/
+XDG_STATE_HOME = ~/.local/state/
+XDG_CACHE_HOME = ~/.cache/
+
 # remove vi and and add lunarvim alias for both vi and vim
 
 

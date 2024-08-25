@@ -1,5 +1,6 @@
 # If the $XDG_DATA_HOME env variable is set, then $XDG_DATA_HOME/pnpm/global
 
+
 # prompt yes with golang automation
 
 sudo pacman-mirrors --geoip
