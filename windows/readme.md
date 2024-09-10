@@ -1,0 +1,1 @@
+replace the file $profile.AllUsersAllHosts with profile.ps1 file. Add shishir.omp.toml in the location "$env:POSH_THEMES_PATH\shishir.omp.toml" (C:\Users\username\AppData\Local\Programs\oh-my-posh\themes).
