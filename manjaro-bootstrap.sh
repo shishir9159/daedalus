@@ -21,6 +21,7 @@ yay -Syyu anki bruno conan imhex miniconda3 nomacs raindrop swww visual-studio-c
 sudo ln -s /opt/miniconda3/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 conda config --set auto_activate_base false
 
+# optional --- yay -S galaxybudsclient-bin
 
 # remove Bangla from Manjaro Settings Manager -> Locale
 
