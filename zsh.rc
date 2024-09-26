@@ -16,3 +16,6 @@ fi
 
 # mcfly
 eval "$(mcfly init zsh)"
+
+# zoxide
+eval "$(zoxide init zsh)"
