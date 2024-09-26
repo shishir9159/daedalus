@@ -8,8 +8,11 @@ sudo pacman-mirrors --geoip
 # :: Repository extra for ghidra
 #    1) jdk-openjdk  2) jdk17-openjdk  3) jdk21-openjdk
 
-sudo pacman -Syyu --needed alacritty base-devel bat btop cairo-dock cairo-dock-plug-ins discord fluent-reader git ghidra kitty keepassxc neovim nyxt obsidian python-pynvim postman-bin qbittorrent radare2 tldr unzip wezterm wireshark-qt
+sudo pacman -Syyu --needed alacritty base-devel bat btop cairo-dock cairo-dock-plug-ins discord fluent-reader git ghidra kitty keepassxc mcfly neovim nyxt obsidian python-pynvim postman-bin qbittorrent radare2 tldr unzip wezterm wireshark-qt zoxide
 git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
+
+# kernel
+# pacman -syyu strace
 
 # rustup prompt
 # 1) Proceed with standard installation (default - just press enter)

@@ -13,3 +13,6 @@ if [ -d "$FNM_PATH" ]; then
   export PATH="/home/carmack/.local/share/fnm:$PATH"
   eval "$(fnm env --use-on-cd --shell zsh)"
 fi
+
+# mcfly
+eval "$(mcfly init zsh)"
