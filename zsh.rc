@@ -19,5 +19,8 @@ fi
 # mcfly
 eval "$(mcfly init zsh)"
 
+# procs
+source <(procs --gen-completion-out zsh)
+
 # zoxide
 eval "$(zoxide init zsh)"
