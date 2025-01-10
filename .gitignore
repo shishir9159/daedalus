@@ -11,7 +11,11 @@
 !/LICENSE
 !/README.md
 !/CONTRIBUTING.md
+!/bootstrap.sh
 
+!/configs/sh/*.sh
+!/configs/fish/conf.d/*.fish
+!/configs/nushell/autoload/*.nu
 !/configs/zsh/zsh.rc
 !/configs/zsh/p10k.zsh
 !/configs/powershell/*.omp.toml

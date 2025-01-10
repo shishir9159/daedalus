@@ -13,13 +13,7 @@ Fresh CachyOS, Hyprland edition:
 ```bash
 sudo pacman -Syu --needed git
 git clone https://github.com/shishir9159/daedalus.git ~/Projects/daedalus && cd ~/Projects/daedalus
-hyprland-multishell/bootstrap-packages.sh
-echo 'packages = ["hyprland", "starship"]' > .dotter/local.toml
-for f in ~/.zshrc ~/.p10k.zsh ~/.config/nvim; do [ ! -e "$f" ] || mv "$f" "$f.pre-dotter"; done
-dotter deploy
-hyprland-multishell/install.sh && export PATH="$HOME/.rices/bin:$PATH"
-hyprland-multishell/bootstrap-profiles.sh
-rice-session noctalia
+./bootstrap.sh
 ```
 
 Then log out and back in. Update: `git pull`, plus `dotter deploy` after a new file.
@@ -57,12 +51,7 @@ Gotchas:
 
 ### Rices
 
-**Noctalia** ships with the edition. GUI tweaks land in `state/noctalia/settings.toml`.
-```bash
-cp -r ~/.config/noctalia/. ~/.rices/profiles/noctalia/config/noctalia/
-cp -r ~/.config/hypr/. ~/.rices/profiles/noctalia/config/hypr/
-rice-snapshot noctalia import
-```
+**Noctalia** ships with the edition: `bootstrap.sh` copies its `~/.config/{noctalia,hypr}` into the profile, once. GUI tweaks land in `state/noctalia/settings.toml`.
 
 **Caelestia**: edit only `~/.config/caelestia/` (`hypr-user.lua`, `hypr-vars.lua`, `shell.json`, `cli.json`).
 ```bash
