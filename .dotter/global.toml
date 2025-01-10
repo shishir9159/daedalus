@@ -1,6 +1,8 @@
 # Run from the repo root: `dotter deploy`. Each machine picks its packages in
 # .dotter/local.toml (or .dotter/<hostname>.toml), untracked:
-#   packages = ["hyprland", "starship"]   # hyprland pulls in zsh, sh and nvim too
+#   packages = ["hyprland", "starship"]   # hyprland pulls in zsh and nvim too
+# After every deploy, post_deploy.sh copies configs/sh/env.sh's block (what
+# every shell exports) into each shell's rc: bash, zsh, fish and nushell.
 
 # Link everything, never template. In automatic mode dotter renders any file
 # containing "{{" as its own template and copies the result; the rice-theme
@@ -25,22 +27,9 @@ depends = ["zsh", "nvim"]
 
 # zsh and nvim are shared by every rice profile: rc files aren't per profile,
 # and rice-sync links ~/.config/nvim into each one.
-[zsh]
-depends = ["sh"]
-
 [zsh.files]
 "configs/zsh/zsh.rc" = "~/.zshrc"
 "configs/zsh/p10k.zsh" = "~/.p10k.zsh"
-
-# What every shell exports, written once in sh. zsh.rc and ~/.bashrc source
-# env.sh (hyprland-multishell/bootstrap-packages.sh adds the bash line). fish
-# and nushell can't read sh: each gets a loader in the directory it autoloads,
-# which sets what env-changes.sh prints.
-[sh.files]
-"configs/sh/env.sh" = "~/.config/sh/env.sh"
-"configs/sh/env-changes.sh" = "~/.config/sh/env-changes.sh"
-"configs/fish/conf.d/sh-env.fish" = "~/.config/fish/conf.d/sh-env.fish"
-"configs/nushell/autoload/sh-env.nu" = "~/.config/nushell/autoload/sh-env.nu"
 
 # One link for the whole directory, not one per file: files created under
 # ~/.config/nvim and vim.pack's lockfile writes land in the repo. Always

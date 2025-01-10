@@ -92,10 +92,6 @@ pac chromium qt5-wayland qt6-wayland
 pac nushell starship ttf-fantasque-nerd
 grep -qF 'starship/starship.bash' ~/.bashrc 2>/dev/null \
   || echo '[[ -r ~/.config/starship/starship.bash ]] && . ~/.config/starship/starship.bash' >> ~/.bashrc
-# What every shell exports (configs/sh, the dotter package "sh"): zsh.rc
-# sources it, fish and nushell autoload theirs, bash has only ~/.bashrc.
-grep -qF '.config/sh/env.sh' ~/.bashrc 2>/dev/null \
-  || echo '[[ -r ~/.config/sh/env.sh ]] && . ~/.config/sh/env.sh' >> ~/.bashrc
 # just's package ships bash and zsh completions but none nushell finds; put
 # upstream's (recipe names from `just --dump`) in its autoload dir.
 # shellcheck disable=SC2016

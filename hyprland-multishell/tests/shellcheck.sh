@@ -8,7 +8,7 @@ files=(
     install.sh bootstrap-profiles.sh bootstrap-packages.sh
     backup/*.sh
     tests/*.sh
-    ../bootstrap.sh ../configs/sh/*.sh
+    ../bootstrap.sh ../configs/sh/*.sh ../.dotter/post_deploy.sh
 )
 shellcheck "${files[@]}"   # .shellcheckrc follows `source`s
 echo "shellcheck: ${#files[@]} files clean"

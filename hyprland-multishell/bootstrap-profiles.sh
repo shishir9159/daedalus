@@ -29,8 +29,8 @@ repos caelestia <<'EOF'
 # config/quickshell/caelestia  https://github.com/caelestia-dots/shell  main
 EOF
 repos rivendell <<'EOF'
-# No installer; hardcodes /home/zac. Copy its .config/ into config/, then rice-doctor.
-# src/rivendell  https://codeberg.org/zacoons/rivendell-hyprdots  main
+# No installer; hardcodes /home/zac. ../bootstrap.sh copies its .config/ into config/.
+src/rivendell  https://codeberg.org/zacoons/rivendell-hyprdots  master
 EOF
 repos moon <<'EOF'
 # Flutter app: build it, wire its dots/ into config/.

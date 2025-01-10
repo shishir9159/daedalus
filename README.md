@@ -16,7 +16,7 @@ git clone https://github.com/shishir9159/daedalus.git ~/Projects/daedalus && cd 
 ./bootstrap.sh
 ```
 
-Then log out and back in. Update: `git pull`, plus `dotter deploy` after a new file.
+Then log out and back in. Update: `git pull`, plus `dotter deploy` after a new file or a change to `configs/sh/env.sh`.
 
 | Command | Does |
 |---|---|
@@ -51,45 +51,45 @@ Gotchas:
 
 ### Rices
 
-**Noctalia** ships with the edition: `bootstrap.sh` copies its `~/.config/{noctalia,hypr}` into the profile, once. GUI tweaks land in `state/noctalia/settings.toml`.
+**Persona** needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), or delete `CavaVisualizer.qml` and its use in `WallpaperEngine.qml` (commit it on `mine`). Its Hyprland config is a copy of Noctalia's: start Persona in it instead.
 
-**Caelestia**: edit only `~/.config/caelestia/` (`hypr-user.lua`, `hypr-vars.lua`, `shell.json`, `cli.json`).
+to remove the widget:
 ```bash
-paru -S caelestia-cli caelestia-shell
-rice-snapshot caelestia empty && rice-do caelestia -- caelestia install && rice-snapshot caelestia installed
-rice-session caelestia
+cd ~/.rices/profiles/persona/config/quickshell/persona
+rm Widgets/CavaVisualizer.qml
+sed -i '171,180d' Widgets/WallpaperEngine.qml
+git commit -am "no cava visualizer"
 ```
 
-**Persona** needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), or delete `CavaVisualizer.qml` and its use in `WallpaperEngine.qml` (commit it on `mine`).
-```bash
-rice-update persona
-cp -r ~/.rices/profiles/noctalia/config/hypr/. ~/.rices/profiles/persona/config/hypr/
-rice-session persona
-```
 ```lua
 hl.exec_once("qs -c persona")
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("qs -c persona ipc call searchapp toggle"))
 ```
 
-**Rivendell, moon**: copy their `.config/` into the profile; `rice-doctor` lists the `/home/zac` paths. Moon is a Flutter app to build first. Then `rice-session rivendell` / `rice-session moon`.
+**Rivendell, moon**: their `hyprland.conf` is in the profile, Rivendell's `/home/zac` replaced by your home; both are still to port to Lua. Moon's bar is a Flutter app in `src/moon_rice`, to build first.
 **skwd-wall** is a wallpaper tool, not a session: `rice-do <p> -- skwd-wall`.
 
 ### Colour locks
 
-Once per profile, then remove those tools from Noctalia's `builtin_ids`/`community_ids` (they'd beat any lock):
+Noctalia recolours your apps from the wallpaper, every time it changes. A lock makes one app keep the colours it has now; the others keep following the wallpaper. Optional: nothing else here needs it.
+
+**Set it up once**, in each profile that runs Noctalia. Until then `lock` has nothing to act on.
+
+1. `rice-theme noctalia-config`: from now on Noctalia gives each app's colours to `rice-theme` instead of writing them into the app.
+2. `rice-theme hints`: prints one line per app. Paste each into that app's own config, so the app reads the colours `rice-theme` hands it.
+3. In Noctalia's settings, turn off its own template for each of those apps (`builtin_ids` / `community_ids` in its config). That template writes straight into the app, so it would undo a lock at the next wallpaper change. `rice-doctor` warns while one is still on.
+
+**Then use it whenever you like:**
 ```bash
-rice-theme hints             # include line for each app's config
-rice-theme noctalia-config   # writes noctalia/templates.toml
+rice-theme lock nvim ghostty                     # keep today's colours, whatever the wallpaper
+rice-theme unlock nvim                           # follow the wallpaper again
+rice-theme save gruvbox nvim kitty               # today's colours, under a name
+rice-theme set gruvbox                           # switch to them later (locks those apps)
+rice-theme render ghostty pic.png --save forest  # a named theme from any picture
+rice-theme status                                # what is locked and whether it still holds (`check`: exit 1 if not)
+rice-theme watch                                 # leave running: puts back a lock a rice overwrites
 ```
-```bash
-rice-theme lock nvim ghostty                     # keep colours across wallpaper changes
-rice-theme unlock nvim
-rice-theme save gruvbox nvim kitty && rice-theme set gruvbox
-rice-theme render ghostty pic.png --save forest  # colours from any image
-rice-theme status                                # `check`: exit 1 if a lock broke
-rice-theme watch                                 # restore locks a rice overwrites
-```
-Outside a rice session add `--profile <p>`. Live reload: Ghostty ≥ 1.2, kitty, Neovim, Starship, Alacritty; foot, GTK, btop and fuzzel on next launch. New tool: `tools.d/<name>.sh` and `templates/<name>.tmpl`.
+All of it works inside that rice's session; anywhere else add `--profile <p>`. Ghostty ≥ 1.2, kitty, Neovim, Starship and Alacritty recolour at once; foot, GTK, btop and fuzzel when next started. New app: `tools.d/<name>.sh` and `templates/<name>.tmpl`.
 
 ### Snapshots, backups, tests
 

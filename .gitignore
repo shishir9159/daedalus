@@ -8,14 +8,13 @@
 !/.shellcheckrc
 !/.github/workflows/*.yml
 !/.dotter/global.toml
+!/.dotter/post_deploy.sh
 !/LICENSE
 !/README.md
 !/CONTRIBUTING.md
 !/bootstrap.sh
 
 !/configs/sh/*.sh
-!/configs/fish/conf.d/*.fish
-!/configs/nushell/autoload/*.nu
 !/configs/zsh/zsh.rc
 !/configs/zsh/p10k.zsh
 !/configs/powershell/*.omp.toml

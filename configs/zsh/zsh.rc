@@ -19,8 +19,10 @@ HISTFILE=${HISTFILE:-$HOME/.zsh_history} HISTSIZE=1200000 SAVEHIST=1000000
 typeset -U path
 export PNPM_HOME="$HOME/.local/share/pnpm"
 path=($HOME/.local/bin(N/) $HOME/.bun/bin(N/) $PNPM_HOME(N/) $path)
-# What every shell exports: configs/sh/env.sh, the dotter package `sh`.
-[[ -r ~/.config/sh/env.sh ]] && source ~/.config/sh/env.sh
+# >>> daedalus configs/sh/env.sh: edit it there, then dotter deploy >>>
+# hyprland-multishell's rice-* tools
+export PATH="$HOME/.rices/bin:$PATH"
+# <<< daedalus configs/sh/env.sh <<<
 
 export EDITOR=nvim VISUAL=nvim   # configs/nvim
 alias vi=nvim vim=nvim
