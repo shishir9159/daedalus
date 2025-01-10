@@ -14,6 +14,8 @@
 !/CONTRIBUTING.md
 !/bootstrap.sh
 
+# holds a config directory in the tree until it has files of its own
+!/configs/*/.placeholder
 !/configs/sh/*.sh
 !/configs/zsh/zsh.rc
 !/configs/zsh/p10k.zsh
