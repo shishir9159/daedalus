@@ -51,9 +51,9 @@ Gotchas:
 
 ### Rices
 
-**Persona** needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), or delete `CavaVisualizer.qml` and its use in `WallpaperEngine.qml` (commit it on `mine`). Its Hyprland config is a copy of Noctalia's: start Persona in it instead.
+**Persona**'s wallpaper needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), which no package has: `bootstrap.sh` builds it from source into the profile's `qml/`. Its Hyprland config is a copy of Noctalia's: start Persona in it instead.
 
-to remove the widget:
+to remove the widget instead (commit it on `mine`):
 ```bash
 cd ~/.rices/profiles/persona/config/quickshell/persona
 rm Widgets/CavaVisualizer.qml
@@ -73,11 +73,12 @@ hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("qs -c persona ipc call searchapp tog
 
 Noctalia recolours your apps from the wallpaper, every time it changes. A lock makes one app keep the colours it has now; the others keep following the wallpaper. Optional: nothing else here needs it.
 
-**Set it up once**, in each profile that runs Noctalia. Until then `lock` has nothing to act on.
-
-1. `rice-theme noctalia-config`: from now on Noctalia gives each app's colours to `rice-theme` instead of writing them into the app.
-2. `rice-theme hints`: prints one line per app. Paste each into that app's own config, so the app reads the colours `rice-theme` hands it.
-3. In Noctalia's settings, turn off its own template for each of those apps (`builtin_ids` / `community_ids` in its config). That template writes straight into the app, so it would undo a lock at the next wallpaper change. `rice-doctor` warns while one is still on.
+**Setup** is done by `bootstrap.sh` for the Noctalia profile. A lock holds back the colours Noctalia generates: Caelestia themes its apps itself and the other rices recolour nothing, so they have nothing to set up. What it ran, for any other profile you start Noctalia in:
+```bash
+rice-theme --profile <p> noctalia-config   # Noctalia gives each app's colours to rice-theme, not to the app
+rice-theme --profile <p> include           # each app's config in the profile reads them from rice-theme
+```
+One thing stays yours, for each app you want to lock: in Noctalia's settings, turn off its own template for that app (`builtin_ids` / `community_ids` in its config). That template writes straight into the app, so it would undo the lock at the next wallpaper change, and switching it off also trades Noctalia's look for that app against `templates/<app>.tmpl`. `rice-doctor` names the ones still on.
 
 **Then use it whenever you like:**
 ```bash

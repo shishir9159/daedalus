@@ -48,6 +48,7 @@ cp -r "$REPO" "$R/hyprland-multishell"
 printf '%s\n' '#!/usr/bin/env bash' 'echo bootstrap-packages >> "$CALLS"' > "$R/hyprland-multishell/bootstrap-packages.sh"
 stub dotter
 stub paru
+stub cmake
 stub sudo   # install.sh's launcher goes to /usr/local/bin: logged, not written
 # what `caelestia install` does to the config dir it is given
 stub caelestia 'mkdir -p "$XDG_CONFIG_HOME/hypr" "$XDG_CONFIG_HOME/fish"
@@ -58,17 +59,19 @@ echo stock > "$HOME/.zshrc"
 echo stock > "$HOME/.config/noctalia/config.toml"
 echo stock > "$HOME/.config/hypr/hyprland.lua"
 echo mine  > "$HOME/.config/fastfetch/config.jsonc"
-# the three cloned rices, as local upstreams
-mkdir -p "$UP/persona" "$UP/rivendell/.config/hypr" "$UP/rivendell/.config/fastfetch" "$UP/moon/dots"
+# the cloned rices and Persona's plugin, as local upstreams
+mkdir -p "$UP/persona" "$UP/cava" "$UP/rivendell/.config/hypr" "$UP/rivendell/.config/fastfetch" "$UP/moon/dots"
 echo shell > "$UP/persona/shell.qml"
+echo plugin > "$UP/cava/CMakeLists.txt"
 echo 'exec-once = /home/zac/bar' > "$UP/rivendell/.config/hypr/hyprland.conf"
 echo theirs > "$UP/rivendell/.config/fastfetch/config.jsonc"
 echo moon > "$UP/moon/dots/hyprland.conf"
-for r in persona rivendell moon; do
+for r in persona cava rivendell moon; do
     git init -q -b main "$UP/$r" && git -C "$UP/$r" add -A && git -C "$UP/$r" commit -qm upstream
-    mkdir -p "$P/$r"
 done
+mkdir -p "$P/persona" "$P/rivendell" "$P/moon"
 echo "config/quickshell/persona  $UP/persona" > "$P/persona/repos.txt"
+echo "src/qt6-cava-plugin  $UP/cava" >> "$P/persona/repos.txt"
 echo "src/rivendell  $UP/rivendell" > "$P/rivendell/repos.txt"
 echo "src/moon_rice  $UP/moon" > "$P/moon/repos.txt"
 # as the README runs it: no rice-* on PATH yet
@@ -82,8 +85,13 @@ expect "deploys"                             called 'dotter deploy'
 expect "noctalia: its config copied in"      has "$P/noctalia/config/noctalia/config.toml" stock
 expect "...and Hyprland's"                   has "$P/noctalia/config/hypr/hyprland.lua" stock
 expect "...and snapshotted"                  git -C "$P/noctalia" rev-parse -q --verify HEAD
+expect "...its colours go through rice-theme" has "$P/noctalia/config/noctalia/templates.toml" 'rice-theme --profile noctalia apply kitty'
+expect "...which its apps read"              has "$P/noctalia/config/kitty/kitty.conf" "include $P/noctalia/config/rice-theme/active/kitty.conf"
 expect "persona: cloned"                     test -f "$P/persona/config/quickshell/persona/shell.qml"
 expect "...onto Noctalia's Hyprland config"  has "$P/persona/config/hypr/hyprland.lua" stock
+expect "...its Cava plugin built from the clone" called "cmake -S $P/persona/src/qt6-cava-plugin"
+expect "...and installed into the profile"   called "-DCMAKE_INSTALL_PREFIX=$P/persona/qml"
+expect "...where its session finds it"       test "$(RICE_HOME=/r bash -c '. "$0"; echo "$QML_IMPORT_PATH"' "$P/persona/profile.env")" = /r/qml
 expect "rivendell: its .config copied in"    has "$P/rivendell/config/hypr/hyprland.conf" "exec-once = $HOME/bar"
 expect "...but not over a shared config"     has "$HOME/.config/fastfetch/config.jsonc" mine
 expect "moon: its hyprland.conf copied in"   has "$P/moon/config/hypr/hyprland.conf" moon
@@ -104,6 +112,7 @@ expect "leaves dotter's link"                test -L "$HOME/.zshrc"
 expect "...and the first backup"             has "$HOME/.zshrc.pre-dotter" stock
 expect "never copies over a profile again"   has "$P/noctalia/config/hypr/hyprland.lua" mine
 expect "...persona's either"                 has "$P/persona/config/hypr/hyprland.lua" mine
+expect "...nor repeats its profile.env lines" test "$(grep -c '^QML_IMPORT_PATH=' "$P/persona/profile.env")" -eq 1
 refute "caelestia's installer runs once"     called 'caelestia install'
 
 finish

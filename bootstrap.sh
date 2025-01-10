@@ -26,11 +26,30 @@ if fresh noctalia; then
     cp -r ~/.config/hypr/. "$P/noctalia/config/hypr/"
     rice-snapshot noctalia import
 fi
+# Colour locks (README.md): Noctalia hands the apps' colours to rice-theme,
+# and the profile's apps read them from it.
+rice-theme --profile noctalia noctalia-config
+rice-theme --profile noctalia include
 rice-session noctalia
 
 # The rices that are a clone. A failed one is reported and skipped.
 rice-update persona rivendell moon || true
 
+# Persona's wallpaper needs the Qt6 Cava plugin, which no package has: built
+# from its clone into the profile's qml/, which profile.env puts on the QML
+# import path. quickshell-git, not extra's quickshell: caelestia-shell depends
+# on it and the two conflict.
+paru -S --needed --noconfirm --skipreview quickshell-git cmake fftw
+build="$(mktemp -d)"
+cmake -S "$P/persona/src/qt6-cava-plugin" -B "$build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$P/persona/qml"
+cmake --build "$build"
+cmake --install "$build"
+rm -rf "$build"
+grep -q '^QML_IMPORT_PATH=' "$P/persona/profile.env" || cat >> "$P/persona/profile.env" <<'ENV'
+# The Qt6 Cava plugin, built into qml/ by daedalus's bootstrap.sh.
+QML_IMPORT_PATH="$RICE_HOME/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+QML2_IMPORT_PATH="$QML_IMPORT_PATH"
+ENV
 if fresh persona; then
     cp -r "$P/noctalia/config/hypr/." "$P/persona/config/hypr/"
     rice-snapshot persona import

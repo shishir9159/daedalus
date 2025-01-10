@@ -2,7 +2,8 @@
 # SIGUSR2 reloads config only from 1.2; below that it TERMINATES Ghostty
 # (every terminal closes). So: check the version, and when unsure, don't.
 DESC="Ghostty"
-INCLUDE="in ghostty/config:  config-file = ?$TH/active/ghostty.conf"
+INC_FILE="ghostty/config" INC_LINE="config-file = ?$TH/active/ghostty.conf"
+INCLUDE="in ghostty/config:  $INC_LINE"
 
 reload() {
     command -v ghostty >/dev/null && pgrep -x ghostty >/dev/null || return 1

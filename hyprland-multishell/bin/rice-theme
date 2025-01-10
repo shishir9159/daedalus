@@ -13,6 +13,7 @@ rice-theme [--profile <name>] <command>    (profile defaults to $RICE_PROFILE)
 
   status | check            per-tool policy and drift (check: tab-separated, exit 1 if a lock broke)
   hints                     include line to add to each app's config
+  include [tool...]         write that line into the profile's own app configs
   apply [tool...]           publish + reload per policy (Noctalia's post_hook)
   lock <tool...> [-t theme] freeze on current colours, or on a named theme
   unlock <tool...>          follow the wallpaper again
@@ -88,11 +89,13 @@ locked() {
 # ----------------------------------------------------------------- adapters --
 # tools.d/<tool>.sh sets EXT (default .conf), DESC (default: the name) and
 # INCLUDE; optionally reload() and transform() (stdin -> stdout, applied on the
-# way into active/).
+# way into active/). Where `include` can write the line itself: INC_FILE (the
+# app's config under the profile's config/, several if it has several),
+# INC_LINE, and INC_TOP=1 if the line must come first.
 load_tool() {
     need_tool "$1"
     unset -f reload transform
-    EXT="" DESC="" INCLUDE=""
+    EXT="" DESC="" INCLUDE="" INC_FILE="" INC_LINE="" INC_TOP=""
     [ -f "$TOOLS_D/$1.sh" ] || rice_die "unknown tool '$1' (no $TOOLS_D/$1.sh)"
     # shellcheck disable=SC1090
     . "$TOOLS_D/$1.sh"
@@ -302,6 +305,29 @@ cmd_hints() {
     done
 }
 
+cmd_include() {
+    local tools=("$@") t rel f old
+    [ ${#tools[@]} -gt 0 ] || mapfile -t tools < <(all_tools)
+    for t in "${tools[@]}"; do
+        load_tool "$t"
+        [ -n "$INC_FILE" ] || continue
+        for rel in $INC_FILE; do
+            f="$PDIR/config/$rel"
+            if [ -L "$PDIR/config/${rel%%/*}" ]; then   # shared with ~/.config: every profile would get it
+                info "${c_y}$t: ${rel%%/*} is shared, not this profile's - by hand, $INCLUDE$c_0"
+                continue
+            fi
+            mkdir -p "${f%/*}"
+            if [ -f "$f" ] && grep -qxF -- "$INC_LINE" "$f"; then continue; fi
+            if [ -n "$INC_TOP" ] && [ -s "$f" ]; then old="$(cat "$f")"; printf '%s\n%s\n' "$INC_LINE" "$old" > "$f"
+            else printf '%s\n' "$INC_LINE" >> "$f"; fi
+            info "${c_g}included$c_0 $t ${c_d}(config/$rel)$c_0"
+        done
+        # Until the first colours arrive: foot won't start on an include that isn't there.
+        [ -e "$ACTIVE_F" ] || : > "$ACTIVE_F"
+    done
+}
+
 cmd_watch() {
     command -v inotifywait >/dev/null || rice_die "needs inotify-tools"
     info "guarding locks in $ACTIVE (Ctrl-C to stop)"
@@ -342,7 +368,7 @@ cmd_noctalia_config() {
 }
 
 case "$CMD" in
-    status|check|hints|reload|watch)  load_policies; "cmd_$CMD" "$@" ;;
+    status|check|hints|include|reload|watch)  load_policies; "cmd_$CMD" "$@" ;;
     apply|lock|unlock|save|set|render) locked "cmd_$CMD" "$@" ;;
     noctalia-config)                   locked cmd_noctalia_config "$@" ;;
     *)                                 usage >&2; exit 2 ;;

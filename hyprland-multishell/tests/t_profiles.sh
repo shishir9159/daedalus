@@ -54,6 +54,11 @@ sed -i 's/^USE_UWSM=1/USE_UWSM=0/' "$P/caelestia/profile.env"
 "$REPO/bootstrap-profiles.sh" >/dev/null
 expect "re-run keeps an edited repos.txt"    has "$P/persona/repos.txt" '# mine'
 expect "re-run keeps an edited USE_UWSM"     has "$P/caelestia/profile.env" 'USE_UWSM=0'
+sed -i '/^src\/qt6-cava-plugin/d' "$P/persona/repos.txt"
+"$REPO/bootstrap-profiles.sh" >/dev/null
+"$REPO/bootstrap-profiles.sh" >/dev/null
+expect "...which gains a repo it lacks, once" test "$(grep -c '^src/qt6-cava-plugin' "$P/persona/repos.txt")" -eq 1
+expect "...and nothing it already has"       test "$(grep -c '^config/quickshell/persona' "$P/persona/repos.txt")" -eq 1
 
 section "greeter entries"
 expect "register"                            rice-session alpha "Alpha Rice"

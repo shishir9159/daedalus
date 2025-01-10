@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # bootstrap-profiles.sh -- create the five profiles. Re-runnable: never
-# overwrites a profile.env or repos.txt that already exists.
+# overwrites a profile.env, and a repos.txt that exists keeps every line it
+# has: the repos below that it lacks are added to it.
 set -euo pipefail
 # shellcheck source=lib/rice-common.sh
 . "$(cd "$(dirname "$0")" && pwd)/lib/rice-common.sh"
@@ -11,9 +12,13 @@ mk() { # <name> <display name> <use_uwsm>
     "$RICE_ROOT/bin/rice-new" "$1" "$2" >/dev/null
     if [ "$fresh" = 1 ]; then sed -i "s/^USE_UWSM=.*/USE_UWSM=$3/" "$env"; echo "  + $1"; else echo "  = $1 (exists)"; fi
 }
-repos() { # <name>, content on stdin
-    local f="$RICE_ROOT/profiles/$1/repos.txt"
-    if [ -f "$f" ]; then cat >/dev/null; else cat > "$f"; fi
+repos() { # <name>, defaults on stdin: a repos.txt that exists only gains the repos it lacks
+    local f="$RICE_ROOT/profiles/$1/repos.txt" line path
+    if [ ! -f "$f" ]; then cat > "$f"; return; fi
+    while IFS= read -r line; do
+        read -r path _ <<< "${line%%#*}"
+        [ -z "$path" ] || grep -q "^[[:space:]]*${path}[[:space:]]" "$f" || echo "$line" >> "$f"
+    done
 }
 
 echo ":: profiles"
@@ -39,6 +44,8 @@ EOF
 repos persona <<'EOF'
 # Pure Quickshell; start it from hyprland.lua with: qs -c persona
 config/quickshell/persona  https://github.com/Yujonpradhananga/Persona-Quickshell  main
+# Its wallpaper's audio visualizer, in no package: ../bootstrap.sh builds it into qml/.
+src/qt6-cava-plugin  https://github.com/Yujonpradhananga/Qt6-Cava-plugin  main
 EOF
 
 echo ":: next: rice-session <name> for each, then rice-doctor"

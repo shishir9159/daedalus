@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # rice-theme: profile resolution, locks surviving a wallpaper change, the foot
 # transform, freezing the source format, drift detection, named themes,
-# noctalia-config safety, the Ghostty version gate and Starship's palette merge.
+# noctalia-config safety, `include` staying inside the profile, the Ghostty
+# version gate and Starship's palette merge.
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
@@ -74,6 +75,21 @@ expect "post_hook names the profile"         has "$NT" 'rice-theme --profile th 
 expect "output goes to generated/"           has "$NT" 'rice-theme/generated/ghostty.conf'
 rice-theme noctalia-config >/dev/null
 expect "our own file is not backed up again" test "$(compgen -G "$NT.bak.*" | wc -l)" -eq 1
+
+section "include"
+mkdir -p "$PD/config/foot" "$HOME/.config/ghostty"
+printf '[main]\nfont=monospace\n' > "$PD/config/foot/foot.ini"
+ln -s "$HOME/.config/ghostty" "$PD/config/ghostty"      # shared, as `!ghostty` in owned.txt leaves it
+expect "runs"                                rice-theme include
+expect "kitty gets its line"                 has "$PD/config/kitty/kitty.conf" "include $A/kitty.conf"
+expect "foot's goes above the first section" test "$(head -1 "$PD/config/foot/foot.ini")" = "include=$A/foot.ini"
+expect "...keeping what was there"           has "$PD/config/foot/foot.ini" 'font=monospace'
+expect "gtk gets it for 3 and 4"             has "$PD/config/gtk-4.0/gtk.css" "@import url(\"$A/gtk.css\");"
+refute "a config shared with ~/.config is left alone" test -e "$HOME/.config/ghostty/config"
+expect "the file it points at exists by then" test -e "$A/kitty.conf"
+rice-theme include >/dev/null
+expect "a second run adds nothing"           test "$(grep -c . "$PD/config/kitty/kitty.conf")" -eq 1
+expect "the locks above still hold"          rice-theme check
 
 section "Ghostty is never sent SIGUSR2 below 1.2 (it would close every terminal)"
 stub pgrep 'exit 0'
