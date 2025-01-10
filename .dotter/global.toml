@@ -1,6 +1,6 @@
 # Run from the repo root: `dotter deploy`. Each machine picks its packages in
 # .dotter/local.toml (or .dotter/<hostname>.toml), untracked:
-#   packages = ["hyprland"]          # pulls in zsh and nvim too
+#   packages = ["hyprland", "starship"]   # hyprland pulls in zsh and nvim too
 
 # Link everything, never template. In automatic mode dotter renders any file
 # containing "{{" as its own template and copies the result; the rice-theme
