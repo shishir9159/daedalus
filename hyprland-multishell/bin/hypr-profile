@@ -24,6 +24,14 @@ echo "=== $(date -Is) starting profile '$PROFILE' ==="
 rice_source_env_file "$PDIR" || echo "!!! profile.env failed (continuing)"
 USE_UWSM="${USE_UWSM:-0}"
 
+# Hyprland looks for a hyprland.lua in ~/.config/hypr too before it takes any
+# hyprland.conf: a profile that has only the .conf is started on it by name,
+# or it would come up on the stock session's config.
+HYPR="$XDG_CONFIG_HOME/hypr"
+if [ -z "${HYPRLAND_CONFIG:-}" ] && [ ! -e "$HYPR/hyprland.lua" ] && [ -e "$HYPR/hyprland.conf" ]; then
+    HYPRLAND_CONFIG="$HYPR/hyprland.conf"
+fi
+
 # start-hyprland (>= 0.53: crash recovery, safe mode), except under uwsm or with
 # an explicit config, where the Hyprland binary's arguments are known.
 if [ -z "${HYPRLAND_BIN:-}" ]; then

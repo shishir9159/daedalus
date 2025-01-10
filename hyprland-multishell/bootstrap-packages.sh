@@ -48,7 +48,7 @@ sudo cachyos-rate-mirrors
 
 # mcfly
 
-sudo pacman -Syyu --needed --noconfirm anki base-devel bat dust eza ghostty gping just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
+sudo pacman -Syyu --needed --noconfirm anki base-devel bat dust eza ghostty gping just keepassxc neovim newsflash obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
 pac paru   # from CachyOS's repo
 
 # kernel
@@ -64,7 +64,7 @@ remove nano nano-syntax-highlighting
 mapfile -t orphans < <(pacman -Qdtq)
 remove "${orphans[@]}"
 # dotter-rs builds with rustup's cargo.
-aur dotter-rs fluent-reader imhex jetbrains-toolbox vesktop visual-studio-code-bin zen-browser-bin
+aur dotter-rs google-chrome-beta imhex jetbrains-toolbox vesktop visual-studio-code-bin zen-browser-bin 
 
 # ghidra needs java-environment>=21. jdk25-openjdk: the newest LTS, and the
 # floor of Ghidra's next release (jdk-openjdk jumps a major every six months).
@@ -84,7 +84,7 @@ fnm default 22
 
 # Noctalia, which the edition ships, is the bar, launcher, notifications and
 # wallpaper.
-pac chromium qt5-wayland qt6-wayland
+pac qt5-wayland qt6-wayland
 
 ######### shells #########
 # nushell, and the starship prompt for bash (configs/starship, the dotter

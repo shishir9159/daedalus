@@ -31,6 +31,12 @@ echo 'HYPRLAND_CONFIG=/some/where.lua' >> "$PD/profile.env"
 : > "$CALLS"; hypr-profile s1
 expect "explicit config uses Hyprland -c"    called 'Hyprland -c /some/where.lua'
 sed -i '/^HYPRLAND_CONFIG=/d' "$PD/profile.env"
+echo 'exec-once = bar' > "$PD/config/hypr/hyprland.conf"
+: > "$CALLS"; hypr-profile s1
+expect "a profile with only a .conf starts on it" called "Hyprland -c $PD/config/hypr/hyprland.conf"
+echo 'return {}' > "$PD/config/hypr/hyprland.lua"
+: > "$CALLS"; hypr-profile s1
+expect "...one with a hyprland.lua is left to Hyprland" called 'start-hyprland'
 
 section "a broken profile.env cannot lock you out"
 echo 'EXTRA="$DEFINITELY_UNSET/x"' >> "$PD/profile.env"

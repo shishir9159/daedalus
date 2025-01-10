@@ -44,14 +44,14 @@ Then log out and back in. Update: `git pull`, plus `dotter deploy` after a new f
 
 Gotchas:
 
-- Hyprland ≥ 0.55 loads `hyprland.lua` and ignores `hyprland.conf`: port `.conf` rices to Lua.
+- Hyprland ≥ 0.55 takes any `hyprland.lua` it finds, `~/.config/hypr`'s too, over a `hyprland.conf`: a profile with only a `.conf` is started on it by name. After 0.56 Hyprland reads no `.conf` at all: port `.conf` rices to Lua.
 - `caelestia install` overwrites `~/.config/hypr`, foot, btop, nvim, gtk: run installers through `rice-do <p> --`.
 - matugen theming writes other apps' configs; hardcoded `~/.config` paths escape the profile (`rice-doctor` finds them).
 - `hyprpm` plugins are ABI-locked to Hyprland: `HYPRLAND_BIN=/opt/hyprland-0.45/bin/Hyprland` in `profile.env`, `exec-once = hyprpm reload -n` in the hypr config.
 
 ### Rices
 
-**Persona**'s wallpaper needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), which no package has: `bootstrap.sh` builds it from source into the profile's `qml/`. Its Hyprland config is a copy of Noctalia's: start Persona in it instead.
+**Persona**'s wallpaper needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin), which no package has: `bootstrap.sh` builds it from source into the profile's `qml/`. Its Hyprland config is a copy of Noctalia's that starts Persona instead, with Persona's launcher on Super+Space; the other keys that call Noctalia (volume, brightness, lock, screenshots) are still to rebind.
 
 to remove the widget instead (commit it on `mine`):
 ```bash
@@ -61,10 +61,7 @@ sed -i '171,180d' Widgets/WallpaperEngine.qml
 git commit -am "no cava visualizer"
 ```
 
-```lua
-hl.exec_once("qs -c persona")
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("qs -c persona ipc call searchapp toggle"))
-```
+**Caelestia**: your own Hyprland settings go in `~/.rices/profiles/caelestia/config/caelestia/hypr-vars.lua` and `hypr-user.lua`, not in the `~/.config/caelestia` its installer names.
 
 **Rivendell, moon**: their `hyprland.conf` is in the profile, Rivendell's `/home/zac` replaced by your home; both are still to port to Lua. Moon's bar is a Flutter app in `src/moon_rice`, to build first.
 **skwd-wall** is a wallpaper tool, not a session: `rice-do <p> -- skwd-wall`.
@@ -112,3 +109,6 @@ Todo:
 - take inspiration again for new configuration: https://github.com/prasanthrangan/hyprdots 5766d02
 - configure wezterm per distro: https://github.com/KevinSilvester/wezterm-config,
   https://github.com/XNM1/linux-nixos-hyprland-config-dotfiles, https://github.com/catppuccin/wezterm
+
+
+configure and store: shelly

@@ -51,13 +51,16 @@ stub paru
 stub cmake
 stub sudo   # install.sh's launcher goes to /usr/local/bin: logged, not written
 # what `caelestia install` does to the config dir it is given
-stub caelestia 'mkdir -p "$XDG_CONFIG_HOME/hypr" "$XDG_CONFIG_HOME/fish"
+stub caelestia 'mkdir -p "$XDG_CONFIG_HOME/hypr/scheme" "$XDG_CONFIG_HOME/fish"
 echo caelestia > "$XDG_CONFIG_HOME/hypr/hyprland.lua"
+echo colours > "$XDG_CONFIG_HOME/hypr/scheme/default.lua"
 echo caelestia > "$XDG_CONFIG_HOME/fish/config.fish"'
 rm -f "$HOME/.zshrc"
 echo stock > "$HOME/.zshrc"
 echo stock > "$HOME/.config/noctalia/config.toml"
-echo stock > "$HOME/.config/hypr/hyprland.lua"
+# the edition's Hyprland config: Noctalia started, its launcher on a key
+printf '%s\n' '-- stock' 'hl.exec_cmd("noctalia")' \
+    'hl.bind("SUPER + Space", hl.dsp.exec_cmd(noctCall .. "panel-toggle launcher"))' > "$HOME/.config/hypr/hyprland.lua"
 echo mine  > "$HOME/.config/fastfetch/config.jsonc"
 # the cloned rices and Persona's plugin, as local upstreams
 mkdir -p "$UP/persona" "$UP/cava" "$UP/rivendell/.config/hypr" "$UP/rivendell/.config/fastfetch" "$UP/moon/dots"
@@ -89,6 +92,10 @@ expect "...its colours go through rice-theme" has "$P/noctalia/config/noctalia/t
 expect "...which its apps read"              has "$P/noctalia/config/kitty/kitty.conf" "include $P/noctalia/config/rice-theme/active/kitty.conf"
 expect "persona: cloned"                     test -f "$P/persona/config/quickshell/persona/shell.qml"
 expect "...onto Noctalia's Hyprland config"  has "$P/persona/config/hypr/hyprland.lua" stock
+expect "...which starts Persona"             has "$P/persona/config/hypr/hyprland.lua" 'hl.exec_cmd("qs -c persona")'
+expect "...not Noctalia"                     has_not "$P/persona/config/hypr/hyprland.lua" noctalia
+expect "...and opens Persona's launcher"     has "$P/persona/config/hypr/hyprland.lua" 'hl.dsp.exec_cmd("qs -c persona ipc call searchapp toggle"))'
+expect "...Noctalia's own copy is untouched" has "$P/noctalia/config/hypr/hyprland.lua" 'hl.exec_cmd("noctalia")'
 expect "...its Cava plugin built from the clone" called "cmake -S $P/persona/src/qt6-cava-plugin"
 expect "...and installed into the profile"   called "-DCMAKE_INSTALL_PREFIX=$P/persona/qml"
 expect "...where its session finds it"       test "$(RICE_HOME=/r bash -c '. "$0"; echo "$QML_IMPORT_PATH"' "$P/persona/profile.env")" = /r/qml
@@ -98,6 +105,11 @@ expect "moon: its hyprland.conf copied in"   has "$P/moon/config/hypr/hyprland.c
 expect "caelestia: installed unattended"     called 'caelestia install --noconfirm'
 expect "...into the profile"                 has "$P/caelestia/config/fish/config.fish" caelestia
 expect "...not into the shared fish config"  has_not "$HOME/.config/fish/config.fish" caelestia
+expect "...its user files are in the profile" has "$P/caelestia/config/caelestia/hypr-vars.lua" 'return {}'
+expect "...where its hyprland.lua finds them" test "$P/caelestia/config/hypr/hypr-vars.lua" -ef "$P/caelestia/config/caelestia/hypr-vars.lua"
+expect "...the second one too"               test "$P/caelestia/config/hypr/hypr-user.lua" -ef "$P/caelestia/config/caelestia/hypr-user.lua"
+expect "...with colours to start on"         has "$P/caelestia/config/hypr/scheme/current.lua" colours
+refute "...and none of it in ~/.config"      test -e "$HOME/.config/caelestia"
 expect "all five are in the greeter"         test "$(find "$RICE_SESSIONS_DIR" -name 'rice-*.desktop' | wc -l)" -eq 5
 
 section "bootstrap.sh, again"

@@ -52,6 +52,10 @@ QML2_IMPORT_PATH="$QML_IMPORT_PATH"
 ENV
 if fresh persona; then
     cp -r "$P/noctalia/config/hypr/." "$P/persona/config/hypr/"
+    # The copy starts Noctalia and opens its launcher: Persona's in their place.
+    { grep -rIlZF -e 'hl.exec_cmd("noctalia")' -e '"panel-toggle launcher")' "$P/persona/config/hypr" || true; } | xargs -0r sed -i \
+        -e 's|hl.exec_cmd("noctalia")|hl.exec_cmd("qs -c persona")|' \
+        -e 's|noctCall .. "panel-toggle launcher")|"qs -c persona ipc call searchapp toggle")|'
     rice-snapshot persona import
 fi
 rice-session persona
@@ -80,6 +84,20 @@ if fresh caelestia; then
     grep -q '^fish ' "$P/caelestia/owned.txt" || echo 'fish fastfetch micro Thunar starship.toml' >> "$P/caelestia/owned.txt"
     rice-snapshot caelestia empty
     rice-do caelestia -- caelestia install --noconfirm --aur-helper paru --enable-components uwsm
+    # Its hyprland.lua makes its two user files, and the colours to start on,
+    # under ~/.config whatever XDG_CONFIG_HOME is: in a profile none of them
+    # appears, the config stops at the first and binds no key. The user files
+    # go where its installer says to edit them, linked next to hyprland.lua,
+    # where `require` looks first.
+    C="$P/caelestia/config"
+    mkdir -p "$C/caelestia"
+    [ -e "$C/caelestia/hypr-vars.lua" ] || echo 'return {}' > "$C/caelestia/hypr-vars.lua"
+    [ -e "$C/caelestia/hypr-user.lua" ] || : > "$C/caelestia/hypr-user.lua"
+    for f in hypr-vars.lua hypr-user.lua; do
+        [ -e "$C/hypr/$f" ] || ln -sf "../caelestia/$f" "$C/hypr/$f"
+    done
+    [ -e "$C/hypr/scheme/current.lua" ] || [ ! -e "$C/hypr/scheme/default.lua" ] \
+        || cp "$C/hypr/scheme/default.lua" "$C/hypr/scheme/current.lua"
     rice-snapshot caelestia installed
 fi
 rice-session caelestia
