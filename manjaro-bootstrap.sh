@@ -33,6 +33,9 @@ conda config --set auto_activate_base false
 # n
 # curl -L https://bit.ly/n-install | N_PREFIX=~/.n bash -s -- -y
 
+#bun
+curl -fsSL https://bun.sh/install | bash
+
 #fnm
 curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
 fnm completions --shell zsh
