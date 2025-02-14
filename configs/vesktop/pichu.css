@@ -1,9 +1,10 @@
 /**
  * @name SteelPixel
  * @author Industry
- * @version 2.0.0
- * @description Blueprint-dark Discord. Flat charcoal, steel hairlines, crop-mark corners,
- *              square avatars, Press Start 2P usernames. Structure after Discord+ by PlusInsta.
+ * @version 3.0.0
+ * @description Blueprint-dark Discord in red on chocolate. Flat cocoa ground, blood-red message
+ *              text, neon-amber Press Start 2P usernames, crop-mark corners, square avatars.
+ *              Structure after Discord+ by PlusInsta.
 */
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
@@ -23,21 +24,25 @@
   --sp-head: 'Barlow Condensed', 'Barlow', sans-serif;
   --sp-code: ui-monospace, 'JetBrains Mono', Consolas, monospace;
 
-  --sp-0: #0d0f11;   /* rails */
-  --sp-1: #16181a;   /* chat ground */
-  --sp-2: #1c2023;   /* raised */
-  --sp-3: #23282c;   /* hover */
+  /* chocolate ground — four flat steps, no gradient */
+  --sp-0: #140f0c;   /* rails */
+  --sp-1: #1d1611;   /* chat ground */
+  --sp-2: #271e17;   /* raised */
+  --sp-3: #33271e;   /* hover */
 
-  --sp-ink:   #e9edf0;
-  --sp-dim:   #aab4bb;
-  --sp-faint: #7f8a91;
+  /* warm ink for chrome (channels, menus, headers) */
+  --sp-ink:   #f4ece4;
+  --sp-dim:   #c2b0a2;
+  --sp-faint: #94806f;
 
-  --sp-steel:  #5980a6;
-  --sp-lit:    #9dc0e0;
-  --sp-hi:     #c9dcee;
+  /* accent: one red, one neon. Contrast measured on --sp-1. */
+  --sp-red:   #d93a2b;   /* fills, rules, bars — never text */
+  --sp-blood: #ff5a4a;   /* message text — 5.9:1 */
+  --sp-neon:  #ffcf6b;   /* usernames, links, live markers — 12.5:1 */
+  --sp-glow:  #ffe6b0;   /* neon, hover step */
 
-  --sp-line: #272d31;
-  --sp-edge: #3d474d;
+  --sp-line: #33281f;
+  --sp-edge: #4d3b2c;
 
   --sp-r: 0px;        /* corner radius. 3px softens everything. */
   --sp-rule: 2px;     /* speaker rule down the left of a message block */
@@ -61,7 +66,7 @@ html.theme-dark.visual-refresh,
   --background-secondary: var(--sp-0);
   --background-secondary-alt: var(--sp-0);
   --background-tertiary: var(--sp-0);
-  --background-accent: var(--sp-steel);
+  --background-accent: var(--sp-red);
   --background-floating: var(--sp-2);
   --background-nested-floating: var(--sp-2);
   --background-message-hover: var(--sp-2);
@@ -88,7 +93,7 @@ html.theme-dark.visual-refresh,
   --bg-mod-subtle: var(--sp-3);
   --bg-mod-strong: var(--sp-3);
   --bg-mod-stronger: var(--sp-3);
-  --bg-mod-backdrop: rgba(8, 10, 11, 0.84);
+  --bg-mod-backdrop: rgba(10, 7, 5, 0.86);
   --card-primary-bg: var(--sp-2);
   --card-secondary-bg: var(--sp-2);
   --chat-background: var(--sp-1);
@@ -99,8 +104,8 @@ html.theme-dark.visual-refresh,
   --text-muted: var(--sp-dim);
   --text-secondary: var(--sp-dim);
   --text-tertiary: var(--sp-faint);
-  --text-link: var(--sp-lit);
-  --text-brand: var(--sp-lit);
+  --text-link: var(--sp-neon);
+  --text-brand: var(--sp-neon);
   --header-primary: var(--sp-ink);
   --header-secondary: var(--sp-dim);
   --interactive-normal: var(--sp-dim);
@@ -120,14 +125,14 @@ html.theme-dark.visual-refresh,
   --border-strong: var(--sp-edge);
   --elevation-stroke: var(--sp-line);
 
-  --brand-experiment: var(--sp-steel);
-  --brand-500: var(--sp-steel);
-  --brand-560: var(--sp-steel);
-  --button-filled-brand-background: var(--sp-steel);
-  --button-filled-brand-text: #0d0f11;
-  --mention-foreground: var(--sp-hi);
-  --mention-background: rgba(89, 128, 166, 0.26);
-  --focus-primary: var(--sp-lit);
+  --brand-experiment: var(--sp-red);
+  --brand-500: var(--sp-red);
+  --brand-560: var(--sp-red);
+  --button-filled-brand-background: var(--sp-red);
+  --button-filled-brand-text: #140f0c;
+  --mention-foreground: var(--sp-glow);
+  --mention-background: rgba(217, 58, 43, 0.26);
+  --focus-primary: var(--sp-neon);
 
   --elevation-low: 0 0 0 1px var(--sp-line);
   --elevation-medium: 0 0 0 1px var(--sp-line);
@@ -184,17 +189,17 @@ html.theme-dark.visual-refresh,
   border-radius: var(--sp-r) !important;
 }
 
-/* four steel crop marks, drawn as background line art — the theme's signature */
+/* four red crop marks, drawn as background line art — the theme's signature */
 [class*="channelTextArea"],
 [class*="popout"] > [class*="menu_"],
 [class*="modal_"][class*="root_"],
 [class*="quickswitcher"] {
   background-color: var(--sp-2) !important;
   background-image:
-    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
-    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
-    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
-    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0) !important;
+    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
+    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
+    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
+    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0) !important;
   background-repeat: no-repeat !important;
   background-size:
     10px 1px, 1px 10px, 10px 1px, 1px 10px,
@@ -207,7 +212,7 @@ html.theme-dark.visual-refresh,
 }
 
 [class*="channelTextArea"]:focus-within {
-  border-color: var(--sp-lit) !important;
+  border-color: var(--sp-neon) !important;
 }
 
 /* header and panel edges are hairlines, not shadows */
@@ -266,6 +271,17 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
   line-height: var(--sp-lh) !important;
   text-wrap: pretty;
 }
+/* the message itself is blood red; everything structural stays warm ink */
+[class*="messageContent"],
+[class*="messageContent"] span:not([class]),
+[class*="repliedTextContent"] {
+  color: var(--sp-blood) !important;
+}
+[class*="messageContent"] code,
+[class*="messageContent"] pre,
+[class*="messageContent"] [class*="hljs"] {
+  color: var(--sp-ink) !important;
+}
 
 [class*="channelName"],
 [class*="nameAndDecorators"],
@@ -281,9 +297,15 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
   color: var(--sp-faint) !important;
 }
 
-[class*="textArea"], [class*="slateTextArea"], [class*="placeholder_"] {
+[class*="textArea"], [class*="slateTextArea"] {
   font-size: var(--sp-body) !important;
   line-height: var(--sp-lh) !important;
+  color: var(--sp-blood) !important;
+}
+[class*="placeholder_"] {
+  font-size: var(--sp-body) !important;
+  line-height: var(--sp-lh) !important;
+  color: var(--sp-faint) !important;
 }
 
 /* condensed uppercase for structure: titles, category labels, section heads */
@@ -302,11 +324,11 @@ h2[class*="header"],
 [class*="categoryHeader"], [class*="membersGroup"] { font-size: var(--sp-small) !important; }
 
 a, [class*="anchor_"] {
-  color: var(--sp-lit) !important;
+  color: var(--sp-neon) !important;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-a:hover, [class*="anchor_"]:hover { color: var(--sp-hi) !important; }
+a:hover, [class*="anchor_"]:hover { color: var(--sp-glow) !important; }
 
 code, pre, [class*="inlineCode"], [class*="hljs"] {
   font-family: var(--sp-code) !important;
@@ -316,7 +338,8 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
   border-radius: var(--sp-r) !important;
 }
 
-/* ── USERNAMES: Press Start 2P. No !important on color, so role colors win. ── */
+/* ── USERNAMES: Press Start 2P, neon amber. No !important on color, so role
+   colors still win. Uncomment the block at the bottom to force neon instead. ── */
 
 [class*="username"],
 [class*="nameTag"],
@@ -326,7 +349,25 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
   font-weight: 400 !important;
   line-height: 1.5 !important;
   letter-spacing: 0 !important;
-  color: var(--sp-hi);
+  color: var(--sp-neon);
+}
+/* Discord tints the name on hover and inside popouts, where it can land on a
+   banner or an accent fill. Pin it to neon and outline it so it stays legible. */
+[class*="username"]:hover,
+[class*="nameTag"]:hover {
+  color: var(--sp-glow) !important;
+  background: transparent !important;
+  text-decoration: none !important;
+}
+[class*="userPopout"] [class*="username"],
+[class*="userProfile"] [class*="username"],
+[class*="profilePanel"] [class*="username"],
+[class*="panelTitle"],
+[class*="headerTop"] [class*="username"] {
+  color: var(--sp-neon) !important;
+  text-shadow:
+    0 1px 0 var(--sp-0), 0 -1px 0 var(--sp-0),
+    1px 0 0 var(--sp-0), -1px 0 0 var(--sp-0);
 }
 [class*="membersWrap"] [class*="username"],
 [class*="memberInner"] [class*="name"],
@@ -347,7 +388,7 @@ li[class*="messageListItem"]:has([class*="groupStart"]) {
   margin-top: 12px !important;
   padding-top: 10px !important;
   border-top: 1px solid var(--sp-line);
-  border-left-color: var(--sp-steel);
+  border-left-color: var(--sp-red);
   position: relative;
 }
 /* registration mark where the rule meets the block */
@@ -359,30 +400,35 @@ li[class*="messageListItem"]:has([class*="groupStart"])::after {
   width: 9px;
   height: 9px;
   background:
-    linear-gradient(var(--sp-lit) 0 0) center / 9px 1px no-repeat,
-    linear-gradient(var(--sp-lit) 0 0) center / 1px 9px no-repeat;
+    linear-gradient(var(--sp-neon) 0 0) center / 9px 1px no-repeat,
+    linear-gradient(var(--sp-neon) 0 0) center / 1px 9px no-repeat;
   pointer-events: none;
 }
 li[class*="messageListItem"]:hover {
   background: var(--sp-2) !important;
-  border-left-color: var(--sp-lit);
+  border-left-color: var(--sp-neon);
 }
 [class*="mentioned_"] {
-  background: rgba(89, 128, 166, 0.16) !important;
-  border-left-color: var(--sp-hi) !important;
+  background: rgba(217, 58, 43, 0.16) !important;
+  border-left-color: var(--sp-glow) !important;
 }
 [class*="mentioned_"]::before { display: none !important; }
 [class*="mention"][class*="interactive"] {
-  background: rgba(89, 128, 166, 0.28) !important;
-  color: var(--sp-hi) !important;
+  background: rgba(217, 58, 43, 0.28) !important;
+  color: var(--sp-neon) !important;
   border-radius: var(--sp-r) !important;
   padding: 1px 5px !important;
   font-weight: 600;
 }
+[class*="mention"][class*="interactive"]:hover,
+[class*="mention"][class*="interactive"]:focus-visible {
+  background: var(--sp-red) !important;
+  color: var(--sp-0) !important;
+}
 [class*="repliedMessage"] { color: var(--sp-dim) !important; opacity: 1 !important; }
 [class*="embedWrapper"] {
   border: 1px solid var(--sp-line) !important;
-  border-left: var(--sp-bar) solid var(--sp-steel) !important;
+  border-left: var(--sp-bar) solid var(--sp-red) !important;
   background: var(--sp-2) !important;
 }
 
@@ -391,19 +437,19 @@ li[class*="messageListItem"]:hover {
 [class*="link_"] [class*="name_"] { color: var(--sp-faint); font-weight: 500; }
 
 [class*="modeUnread"] {
-  background: rgba(89, 128, 166, 0.09) !important;
-  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-steel) !important;
+  background: rgba(217, 58, 43, 0.09) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-red) !important;
 }
-[class*="modeUnread"] [class*="name_"] { color: var(--sp-hi) !important; font-weight: 700 !important; }
+[class*="modeUnread"] [class*="name_"] { color: var(--sp-glow) !important; font-weight: 700 !important; }
 
 [class*="modeSelected"], [class*="modeConnected"] {
   background: var(--sp-3) !important;
-  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-lit) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-neon) !important;
 }
 [class*="modeSelected"] [class*="name_"] { color: var(--sp-ink) !important; font-weight: 700 !important; }
 
 [class*="unreadMentionsIndicator"], [class*="pill_"] [class*="item_"] {
-  background: var(--sp-lit) !important;
+  background: var(--sp-neon) !important;
   border-radius: var(--sp-r) !important;
   width: var(--sp-bar) !important;
 }
@@ -412,8 +458,8 @@ li[class*="messageListItem"]:hover {
 [class*="numberBadge"],
 [class*="mentionsBadge"],
 [class*="baseShapeRound"][class*="badge"] {
-  background: var(--sp-steel) !important;
-  color: #0d0f11 !important;
+  background: var(--sp-red) !important;
+  color: #140f0c !important;
   font-family: var(--sp-pixel) !important;
   font-size: 13px !important;
   min-width: 26px !important;
@@ -436,7 +482,7 @@ li[class*="messageListItem"]:hover {
 }
 
 [class*="divider_"][class*="isUnread"], [class*="newMessagesBar"] {
-  border-color: var(--sp-lit) !important;
+  border-color: var(--sp-neon) !important;
   border-top-width: 2px !important;
   background: var(--sp-1) !important;
 }
@@ -445,7 +491,7 @@ li[class*="messageListItem"]:hover {
   font-size: var(--sp-small) !important;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--sp-lit) !important;
+  color: var(--sp-neon) !important;
   background: var(--sp-1) !important;
 }
 [class*="divider_"]:not([class*="isUnread"]) { border-color: var(--sp-line) !important; }
@@ -453,14 +499,32 @@ li[class*="messageListItem"]:hover {
 /* ── STATES ──────────────────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--sp-lit) !important;
+  outline: 2px solid var(--sp-neon) !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
 }
 [class*="link_"]:hover, [class*="menuItem"]:hover, [class*="memberInner"]:hover {
   background: var(--sp-3) !important;
 }
-::selection { background: rgba(89, 128, 166, 0.42); color: var(--sp-ink); }
+/* Text selection was the worst offender: a translucent wash over neon or blood
+   red left the glyphs unreadable. It is now one solid, opaque pair everywhere. */
+::selection,
+[class*="username"]::selection,
+[class*="nameTag"]::selection,
+[class*="messageContent"]::selection,
+[class*="messageContent"] *::selection,
+[class*="markup_"]::selection,
+[class*="markup_"] *::selection,
+[class*="mention"]::selection,
+[class*="timestamp"]::selection,
+[class*="name_"]::selection,
+[class*="channelName"]::selection,
+a::selection,
+code::selection {
+  background: var(--sp-neon) !important;
+  color: var(--sp-0) !important;
+  text-shadow: none !important;
+}
 
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-thumb {
@@ -468,9 +532,14 @@ li[class*="messageListItem"]:hover {
   border: 3px solid var(--sp-0);
   border-radius: var(--sp-r) !important;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--sp-steel) !important; }
+::-webkit-scrollbar-thumb:hover { background: var(--sp-red) !important; }
 ::-webkit-scrollbar-track { background: var(--sp-0) !important; }
 
 /* Plugin sprites (oneko and friends) keep their own styles — nothing above
    touches unclassed elements, and no blanket animation override is applied. */
 #oneko { image-rendering: pixelated; }
+
+/* ── OPT-IN: force neon on every username, overriding server role colors.
+   Uncomment if a dark role color is ever hard to read. ─────────────────────
+[class*="username"], [class*="nameTag"] { color: var(--sp-neon) !important; }
+*/

@@ -6,13 +6,10 @@ XDG_CACHE_HOME = ~/.cache/
 
 # remove vi and and add lunarvim alias for both vi and vim
 
-alias update = "yay -Syyu; rustup update; curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell; npm update -g; pnpm up -g --latest; bun upgrade;
-alias clean = "yay -Rsn $(yay -Qdtq); rm -rf .cache/yay; rustup update; pnpm store prune --force; npm cache clean --force"
+alias update = "yay -Syyu; rustup update; curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell; pnpm self-update; bun upgrade; herdr update"
+alias clean = "sudo paccache -rk0; yay -Rsn $(yay -Qdtq); rm -rf .cache/yay; pnpm store prune --force; npm cache clean --force; npm prune --force; bun prune --force"
 
 uv tool upgrade --all
-
-yay -Syyu; rustup update; curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell; pnpm self-update; bun upgrade; herdr update
-sudo paccache -rk0; yay -Rsn $(yay -Qdtq); rm -rf .cache/yay; pnpm store prune --force; npm cache clean --force; npm prune --force; bun prune --force
 
 # fnm
 FNM_PATH="/home/carmack/.local/share/fnm"
