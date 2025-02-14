@@ -1,0 +1,31 @@
+[Desktop Entry]
+FullScreen=false
+
+[General]
+LockSidebar=true
+ShowSidebar=false
+
+[MainWindow]
+ToolBarsMovable=Disabled
+
+[Recent Files]
+File1[$e]=/run/media/carmack/Cum De La/manjaro/Books/DP/0804.2525.pdf
+File10[$e]=/run/media/carmack/Transcend/Screenshot_20210601-131749.png
+File2[$e]=/run/media/carmack/Cum De La/manjaro/Books/New folder/l3.pdf
+File3[$e]=/run/media/carmack/Cum De La/manjaro/Books/papers/l14.pdf
+File4[$e]=/run/media/carmack/Cum De La/manjaro/Books/papers/l11.pdf
+File5[$e]=/run/media/carmack/Cum De La/manjaro/Books/Personal Notes Istio/Istio Up Running Using a Service Mesh to Connect, Secure, Control, and Observe.pdf
+File6[$e]=/run/media/carmack/Cum De La/manjaro/Books/Personal Notes Istio/Getting Started with Istio Service Mesh Manage Microservices in Kubernetes (2020).pdf
+File7[$e]=/run/media/carmack/Cum De La/manjaro/Books/Recursive/Thinking Recursively (Eric S. Roberts).pdf
+File8[$e]=/run/media/carmack/Cum De La/manjaro/Books/RUST/Rust API Guidelines.pdf
+File9[$e]=/run/media/carmack/Cum De La/manjaro/f3ggot.png
+Name1[$e]=0804.2525.pdf
+Name10[$e]=Screenshot_20210601-131749.png
+Name2[$e]=l3.pdf
+Name3[$e]=l14.pdf
+Name4[$e]=l11.pdf
+Name5[$e]=Istio Up Running Using a Service Mesh to Connect, Secure, Control, and Observe.pdf
+Name6[$e]=Getting Started with Istio Service Mesh Manage Microservices in Kubernetes (2020).pdf
+Name7[$e]=Thinking Recursively (Eric S. Roberts).pdf
+Name8[$e]=Rust API Guidelines.pdf
+Name9[$e]=f3ggot.png

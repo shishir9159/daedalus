@@ -1,0 +1,476 @@
+/**
+ * @name SteelPixel
+ * @author Industry
+ * @version 2.0.0
+ * @description Blueprint-dark Discord. Flat charcoal, steel hairlines, crop-mark corners,
+ *              square avatars, Press Start 2P usernames. Structure after Discord+ by PlusInsta.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
+
+/* ── TWEAKS ──────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-body:      21px;   /* message text */
+  --sp-user:      16px;   /* Press Start 2P — whole numbers only */
+  --sp-ui:        16px;   /* channels, members, menus */
+  --sp-small:     14px;   /* timestamps */
+  --sp-notice:    17px;   /* toasts, notices, in-app notifications */
+  --sp-lh:        1.55;
+
+  --sp-pixel: 'Press Start 2P', monospace;
+  --sp-body-font: 'Barlow', system-ui, sans-serif;
+  --sp-head: 'Barlow Condensed', 'Barlow', sans-serif;
+  --sp-code: ui-monospace, 'JetBrains Mono', Consolas, monospace;
+
+  --sp-0: #0d0f11;   /* rails */
+  --sp-1: #16181a;   /* chat ground */
+  --sp-2: #1c2023;   /* raised */
+  --sp-3: #23282c;   /* hover */
+
+  --sp-ink:   #e9edf0;
+  --sp-dim:   #aab4bb;
+  --sp-faint: #7f8a91;
+
+  --sp-steel:  #5980a6;
+  --sp-lit:    #9dc0e0;
+  --sp-hi:     #c9dcee;
+
+  --sp-line: #272d31;
+  --sp-edge: #3d474d;
+
+  --sp-r: 0px;        /* corner radius. 3px softens everything. */
+  --sp-rule: 2px;     /* speaker rule down the left of a message block */
+  --sp-bar: 4px;      /* unread / selected channel bar */
+}
+
+/* ── TOKEN MAP ───────────────────────────────────────────────────────────── */
+/* Selector list is deliberately over-specified: Discord scopes its own tokens
+   under .visual-refresh, which outweighs a bare :root. */
+
+:root,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.visual-refresh,
+html.theme-dark,
+html.theme-dark.visual-refresh,
+.theme-dark.visual-refresh,
+.theme-darker.visual-refresh {
+  --background-primary: var(--sp-1);
+  --background-secondary: var(--sp-0);
+  --background-secondary-alt: var(--sp-0);
+  --background-tertiary: var(--sp-0);
+  --background-accent: var(--sp-steel);
+  --background-floating: var(--sp-2);
+  --background-nested-floating: var(--sp-2);
+  --background-message-hover: var(--sp-2);
+  --background-modifier-hover: var(--sp-3);
+  --background-modifier-active: var(--sp-3);
+  --background-modifier-selected: var(--sp-3);
+  --background-modifier-accent: var(--sp-line);
+  --channeltextarea-background: var(--sp-2);
+  --deprecated-panel-background: var(--sp-0);
+  --deprecated-quickswitcher-input-background: var(--sp-2);
+  --input-background: var(--sp-2);
+  --modal-background: var(--sp-1);
+  --modal-footer-background: var(--sp-0);
+
+  --bg-base-primary: var(--sp-1);
+  --bg-base-secondary: var(--sp-0);
+  --bg-base-tertiary: var(--sp-0);
+  --bg-base-quaternary: var(--sp-0);
+  --bg-surface-overlay: var(--sp-2);
+  --bg-surface-raised: var(--sp-2);
+  --bg-surface-higher: var(--sp-2);
+  --bg-surface-highest: var(--sp-3);
+  --bg-mod-faint: var(--sp-2);
+  --bg-mod-subtle: var(--sp-3);
+  --bg-mod-strong: var(--sp-3);
+  --bg-mod-stronger: var(--sp-3);
+  --bg-mod-backdrop: rgba(8, 10, 11, 0.84);
+  --card-primary-bg: var(--sp-2);
+  --card-secondary-bg: var(--sp-2);
+  --chat-background: var(--sp-1);
+  --home-background: var(--sp-1);
+
+  --text-normal: var(--sp-ink);
+  --text-default: var(--sp-ink);
+  --text-muted: var(--sp-dim);
+  --text-secondary: var(--sp-dim);
+  --text-tertiary: var(--sp-faint);
+  --text-link: var(--sp-lit);
+  --text-brand: var(--sp-lit);
+  --header-primary: var(--sp-ink);
+  --header-secondary: var(--sp-dim);
+  --interactive-normal: var(--sp-dim);
+  --interactive-hover: var(--sp-ink);
+  --interactive-active: var(--sp-ink);
+  --interactive-muted: var(--sp-faint);
+  --channels-default: var(--sp-dim);
+  --channel-default: var(--sp-dim);
+  --channel-icon: var(--sp-faint);
+  --icon-primary: var(--sp-ink);
+  --icon-secondary: var(--sp-dim);
+  --icon-tertiary: var(--sp-faint);
+
+  --border-faint: var(--sp-line);
+  --border-subtle: var(--sp-line);
+  --border-normal: var(--sp-edge);
+  --border-strong: var(--sp-edge);
+  --elevation-stroke: var(--sp-line);
+
+  --brand-experiment: var(--sp-steel);
+  --brand-500: var(--sp-steel);
+  --brand-560: var(--sp-steel);
+  --button-filled-brand-background: var(--sp-steel);
+  --button-filled-brand-text: #0d0f11;
+  --mention-foreground: var(--sp-hi);
+  --mention-background: rgba(89, 128, 166, 0.26);
+  --focus-primary: var(--sp-lit);
+
+  --elevation-low: 0 0 0 1px var(--sp-line);
+  --elevation-medium: 0 0 0 1px var(--sp-line);
+  --elevation-high: 0 0 0 1px var(--sp-edge);
+  --shadow-low: 0 0 0 1px var(--sp-line);
+  --shadow-high: 0 0 0 1px var(--sp-edge);
+
+  --scrollbar-thin-thumb: var(--sp-edge);
+  --scrollbar-thin-track: transparent;
+  --scrollbar-auto-thumb: var(--sp-edge);
+  --scrollbar-auto-track: var(--sp-0);
+
+  --font-primary: var(--sp-body-font);
+  --font-display: var(--sp-body-font);
+  --font-headline: var(--sp-head);
+  --font-code: var(--sp-code);
+}
+
+/* Surfaces Discord paints directly rather than through a token. */
+[class*="appMount"],
+[class*="app_"],
+[class*="appDevToolsWrapper"],
+[class*="baseLayer"],
+[class*="chat_"],
+[class*="chatContent"],
+[class*="messagesWrapper"],
+[class*="page_"],
+[class*="content_"][class*="chat"] {
+  background: var(--sp-1) !important;
+}
+[class*="guilds_"],
+[class*="sidebar_"],
+[class*="sidebarList"],
+[class*="panels_"],
+[class*="membersWrap"] {
+  background: var(--sp-0) !important;
+}
+
+/* ── SHAPE: crop marks, hairlines, square everything ─────────────────────── */
+
+[class*="popout"],
+[class*="menu_"],
+[class*="modal_"],
+[class*="quickswitcher"],
+[class*="autocomplete"],
+[class*="channelTextArea"],
+[class*="embedWrapper"],
+[class*="card_"],
+[class*="button_"],
+[class*="input_"],
+[class*="inputWrapper"],
+[class*="searchBar"],
+[class*="tooltip_"] {
+  border-radius: var(--sp-r) !important;
+}
+
+/* four steel crop marks, drawn as background line art — the theme's signature */
+[class*="channelTextArea"],
+[class*="popout"] > [class*="menu_"],
+[class*="modal_"][class*="root_"],
+[class*="quickswitcher"] {
+  background-color: var(--sp-2) !important;
+  background-image:
+    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
+    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
+    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0),
+    linear-gradient(var(--sp-steel) 0 0), linear-gradient(var(--sp-steel) 0 0) !important;
+  background-repeat: no-repeat !important;
+  background-size:
+    10px 1px, 1px 10px, 10px 1px, 1px 10px,
+    10px 1px, 1px 10px, 10px 1px, 1px 10px !important;
+  background-position:
+    0 0, 0 0, 100% 0, 100% 0,
+    0 100%, 0 100%, 100% 100%, 100% 100% !important;
+  border: 1px solid var(--sp-edge) !important;
+  box-shadow: none !important;
+}
+
+[class*="channelTextArea"]:focus-within {
+  border-color: var(--sp-lit) !important;
+}
+
+/* header and panel edges are hairlines, not shadows */
+[class*="title_"][class*="chat"],
+[class*="upperContainer"],
+[class*="membersWrap"],
+[class*="form_"][class*="channelTextArea"] {
+  box-shadow: none !important;
+}
+[class*="membersWrap"] { border-left: 1px solid var(--sp-line) !important; }
+[class*="upperContainer"] { border-bottom: 1px solid var(--sp-line) !important; }
+
+/* ── AVATARS AND ICONS: square. Discord clips them with an SVG mask, so the
+   mask has to go before any border-radius takes effect. ──────────────────── */
+
+svg[class*="mask"] foreignObject,
+foreignObject[mask],
+[class*="avatar"] foreignObject,
+[class*="wrapper_"] > svg > foreignObject {
+  mask: none !important;
+  clip-path: none !important;
+}
+[class*="avatar"],
+[class*="avatar"] img,
+img[class*="avatar"],
+[class*="avatarStack"] img,
+[class*="guildIcon"],
+[class*="blobContainer"] [class*="wrapper_"],
+[class*="listItem_"] [class*="wrapper_"] > div,
+[class*="circleIconButton"] {
+  border-radius: var(--sp-r) !important;
+}
+[class*="avatar"] img,
+img[class*="avatar"],
+[class*="guildIcon"] {
+  box-shadow: 0 0 0 1px var(--sp-edge);
+}
+[class*="cozyMessage"] [class*="avatar"] {
+  width: 44px !important;
+  height: 44px !important;
+}
+/* status dot: a square tick in the corner, not a bubble */
+[class*="mask_"] rect,
+[class*="pointerEvents"] rect {
+  rx: 0 !important;
+  ry: 0 !important;
+}
+
+/* ── TYPE ────────────────────────────────────────────────────────────────── */
+
+body, [class*="app_"] { font-family: var(--sp-body-font); }
+
+[class*="messageContent"],
+[class*="markup_"] {
+  font-size: var(--sp-body) !important;
+  line-height: var(--sp-lh) !important;
+  text-wrap: pretty;
+}
+
+[class*="channelName"],
+[class*="nameAndDecorators"],
+[class*="menuItem"] [class*="label"],
+[class*="tabBarItem"] {
+  font-size: var(--sp-ui) !important;
+}
+
+[class*="timestamp"], [class*="edited_"] {
+  font-family: var(--sp-code) !important;
+  font-size: var(--sp-small) !important;
+  letter-spacing: -0.02em;
+  color: var(--sp-faint) !important;
+}
+
+[class*="textArea"], [class*="slateTextArea"], [class*="placeholder_"] {
+  font-size: var(--sp-body) !important;
+  line-height: var(--sp-lh) !important;
+}
+
+/* condensed uppercase for structure: titles, category labels, section heads */
+[class*="titleWrapper"] h1,
+[class*="upperContainer"] h1,
+h2[class*="header"],
+[class*="categoryHeader"],
+[class*="containerDefault"] [class*="headerText"],
+[class*="membersGroup"] {
+  font-family: var(--sp-head) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.14em !important;
+  color: var(--sp-dim) !important;
+}
+[class*="titleWrapper"] h1, [class*="upperContainer"] h1 { font-size: 21px !important; letter-spacing: 0.08em !important; color: var(--sp-ink) !important; }
+[class*="categoryHeader"], [class*="membersGroup"] { font-size: var(--sp-small) !important; }
+
+a, [class*="anchor_"] {
+  color: var(--sp-lit) !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+a:hover, [class*="anchor_"]:hover { color: var(--sp-hi) !important; }
+
+code, pre, [class*="inlineCode"], [class*="hljs"] {
+  font-family: var(--sp-code) !important;
+  font-size: calc(var(--sp-body) - 4px) !important;
+  background: var(--sp-0) !important;
+  border: 1px solid var(--sp-line) !important;
+  border-radius: var(--sp-r) !important;
+}
+
+/* ── USERNAMES: Press Start 2P. No !important on color, so role colors win. ── */
+
+[class*="username"],
+[class*="nameTag"],
+[class*="headerText"] [class*="username"] {
+  font-family: var(--sp-pixel) !important;
+  font-size: var(--sp-user) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0 !important;
+  color: var(--sp-hi);
+}
+[class*="membersWrap"] [class*="username"],
+[class*="memberInner"] [class*="name"],
+[class*="privateChannels"] [class*="name"],
+[class*="panelTitle"] {
+  font-family: var(--sp-pixel) !important;
+  font-size: calc(var(--sp-user) - 3px) !important;
+  line-height: 1.65 !important;
+}
+
+/* ── MESSAGE BLOCKS: one speaker, one framed block ───────────────────────── */
+
+li[class*="messageListItem"] {
+  padding-left: 14px !important;
+  border-left: var(--sp-rule) solid transparent;
+}
+li[class*="messageListItem"]:has([class*="groupStart"]) {
+  margin-top: 12px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid var(--sp-line);
+  border-left-color: var(--sp-steel);
+  position: relative;
+}
+/* registration mark where the rule meets the block */
+li[class*="messageListItem"]:has([class*="groupStart"])::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 9px;
+  height: 9px;
+  background:
+    linear-gradient(var(--sp-lit) 0 0) center / 9px 1px no-repeat,
+    linear-gradient(var(--sp-lit) 0 0) center / 1px 9px no-repeat;
+  pointer-events: none;
+}
+li[class*="messageListItem"]:hover {
+  background: var(--sp-2) !important;
+  border-left-color: var(--sp-lit);
+}
+[class*="mentioned_"] {
+  background: rgba(89, 128, 166, 0.16) !important;
+  border-left-color: var(--sp-hi) !important;
+}
+[class*="mentioned_"]::before { display: none !important; }
+[class*="mention"][class*="interactive"] {
+  background: rgba(89, 128, 166, 0.28) !important;
+  color: var(--sp-hi) !important;
+  border-radius: var(--sp-r) !important;
+  padding: 1px 5px !important;
+  font-weight: 600;
+}
+[class*="repliedMessage"] { color: var(--sp-dim) !important; opacity: 1 !important; }
+[class*="embedWrapper"] {
+  border: 1px solid var(--sp-line) !important;
+  border-left: var(--sp-bar) solid var(--sp-steel) !important;
+  background: var(--sp-2) !important;
+}
+
+/* ── READ / UNREAD ───────────────────────────────────────────────────────── */
+
+[class*="link_"] [class*="name_"] { color: var(--sp-faint); font-weight: 500; }
+
+[class*="modeUnread"] {
+  background: rgba(89, 128, 166, 0.09) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-steel) !important;
+}
+[class*="modeUnread"] [class*="name_"] { color: var(--sp-hi) !important; font-weight: 700 !important; }
+
+[class*="modeSelected"], [class*="modeConnected"] {
+  background: var(--sp-3) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-lit) !important;
+}
+[class*="modeSelected"] [class*="name_"] { color: var(--sp-ink) !important; font-weight: 700 !important; }
+
+[class*="unreadMentionsIndicator"], [class*="pill_"] [class*="item_"] {
+  background: var(--sp-lit) !important;
+  border-radius: var(--sp-r) !important;
+  width: var(--sp-bar) !important;
+}
+
+/* mention counts and every in-app notification, sized to be read */
+[class*="numberBadge"],
+[class*="mentionsBadge"],
+[class*="baseShapeRound"][class*="badge"] {
+  background: var(--sp-steel) !important;
+  color: #0d0f11 !important;
+  font-family: var(--sp-pixel) !important;
+  font-size: 13px !important;
+  min-width: 26px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  padding: 0 5px !important;
+  border-radius: var(--sp-r) !important;
+}
+[class*="toast"],
+[class*="notice_"],
+[class*="noticeText"],
+[class*="notificationBody"],
+[class*="notificationContent"],
+[class*="tooltipContent"],
+[class*="quickswitcher"] [class*="resultFocused"],
+[class*="quickswitcher"] input {
+  font-size: var(--sp-notice) !important;
+  line-height: 1.5 !important;
+  color: var(--sp-ink) !important;
+}
+
+[class*="divider_"][class*="isUnread"], [class*="newMessagesBar"] {
+  border-color: var(--sp-lit) !important;
+  border-top-width: 2px !important;
+  background: var(--sp-1) !important;
+}
+[class*="divider_"][class*="isUnread"] span, [class*="newMessagesBar"] {
+  font-family: var(--sp-head) !important;
+  font-size: var(--sp-small) !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sp-lit) !important;
+  background: var(--sp-1) !important;
+}
+[class*="divider_"]:not([class*="isUnread"]) { border-color: var(--sp-line) !important; }
+
+/* ── STATES ──────────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--sp-lit) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+[class*="link_"]:hover, [class*="menuItem"]:hover, [class*="memberInner"]:hover {
+  background: var(--sp-3) !important;
+}
+::selection { background: rgba(89, 128, 166, 0.42); color: var(--sp-ink); }
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb {
+  background: var(--sp-edge) !important;
+  border: 3px solid var(--sp-0);
+  border-radius: var(--sp-r) !important;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--sp-steel) !important; }
+::-webkit-scrollbar-track { background: var(--sp-0) !important; }
+
+/* Plugin sprites (oneko and friends) keep their own styles — nothing above
+   touches unclassed elements, and no blanket animation override is applied. */
+#oneko { image-rendering: pixelated; }
