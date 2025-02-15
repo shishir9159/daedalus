@@ -1,5 +1,5 @@
 /**
- * @name Emberkeep
+ * @name Emberkeep-pika-pika
  * @author Industry
  * @version 5.1.0
  * @description Medieval-pixel Discord for low vision. Ember gradient ground, messages
@@ -356,8 +356,9 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
 }
 
 /* ── TIME: a struck bell, not a whisper ──────────────────────────────────── */
-/* VT323 at 19px is taller and far more legible than the old 14px mono, and the
-   angle brackets make the stamp findable without reading it. */
+/* VT323 at 19px is taller and far more legible than the old 14px mono. The
+   stamp is one unbroken line, underscored in red so it reads as a stamp
+   without any glyphs wrapped around it. */
 
 [class*="timestamp"], [class*="edited_"] {
   font-family: var(--sp-runic) !important;
@@ -366,14 +367,12 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
   color: var(--sp-gold) !important;
   opacity: 1 !important;
   text-transform: uppercase;
+  white-space: nowrap !important;
 }
-[class*="timestamp"]:not([class*="VisibleOnHover"])::before {
-  content: "\2039\00a0";
-  color: var(--sp-red);
-}
-[class*="timestamp"]:not([class*="VisibleOnHover"])::after {
-  content: "\00a0\203a";
-  color: var(--sp-red);
+[class*="timestamp"]:not([class*="VisibleOnHover"]) {
+  display: inline-block !important;
+  padding-bottom: 1px !important;
+  border-bottom: 1px solid var(--sp-red) !important;
 }
 [class*="timestampVisibleOnHover"] {
   font-size: 15px !important;
