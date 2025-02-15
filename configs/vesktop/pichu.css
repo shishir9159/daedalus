@@ -1,57 +1,65 @@
 /**
- * @name SteelPixel
+ * @name Emberkeep
  * @author Industry
- * @version 3.0.0
- * @description Blueprint-dark Discord in red on chocolate. Flat cocoa ground, blood-red message
- *              text, neon-amber Press Start 2P usernames, crop-mark corners, square avatars.
- *              Structure after Discord+ by PlusInsta.
+ * @version 5.1.0
+ * @description Medieval-pixel Discord for low vision. Ember gradient ground, messages
+ *              on iron plates over the ember, no frames, neon-red Press Start 2P names.
+ *              After Discord+ by PlusInsta.
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
 
 /* ── TWEAKS ──────────────────────────────────────────────────────────────── */
 
 :root {
   --sp-body:      21px;   /* message text */
   --sp-user:      16px;   /* Press Start 2P — whole numbers only */
-  --sp-ui:        16px;   /* channels, members, menus */
-  --sp-small:     14px;   /* timestamps */
-  --sp-notice:    17px;   /* toasts, notices, in-app notifications */
+  --sp-ui:        17px;   /* channels, members, friends */
+  --sp-time:      19px;   /* VT323 runs small; this is ~14px of Barlow */
+  --sp-notice:    17px;
   --sp-lh:        1.55;
 
   --sp-pixel: 'Press Start 2P', monospace;
+  --sp-runic: 'VT323', ui-monospace, monospace;
   --sp-body-font: 'Barlow', system-ui, sans-serif;
   --sp-head: 'Barlow Condensed', 'Barlow', sans-serif;
   --sp-code: ui-monospace, 'JetBrains Mono', Consolas, monospace;
 
-  /* chocolate ground — four flat steps, no gradient */
-  --sp-0: #140f0c;   /* rails */
-  --sp-1: #1d1611;   /* chat ground */
-  --sp-2: #271e17;   /* raised */
-  --sp-3: #33271e;   /* hover */
+  /* ground */
+  --sp-0: #141110;   /* rails */
+  --sp-1: #191615;   /* chat base, under the ember gradient */
+  --sp-2: #241e1c;   /* raised */
+  --sp-3: #322826;   /* hover */
 
-  /* warm ink for chrome (channels, menus, headers) */
-  --sp-ink:   #f4ece4;
-  --sp-dim:   #c2b0a2;
-  --sp-faint: #94806f;
+  /* the ember: red at the floor, dark at the ceiling, both at 66% */
+  --sp-ember: linear-gradient(0deg, rgba(255, 0, 4, 0.66) 0%, rgba(25, 22, 21, 0.66) 100%);
 
-  /* accent: one red, one neon. Contrast measured on --sp-1. */
-  --sp-red:   #d93a2b;   /* fills, rules, bars — never text */
-  --sp-blood: #ff5a4a;   /* message text — 5.9:1 */
-  --sp-neon:  #ffcf6b;   /* usernames, links, live markers — 12.5:1 */
-  --sp-glow:  #ffe6b0;   /* neon, hover step */
+  /* the plate every message sits on — dark enough to carry red over the ember */
+  --sp-tablet: rgba(18, 13, 12, 0.86);
 
-  --sp-line: #33281f;
-  --sp-edge: #4d3b2c;
+  /* ink */
+  --sp-ink:   #f3e9e2;
+  --sp-dim:   #c9b6ab;
+  --sp-faint: #9a8579;
 
-  --sp-r: 0px;        /* corner radius. 3px softens everything. */
-  --sp-rule: 2px;     /* speaker rule down the left of a message block */
+  /* accent */
+  --sp-red:    #d61f1c;   /* fills, bars, rules — never text */
+  --sp-blood:  #ff6f62;   /* message text, on the plate */
+  --sp-neon:   #ff5f66;   /* usernames, glowing */
+  --sp-gold:   #f0c060;   /* time, structure, unread */
+  --sp-glow:   #ffdfa0;
+
+  --sp-line: #382c28;
+  --sp-edge: #57433c;
+
+  --sp-r: 0px;        /* corner radius on panels. 3px softens everything. */
+  --sp-rule: 3px;     /* speaker rule down the left of a message block */
   --sp-bar: 4px;      /* unread / selected channel bar */
 }
 
 /* ── TOKEN MAP ───────────────────────────────────────────────────────────── */
-/* Selector list is deliberately over-specified: Discord scopes its own tokens
-   under .visual-refresh, which outweighs a bare :root. */
+/* Over-specified on purpose: Discord scopes its tokens under .visual-refresh,
+   which outweighs a bare :root. */
 
 :root,
 .theme-dark,
@@ -69,7 +77,7 @@ html.theme-dark.visual-refresh,
   --background-accent: var(--sp-red);
   --background-floating: var(--sp-2);
   --background-nested-floating: var(--sp-2);
-  --background-message-hover: var(--sp-2);
+  --background-message-hover: transparent;
   --background-modifier-hover: var(--sp-3);
   --background-modifier-active: var(--sp-3);
   --background-modifier-selected: var(--sp-3);
@@ -93,7 +101,7 @@ html.theme-dark.visual-refresh,
   --bg-mod-subtle: var(--sp-3);
   --bg-mod-strong: var(--sp-3);
   --bg-mod-stronger: var(--sp-3);
-  --bg-mod-backdrop: rgba(10, 7, 5, 0.86);
+  --bg-mod-backdrop: rgba(10, 6, 5, 0.86);
   --card-primary-bg: var(--sp-2);
   --card-secondary-bg: var(--sp-2);
   --chat-background: var(--sp-1);
@@ -104,13 +112,13 @@ html.theme-dark.visual-refresh,
   --text-muted: var(--sp-dim);
   --text-secondary: var(--sp-dim);
   --text-tertiary: var(--sp-faint);
-  --text-link: var(--sp-neon);
-  --text-brand: var(--sp-neon);
+  --text-link: var(--sp-gold);
+  --text-brand: var(--sp-gold);
   --header-primary: var(--sp-ink);
   --header-secondary: var(--sp-dim);
   --interactive-normal: var(--sp-dim);
   --interactive-hover: var(--sp-ink);
-  --interactive-active: var(--sp-ink);
+  --interactive-active: var(--sp-glow);
   --interactive-muted: var(--sp-faint);
   --channels-default: var(--sp-dim);
   --channel-default: var(--sp-dim);
@@ -129,10 +137,10 @@ html.theme-dark.visual-refresh,
   --brand-500: var(--sp-red);
   --brand-560: var(--sp-red);
   --button-filled-brand-background: var(--sp-red);
-  --button-filled-brand-text: #140f0c;
+  --button-filled-brand-text: #ffffff;
   --mention-foreground: var(--sp-glow);
-  --mention-background: rgba(217, 58, 43, 0.26);
-  --focus-primary: var(--sp-neon);
+  --mention-background: rgba(214, 31, 28, 0.26);
+  --focus-primary: var(--sp-gold);
 
   --elevation-low: 0 0 0 1px var(--sp-line);
   --elevation-medium: 0 0 0 1px var(--sp-line);
@@ -151,34 +159,135 @@ html.theme-dark.visual-refresh,
   --font-code: var(--sp-code);
 }
 
-/* Surfaces Discord paints directly rather than through a token. */
+/* ── THE EMBER GROUND ────────────────────────────────────────────────────── */
+/* The gradient is pinned to the chat column, not the scroller, so it stays put
+   while messages move over it. Everything inside is transparent. */
+
+[class*="chat_"],
+[class*="chatContent"] {
+  background: var(--sp-ember), var(--sp-1) !important;
+}
+[class*="chat_"] [class*="scroller_"],
+[class*="chatContent"] [class*="scroller_"],
+[class*="messagesWrapper"],
+[class*="scrollerContent"],
+[class*="scrollerInner"] {
+  background: transparent !important;
+}
+
 [class*="appMount"],
 [class*="app_"],
-[class*="appDevToolsWrapper"],
 [class*="baseLayer"],
-[class*="chat_"],
-[class*="chatContent"],
-[class*="messagesWrapper"],
-[class*="page_"],
-[class*="content_"][class*="chat"] {
+[class*="page_"] {
   background: var(--sp-1) !important;
 }
+
+/* ── PANELS: rails, DM list, friends tab, member list ────────────────────── */
+/* Discord paints several of these directly rather than through a token, and the
+   friends surfaces have their own container classes. All of them, explicitly. */
+
 [class*="guilds_"],
 [class*="sidebar_"],
 [class*="sidebarList"],
+[class*="sidebarRegion"],
 [class*="panels_"],
-[class*="membersWrap"] {
+[class*="privateChannels"],
+[class*="privateChannelsHeaderContainer"],
+[class*="membersWrap"],
+[class*="members_"],
+[class*="peopleColumn"],
+[class*="peopleList"],
+[class*="nowPlayingColumn"],
+[class*="friendsTable"],
+[class*="friendsTableHeader"],
+[class*="friendsError"],
+[class*="peopleListItem"],
+[class*="container_"][class*="people"],
+[class*="tabBar_"],
+[class*="emptyPage"],
+[class*="nowPlayingHeader"] {
   background: var(--sp-0) !important;
 }
 
-/* ── SHAPE: crop marks, hairlines, square everything ─────────────────────── */
+/* friends tab and DM list: the names were the complaint — they read as ink now,
+   gold when the row is live, and every row carries a hairline so the list has
+   countable rhythm instead of a grey wash */
+[class*="privateChannels"] [class*="name_"],
+[class*="peopleListItem"] [class*="username"],
+[class*="friendsTable"] [class*="username"],
+[class*="peopleListItem"] [class*="discriminator"],
+[class*="friendsTable"] [class*="discriminator"] {
+  color: var(--sp-ink) !important;
+}
+[class*="peopleListItem"],
+[class*="friendsTableRow"] {
+  border-bottom: 1px solid var(--sp-line) !important;
+  border-radius: 0 !important;
+}
+[class*="peopleListItem"]:hover,
+[class*="friendsTableRow"]:hover {
+  background: var(--sp-3) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-red) !important;
+}
+[class*="peopleListItem"] [class*="subtext"],
+[class*="peopleListItem"] [class*="activity"],
+[class*="friendsTable"] [class*="subtext"] {
+  color: var(--sp-dim) !important;
+  font-size: 15px !important;
+}
+[class*="friendsTableHeader"],
+[class*="privateChannelsHeaderContainer"] h2 {
+  font-family: var(--sp-head) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.16em !important;
+  color: var(--sp-gold) !important;
+  font-size: 14px !important;
+}
+[class*="tabBar_"] [class*="item_"] {
+  font-family: var(--sp-head) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 16px !important;
+  color: var(--sp-dim) !important;
+  border-radius: 0 !important;
+}
+[class*="tabBar_"] [class*="item_"][class*="selected"] {
+  color: var(--sp-glow) !important;
+  background: var(--sp-3) !important;
+  box-shadow: inset 0 -3px 0 0 var(--sp-red) !important;
+}
+
+/* ── THE MESSAGE BOX: an iron trough, not Discord's grey pill ────────────── */
+
+[class*="channelTextArea"],
+[class*="channelTextArea"] [class*="scrollableContainer"],
+[class*="channelTextArea"] [class*="inner_"],
+[class*="channelBottomBarArea"],
+[class*="form_"] {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+[class*="channelTextArea"] [class*="scrollableContainer"] {
+  background: var(--sp-2) !important;
+  border: 2px solid var(--sp-edge) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5) !important;
+}
+[class*="channelTextArea"] [class*="scrollableContainer"]:focus-within {
+  border-color: var(--sp-gold) !important;
+}
+[class*="form_"]::before { display: none !important; }
+[class*="form_"] {
+  border-top: 1px solid var(--sp-line) !important;
+  box-shadow: none !important;
+}
+
+/* ── SHAPE: iron corner braces on floating panels ────────────────────────── */
 
 [class*="popout"],
 [class*="menu_"],
 [class*="modal_"],
 [class*="quickswitcher"],
 [class*="autocomplete"],
-[class*="channelTextArea"],
 [class*="embedWrapper"],
 [class*="card_"],
 [class*="button_"],
@@ -189,77 +298,35 @@ html.theme-dark.visual-refresh,
   border-radius: var(--sp-r) !important;
 }
 
-/* four red crop marks, drawn as background line art — the theme's signature */
-[class*="channelTextArea"],
+/* four brackets drawn as line art — the keep's corner ironwork */
 [class*="popout"] > [class*="menu_"],
 [class*="modal_"][class*="root_"],
 [class*="quickswitcher"] {
   background-color: var(--sp-2) !important;
   background-image:
-    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
-    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
-    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0),
-    linear-gradient(var(--sp-red) 0 0), linear-gradient(var(--sp-red) 0 0) !important;
+    linear-gradient(var(--sp-gold) 0 0), linear-gradient(var(--sp-gold) 0 0),
+    linear-gradient(var(--sp-gold) 0 0), linear-gradient(var(--sp-gold) 0 0),
+    linear-gradient(var(--sp-gold) 0 0), linear-gradient(var(--sp-gold) 0 0),
+    linear-gradient(var(--sp-gold) 0 0), linear-gradient(var(--sp-gold) 0 0) !important;
   background-repeat: no-repeat !important;
   background-size:
-    10px 1px, 1px 10px, 10px 1px, 1px 10px,
-    10px 1px, 1px 10px, 10px 1px, 1px 10px !important;
+    12px 2px, 2px 12px, 12px 2px, 2px 12px,
+    12px 2px, 2px 12px, 12px 2px, 2px 12px !important;
   background-position:
     0 0, 0 0, 100% 0, 100% 0,
     0 100%, 0 100%, 100% 100%, 100% 100% !important;
-  border: 1px solid var(--sp-edge) !important;
+  border: 2px solid var(--sp-edge) !important;
   box-shadow: none !important;
 }
 
-[class*="channelTextArea"]:focus-within {
-  border-color: var(--sp-neon) !important;
-}
-
-/* header and panel edges are hairlines, not shadows */
-[class*="title_"][class*="chat"],
-[class*="upperContainer"],
-[class*="membersWrap"],
-[class*="form_"][class*="channelTextArea"] {
-  box-shadow: none !important;
-}
 [class*="membersWrap"] { border-left: 1px solid var(--sp-line) !important; }
-[class*="upperContainer"] { border-bottom: 1px solid var(--sp-line) !important; }
+[class*="upperContainer"] {
+  border-bottom: 2px solid var(--sp-line) !important;
+  box-shadow: none !important;
+}
 
-/* ── AVATARS AND ICONS: square. Discord clips them with an SVG mask, so the
-   mask has to go before any border-radius takes effect. ──────────────────── */
-
-svg[class*="mask"] foreignObject,
-foreignObject[mask],
-[class*="avatar"] foreignObject,
-[class*="wrapper_"] > svg > foreignObject {
-  mask: none !important;
-  clip-path: none !important;
-}
-[class*="avatar"],
-[class*="avatar"] img,
-img[class*="avatar"],
-[class*="avatarStack"] img,
-[class*="guildIcon"],
-[class*="blobContainer"] [class*="wrapper_"],
-[class*="listItem_"] [class*="wrapper_"] > div,
-[class*="circleIconButton"] {
-  border-radius: var(--sp-r) !important;
-}
-[class*="avatar"] img,
-img[class*="avatar"],
-[class*="guildIcon"] {
-  box-shadow: 0 0 0 1px var(--sp-edge);
-}
-[class*="cozyMessage"] [class*="avatar"] {
-  width: 44px !important;
-  height: 44px !important;
-}
-/* status dot: a square tick in the corner, not a bubble */
-[class*="mask_"] rect,
-[class*="pointerEvents"] rect {
-  rx: 0 !important;
-  ry: 0 !important;
-}
+/* Avatars, guild icons and the server unread/mention counts are left exactly as
+   Discord draws them — round, and at Discord's own badge size. */
 
 /* ── TYPE ────────────────────────────────────────────────────────────────── */
 
@@ -271,7 +338,6 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
   line-height: var(--sp-lh) !important;
   text-wrap: pretty;
 }
-/* the message itself is blood red; everything structural stays warm ink */
 [class*="messageContent"],
 [class*="messageContent"] span:not([class]),
 [class*="repliedTextContent"] {
@@ -285,22 +351,40 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
 
 [class*="channelName"],
 [class*="nameAndDecorators"],
-[class*="menuItem"] [class*="label"],
-[class*="tabBarItem"] {
+[class*="menuItem"] [class*="label"] {
   font-size: var(--sp-ui) !important;
 }
 
+/* ── TIME: a struck bell, not a whisper ──────────────────────────────────── */
+/* VT323 at 19px is taller and far more legible than the old 14px mono, and the
+   angle brackets make the stamp findable without reading it. */
+
 [class*="timestamp"], [class*="edited_"] {
-  font-family: var(--sp-code) !important;
-  font-size: var(--sp-small) !important;
-  letter-spacing: -0.02em;
+  font-family: var(--sp-runic) !important;
+  font-size: var(--sp-time) !important;
+  letter-spacing: 0.08em !important;
+  color: var(--sp-gold) !important;
+  opacity: 1 !important;
+  text-transform: uppercase;
+}
+[class*="timestamp"]:not([class*="VisibleOnHover"])::before {
+  content: "\2039\00a0";
+  color: var(--sp-red);
+}
+[class*="timestamp"]:not([class*="VisibleOnHover"])::after {
+  content: "\00a0\203a";
+  color: var(--sp-red);
+}
+[class*="timestampVisibleOnHover"] {
+  font-size: 15px !important;
   color: var(--sp-faint) !important;
 }
+[class*="divider_"] [class*="timestamp"] { font-size: 16px !important; }
 
 [class*="textArea"], [class*="slateTextArea"] {
   font-size: var(--sp-body) !important;
   line-height: var(--sp-lh) !important;
-  color: var(--sp-blood) !important;
+  color: var(--sp-ink) !important;
 }
 [class*="placeholder_"] {
   font-size: var(--sp-body) !important;
@@ -308,7 +392,7 @@ body, [class*="app_"] { font-family: var(--sp-body-font); }
   color: var(--sp-faint) !important;
 }
 
-/* condensed uppercase for structure: titles, category labels, section heads */
+/* condensed uppercase for structure */
 [class*="titleWrapper"] h1,
 [class*="upperContainer"] h1,
 h2[class*="header"],
@@ -320,12 +404,19 @@ h2[class*="header"],
   letter-spacing: 0.14em !important;
   color: var(--sp-dim) !important;
 }
-[class*="titleWrapper"] h1, [class*="upperContainer"] h1 { font-size: 21px !important; letter-spacing: 0.08em !important; color: var(--sp-ink) !important; }
-[class*="categoryHeader"], [class*="membersGroup"] { font-size: var(--sp-small) !important; }
+[class*="titleWrapper"] h1, [class*="upperContainer"] h1 {
+  font-size: 21px !important;
+  letter-spacing: 0.08em !important;
+  color: var(--sp-ink) !important;
+}
+[class*="categoryHeader"], [class*="membersGroup"] {
+  font-size: 14px !important;
+  color: var(--sp-gold) !important;
+}
 
 a, [class*="anchor_"] {
-  color: var(--sp-neon) !important;
-  text-decoration-thickness: 1px;
+  color: var(--sp-gold) !important;
+  text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
 a:hover, [class*="anchor_"]:hover { color: var(--sp-glow) !important; }
@@ -333,13 +424,14 @@ a:hover, [class*="anchor_"]:hover { color: var(--sp-glow) !important; }
 code, pre, [class*="inlineCode"], [class*="hljs"] {
   font-family: var(--sp-code) !important;
   font-size: calc(var(--sp-body) - 4px) !important;
-  background: var(--sp-0) !important;
-  border: 1px solid var(--sp-line) !important;
-  border-radius: var(--sp-r) !important;
+  background: rgba(10, 6, 5, 0.6) !important;
+  border: 1px solid var(--sp-edge) !important;
+  border-radius: 0 !important;
 }
 
-/* ── USERNAMES: Press Start 2P, neon amber. No !important on color, so role
-   colors still win. Uncomment the block at the bottom to force neon instead. ── */
+/* ── USERNAMES: neon red, lit from behind ────────────────────────────────── */
+/* Forced past role colors, per request. The dark outline in the shadow stack is
+   what keeps them readable where the ember is at its reddest. */
 
 [class*="username"],
 [class*="nameTag"],
@@ -347,89 +439,74 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
   font-family: var(--sp-pixel) !important;
   font-size: var(--sp-user) !important;
   font-weight: 400 !important;
-  line-height: 1.5 !important;
+  line-height: 1.6 !important;
   letter-spacing: 0 !important;
-  color: var(--sp-neon);
+  color: var(--sp-neon) !important;
+  text-shadow:
+    0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
+    1px 0 0 #12100f, -1px 0 0 #12100f,
+    0 0 10px rgba(255, 45, 55, 0.75),
+    0 0 22px rgba(255, 0, 4, 0.45) !important;
 }
-/* Discord tints the name on hover and inside popouts, where it can land on a
-   banner or an accent fill. Pin it to neon and outline it so it stays legible. */
 [class*="username"]:hover,
 [class*="nameTag"]:hover {
   color: var(--sp-glow) !important;
   background: transparent !important;
   text-decoration: none !important;
-}
-[class*="userPopout"] [class*="username"],
-[class*="userProfile"] [class*="username"],
-[class*="profilePanel"] [class*="username"],
-[class*="panelTitle"],
-[class*="headerTop"] [class*="username"] {
-  color: var(--sp-neon) !important;
   text-shadow:
-    0 1px 0 var(--sp-0), 0 -1px 0 var(--sp-0),
-    1px 0 0 var(--sp-0), -1px 0 0 var(--sp-0);
+    0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
+    1px 0 0 #12100f, -1px 0 0 #12100f,
+    0 0 12px rgba(255, 190, 90, 0.8) !important;
 }
 [class*="membersWrap"] [class*="username"],
 [class*="memberInner"] [class*="name"],
-[class*="privateChannels"] [class*="name"],
+[class*="privateChannels"] [class*="name_"],
 [class*="panelTitle"] {
   font-family: var(--sp-pixel) !important;
-  font-size: calc(var(--sp-user) - 3px) !important;
-  line-height: 1.65 !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+}
+[class*="membersWrap"] [class*="username"],
+[class*="panelTitle"] {
+  color: var(--sp-neon) !important;
 }
 
-/* ── MESSAGE BLOCKS: one speaker, one framed block ───────────────────────── */
+/* ── MESSAGES: one iron plate each ───────────────────────────────────────── */
+/* No frames, no rules, no rivets — just the plate. It is what makes red text
+   safe over a red floor: it holds the local ground near-black however hot the
+   ember behind it gets, and the gap between plates separates the speakers. */
 
 li[class*="messageListItem"] {
-  padding-left: 14px !important;
-  border-left: var(--sp-rule) solid transparent;
+  padding-left: 16px !important;
+  padding-right: 12px !important;
+  background: var(--sp-tablet) !important;
+  border: 0 !important;
 }
 li[class*="messageListItem"]:has([class*="groupStart"]) {
   margin-top: 12px !important;
-  padding-top: 10px !important;
-  border-top: 1px solid var(--sp-line);
-  border-left-color: var(--sp-red);
-  position: relative;
+  padding-top: 13px !important;
 }
-/* registration mark where the rule meets the block */
-li[class*="messageListItem"]:has([class*="groupStart"])::after {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: -4px;
-  width: 9px;
-  height: 9px;
-  background:
-    linear-gradient(var(--sp-neon) 0 0) center / 9px 1px no-repeat,
-    linear-gradient(var(--sp-neon) 0 0) center / 1px 9px no-repeat;
-  pointer-events: none;
-}
-li[class*="messageListItem"]:hover {
-  background: var(--sp-2) !important;
-  border-left-color: var(--sp-neon);
-}
-[class*="mentioned_"] {
-  background: rgba(217, 58, 43, 0.16) !important;
-  border-left-color: var(--sp-glow) !important;
-}
-[class*="mentioned_"]::before { display: none !important; }
+li[class*="messageListItem"]:hover { background: rgba(30, 21, 19, 0.92) !important; }
+/* a ping gets the same plate as everything else; the @name chip carries it */
+[class*="mentioned_"] { background: var(--sp-tablet) !important; }
+[class*="mentioned_"]::before, [class*="mentioned_"]::after { display: none !important; }
 [class*="mention"][class*="interactive"] {
-  background: rgba(217, 58, 43, 0.28) !important;
-  color: var(--sp-neon) !important;
-  border-radius: var(--sp-r) !important;
+  background: rgba(214, 31, 28, 0.34) !important;
+  color: var(--sp-glow) !important;
+  border-radius: 0 !important;
   padding: 1px 5px !important;
   font-weight: 600;
 }
 [class*="mention"][class*="interactive"]:hover,
 [class*="mention"][class*="interactive"]:focus-visible {
   background: var(--sp-red) !important;
-  color: var(--sp-0) !important;
+  color: #ffffff !important;
 }
 [class*="repliedMessage"] { color: var(--sp-dim) !important; opacity: 1 !important; }
 [class*="embedWrapper"] {
-  border: 1px solid var(--sp-line) !important;
+  border: 1px solid var(--sp-edge) !important;
   border-left: var(--sp-bar) solid var(--sp-red) !important;
-  background: var(--sp-2) !important;
+  background: rgba(12, 8, 7, 0.9) !important;
 }
 
 /* ── READ / UNREAD ───────────────────────────────────────────────────────── */
@@ -437,37 +514,17 @@ li[class*="messageListItem"]:hover {
 [class*="link_"] [class*="name_"] { color: var(--sp-faint); font-weight: 500; }
 
 [class*="modeUnread"] {
-  background: rgba(217, 58, 43, 0.09) !important;
-  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-red) !important;
+  background: rgba(214, 31, 28, 0.14) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-gold) !important;
 }
 [class*="modeUnread"] [class*="name_"] { color: var(--sp-glow) !important; font-weight: 700 !important; }
 
 [class*="modeSelected"], [class*="modeConnected"] {
   background: var(--sp-3) !important;
-  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-neon) !important;
+  box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-red) !important;
 }
 [class*="modeSelected"] [class*="name_"] { color: var(--sp-ink) !important; font-weight: 700 !important; }
 
-[class*="unreadMentionsIndicator"], [class*="pill_"] [class*="item_"] {
-  background: var(--sp-neon) !important;
-  border-radius: var(--sp-r) !important;
-  width: var(--sp-bar) !important;
-}
-
-/* mention counts and every in-app notification, sized to be read */
-[class*="numberBadge"],
-[class*="mentionsBadge"],
-[class*="baseShapeRound"][class*="badge"] {
-  background: var(--sp-red) !important;
-  color: #140f0c !important;
-  font-family: var(--sp-pixel) !important;
-  font-size: 13px !important;
-  min-width: 26px !important;
-  height: 24px !important;
-  line-height: 24px !important;
-  padding: 0 5px !important;
-  border-radius: var(--sp-r) !important;
-}
 [class*="toast"],
 [class*="notice_"],
 [class*="noticeText"],
@@ -482,34 +539,27 @@ li[class*="messageListItem"]:hover {
 }
 
 [class*="divider_"][class*="isUnread"], [class*="newMessagesBar"] {
-  border-color: var(--sp-neon) !important;
+  border-color: var(--sp-gold) !important;
   border-top-width: 2px !important;
-  background: var(--sp-1) !important;
+  background: transparent !important;
 }
 [class*="divider_"][class*="isUnread"] span, [class*="newMessagesBar"] {
   font-family: var(--sp-head) !important;
-  font-size: var(--sp-small) !important;
-  letter-spacing: 0.14em;
+  font-size: 14px !important;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--sp-neon) !important;
-  background: var(--sp-1) !important;
+  color: #2a1a0e !important;
+  background: var(--sp-gold) !important;
+  padding: 2px 8px !important;
+  border-radius: 0 !important;
 }
 [class*="divider_"]:not([class*="isUnread"]) { border-color: var(--sp-line) !important; }
 
-/* ── STATES ──────────────────────────────────────────────────────────────── */
+/* ── SELECTION: one solid opaque pair, forced past every rule above ──────── */
 
-:focus-visible {
-  outline: 2px solid var(--sp-neon) !important;
-  outline-offset: 2px !important;
-  box-shadow: none !important;
-}
-[class*="link_"]:hover, [class*="menuItem"]:hover, [class*="memberInner"]:hover {
-  background: var(--sp-3) !important;
-}
-/* Text selection was the worst offender: a translucent wash over neon or blood
-   red left the glyphs unreadable. It is now one solid, opaque pair everywhere. */
 ::selection,
 [class*="username"]::selection,
+[class*="username"] *::selection,
 [class*="nameTag"]::selection,
 [class*="messageContent"]::selection,
 [class*="messageContent"] *::selection,
@@ -517,29 +567,37 @@ li[class*="messageListItem"]:hover {
 [class*="markup_"] *::selection,
 [class*="mention"]::selection,
 [class*="timestamp"]::selection,
+[class*="timestamp"] *::selection,
 [class*="name_"]::selection,
 [class*="channelName"]::selection,
 a::selection,
 code::selection {
-  background: var(--sp-neon) !important;
-  color: var(--sp-0) !important;
+  background: var(--sp-gold) !important;
+  color: #14100c !important;
   text-shadow: none !important;
+  -webkit-text-fill-color: #14100c !important;
 }
 
-::-webkit-scrollbar { width: 12px; height: 12px; }
+/* ── STATES ──────────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 3px solid var(--sp-gold) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+[class*="link_"]:hover, [class*="menuItem"]:hover, [class*="memberInner"]:hover {
+  background: var(--sp-3) !important;
+}
+
+::-webkit-scrollbar { width: 14px; height: 14px; }
 ::-webkit-scrollbar-thumb {
   background: var(--sp-edge) !important;
-  border: 3px solid var(--sp-0);
-  border-radius: var(--sp-r) !important;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  border-radius: 0 !important;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--sp-red) !important; }
-::-webkit-scrollbar-track { background: var(--sp-0) !important; }
+::-webkit-scrollbar-thumb:hover { background: var(--sp-red) !important; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent !important; }
 
-/* Plugin sprites (oneko and friends) keep their own styles — nothing above
-   touches unclassed elements, and no blanket animation override is applied. */
+/* Plugin sprites (oneko and friends) keep their own styles. */
 #oneko { image-rendering: pixelated; }
-
-/* ── OPT-IN: force neon on every username, overriding server role colors.
-   Uncomment if a dark role color is ever hard to read. ─────────────────────
-[class*="username"], [class*="nameTag"] { color: var(--sp-neon) !important; }
-*/
