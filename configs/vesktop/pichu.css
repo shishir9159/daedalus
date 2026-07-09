@@ -1,5 +1,5 @@
 /**
- * @name Emberkeep-pika-pika
+ * @name Emberkeep
  * @author Industry
  * @version 5.1.0
  * @description Medieval-pixel Discord for low vision. Ember gradient ground, messages
@@ -447,15 +447,17 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
     0 0 10px rgba(255, 45, 55, 0.75),
     0 0 22px rgba(255, 0, 4, 0.45) !important;
 }
+/* hovering a name changes nothing — no color shift, no glow, no underline */
 [class*="username"]:hover,
 [class*="nameTag"]:hover {
-  color: var(--sp-glow) !important;
+  color: var(--sp-neon) !important;
   background: transparent !important;
   text-decoration: none !important;
   text-shadow:
     0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
     1px 0 0 #12100f, -1px 0 0 #12100f,
-    0 0 12px rgba(255, 190, 90, 0.8) !important;
+    0 0 10px rgba(255, 45, 55, 0.75),
+    0 0 22px rgba(255, 0, 4, 0.45) !important;
 }
 [class*="membersWrap"] [class*="username"],
 [class*="memberInner"] [class*="name"],
@@ -597,6 +599,3 @@ code::selection {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--sp-red) !important; background-clip: padding-box; }
 ::-webkit-scrollbar-track { background: transparent !important; }
-
-/* Plugin sprites (oneko and friends) keep their own styles. */
-#oneko { image-rendering: pixelated; }
