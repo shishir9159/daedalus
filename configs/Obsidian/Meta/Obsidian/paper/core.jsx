@@ -174,7 +174,7 @@ const RELATIONS = [
  * `rev` is Datacore's index counter: it is in the dependency list so a paper
  * whose frontmatter you just edited re-reads itself, and nothing else does.
  */
-function readPaper(path, rev) {
+function readPaper(path, rev, collectedBy = null) {
   const cache = app.metadataCache.getCache(path) ?? {};
   const fm = cache.frontmatter ?? {};
   const get = (k) => fmGet(fm, k);
@@ -205,7 +205,19 @@ function readPaper(path, rev) {
       .map((t) => String(t ?? "").replace(/^#/, "").trim())
       .filter(Boolean)
   ));
-  const topics = tags.filter((t) => !NON_TOPIC_TAGS.has(t.toLowerCase()));
+  /**
+   * A topic is a tag that says something about the paper.
+   *
+   * Two kinds do not. The first says what kind of note this is (#paper and
+   * friends). The second is whatever you collected on: point a view at
+   * tag={["transformer"]} and every paper in it carries #transformer, so
+   * grouping by it yields exactly one drawer holding everything. The tag you
+   * searched for is the one tag guaranteed to carry no information.
+   */
+  const topics = tags.filter((t) => {
+    const k = t.toLowerCase();
+    return !NON_TOPIC_TAGS.has(k) && !collectedBy?.has(k);
+  });
 
   // Every relation, resolved to a note path where the target exists. Kept as
   // paths rather than labels so the constellation can join them up and a
@@ -276,9 +288,18 @@ function readPaper(path, rev) {
 /**
  * Every paper in the vault that carries `tag`, as models.
  *
- * `tag` takes one tag or several — tag="paper" or tag={["paper", "preprint"]} —
- * the same shape the shelf uses, so a vault that tags things two ways does not
- * need two views.
+ * `tag` takes one tag or several, exactly as <Shelves> does:
+ *
+ *     <Drawers design="medieval" tag={["paper"]} />
+ *     <ContactSheet design="art deco" tag={["paper", "preprint"]} />
+ *     <Pinboard design="medieval" tag="transformer" folder="Papers/NLP" />
+ *
+ * Several tags are OR'd, a leading # is optional, and `folder` narrows the
+ * result to one subtree. Whatever you collected on is then dropped from every
+ * paper's topics — see readPaper — because a tag they all share cannot tell
+ * them apart.
+ *
+ * Notes under Meta/Obsidian/Templates/ are never collected (IGNORE_PATHS).
  */
 function usePapers({ tag = "paper", folder = null } = {}) {
   const tags = [].concat(tag).map((t) => String(t).trim().replace(/^#/, "")).filter(Boolean);
@@ -288,14 +309,19 @@ function usePapers({ tag = "paper", folder = null } = {}) {
   const all = dc.useQuery(query);
   const rev = dc.useIndexUpdates();
 
+  // A fresh array every render would re-read every paper every render, so the
+  // dependency is the joined string and the Set is rebuilt only when it moves.
+  const tagKey = tags.join(" ").toLowerCase();
+
   return dc.useMemo(() => {
+    const collectedBy = new Set(tagKey ? tagKey.split(" ") : []);
     const inFolder = (p) =>
       !folder || p === folder || p.startsWith(String(folder).replace(/\/?$/, "/"));
     return (all ?? [])
       .map((p) => p.$path)
       .filter((p) => p && !isIgnored(p) && inFolder(p))
-      .map((p) => readPaper(p, rev));
-  }, [all, rev, folder]);
+      .map((p) => readPaper(p, rev, collectedBy));
+  }, [all, rev, folder, tagKey]);
 }
 
 /** id → paper, for the many places that hold an id and want the record. */
@@ -727,8 +753,8 @@ const CSS = `
    scrolling column and you read the paper's own summary before you had seen
    the paper. It is in the margin now, beside the metadata it belongs with. */
 /* Both columns shrink rather than being clipped: a sidebar leaf is nowhere
-   near 856px wide, and `flex: none` there meant the margin disappeared behind
-   the overflow rather than getting narrower. */
+   near 856px wide, and a rigid flex: none there meant the margin disappeared
+   behind the overflow rather than getting narrower. */
 .pv-read-face {
   flex: 0 1 470px; min-width: 300px; overflow-y: auto; padding: 32px 36px 36px;
   display: flex; flex-direction: column; gap: 16px;

@@ -17,16 +17,24 @@
 //
 //    ```datacorejsx
 //    const { Constellation } = await dc.require("Meta/Obsidian/_datacore/paper/views.jsx");
-//    return function View() { return <Constellation design="art deco" />; };
+//    return function View() {
+//      return <Constellation
+//        design="art deco"
+//        tag={["paper"]}
+//      />;
+//    };
 //    ```
 //
 //  REQUIRED       design "medieval" | "art deco"
-//  ALL THREE      tag "paper" · folder · full · webfonts · height
+//  ALL THREE      tag "paper" (or a list) · folder · full · webfonts · height
 //  CONSTELLATION  edges "all" | "links"
 //  PINBOARD       perRow 6 · spread
 //  CONTACT SHEET  columns 10 · thumbs true
 //
 //  `design` is mandatory, exactly as in drawers.jsx, and for the same reason.
+//  `tag` takes one tag or a list, exactly as <Shelves> does — see usePapers in
+//  core.jsx for what collecting on a subject rather than on #paper does to the
+//  topic colours.
 //
 //  ── ON THE PINBOARD ───────────────────────────────────────────────────────
 //  There is no card/thread switch. The study had one — a mode that shrank every

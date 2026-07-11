@@ -6,7 +6,12 @@
 //
 //    ```datacorejsx
 //    const { Drawers } = await dc.require("Meta/Obsidian/_datacore/paper/drawers.jsx");
-//    return function View() { return <Drawers design="medieval" />; };
+//    return function View() {
+//      return <Drawers
+//        design="medieval"
+//        tag={["paper"]}
+//      />;
+//    };
 //    ```
 //
 //  REQUIRED          design "medieval" | "art deco"
@@ -17,6 +22,16 @@
 //  OTHER             queueSize · motion · full · webfonts
 //
 //  `design` is mandatory. Everything else has an answer already.
+//
+//  `tag` behaves exactly as it does on <Shelves>: one tag or a list, OR'd, a
+//  leading # optional. Collect on a subject rather than on #paper and the
+//  drawers regroup around whatever is left —
+//
+//    <Drawers design="art deco" tag={["transformer", "attention"]} />
+//    <Drawers design="medieval" tag="paper" folder="Papers/NLP" />
+//
+//  — because the tag you searched for is dropped from every paper's topics.
+//  See usePapers in core.jsx.
 //
 //  ── HOW IT BEHAVES ────────────────────────────────────────────────────────
 //  A drawer is shut until you pull it. Pulling one pushes it towards you by
