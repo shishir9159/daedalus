@@ -228,8 +228,9 @@ function ConstellationBody({
                       zIndex: on ? 10 : 2,
                     }}
                     title={`${p.title}\nclick · select   double-click · read`}
-                    onClick={() => setSel(p.id)}
-                    onDoubleClick={() => setReading(p.id)}
+                    /* one handler, clicks counted off MouseEvent.detail —
+                       onDoubleClick is a React name Preact never binds */
+                    onClick={(e) => (e.detail >= 2 ? setReading(p.id) : setSel(p.id))}
                   >
                     <span class="pvv-dot" />
                     <span class="pvv-label">{p.title}</span>
@@ -255,7 +256,14 @@ function ConstellationBody({
                     <span>SELECTED</span>
                     <i class="pv-rule" />
                   </div>
-                  <span class="pvv-side-title">{chosen.title}</span>
+                  {/* The title opens the reading panel; the page opens the PDF.
+                      Two targets, two destinations, neither of them a filename
+                      pretending to be a button. */}
+                  <span
+                    class="pvv-side-title"
+                    title="read"
+                    onClick={() => setReading(chosen.id)}
+                  >{chosen.title}</span>
                   <span class="pvv-side-authors">{chosen.authorsFull}</span>
                   {chosen.affiliationLine && (
                     <span class="pvv-side-affil">{chosen.affiliationLine}</span>
@@ -281,9 +289,7 @@ function ConstellationBody({
                       </div>
                     </div>
                   )}
-                  <button class="pv-open" onClick={() => setReading(chosen.id)}>
-                    <span class="pv-lozenge pvv-tiny" />{chosen.name}
-                  </button>
+                  <PageSheet paper={chosen} width={300} />
                 </>
               )}
             </div>
@@ -686,8 +692,7 @@ const STYLE_ID = "paper-views-datacore-styles";
 
 const CSS = `
 .pvv-split { flex: 1; min-height: 0; display: flex; overflow: hidden; }
-.pvv-grow, .pvv-tiny { flex: 1; }
-.pvv-tiny { flex: none; width: 7px !important; height: 7px !important; }
+.pvv-grow { flex: 1; }
 
 /* ── constellation ────────────────────────────────────────────────────── */
 .pvv-sky { flex: 1; position: relative; min-width: 0; }
@@ -740,7 +745,13 @@ const CSS = `
 }
 .pv.medieval .pvv-side { background: #1c1610; }
 .pv.deco .pvv-side { background: #14132e; }
-.pvv-side-title { font-size: 18px; line-height: 1.34; text-wrap: pretty; color: var(--pv-cream); }
+.pvv-side-title {
+  font-size: 18px; line-height: 1.34; text-wrap: pretty; color: var(--pv-cream);
+  cursor: pointer; transition: color .14s ease-out;
+}
+.pvv-side-title:hover { color: var(--pv-gold); }
+/* the page sits last in the margin, and is the only way from here to the PDF */
+.pvv-side .pv-sheet { margin-top: 2px; }
 .pvv-side-authors { font-size: 12.5px; line-height: 1.5; color: var(--pv-cream-dim); }
 .pv.medieval .pvv-side-authors { font-style: italic; }
 .pvv-side-affil { font-size: 11px; line-height: 1.45; color: rgba(240,224,196,.4); }

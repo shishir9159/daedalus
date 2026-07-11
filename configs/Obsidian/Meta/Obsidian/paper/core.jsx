@@ -529,7 +529,13 @@ function PageSheet({ paper, width = 420, page = null, className = "" }) {
   );
 }
 
-/** Open the note itself. Ctrl/Cmd puts it in a new tab, as everywhere else. */
+/**
+ * Open the note itself. Ctrl/Cmd puts it in a new tab, as everywhere else.
+ *
+ * Nothing in these views calls this any more: a click on a paper goes to the
+ * PDF, and only to the PDF. Kept because it is the obvious thing a view built
+ * on top of this module will want, and it is four lines.
+ */
 const openNote = (paper, evt) => {
   if (!paper?.path) return;
   evt?.preventDefault?.();
@@ -603,7 +609,21 @@ const CSS = `
   --pv-deckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Cfilter id='d' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.024' numOctaves='4' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='13' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='8' y='8' width='184' height='234' fill='%23fff' filter='url(%23d)'/%3E%3C/svg%3E");
   --pv-deckle-roll: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Cfilter id='d' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.028' numOctaves='4' seed='19' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Crect x='6' y='26' width='188' height='216' fill='%23fff'/%3E%3C/g%3E%3Crect x='4' y='14' width='192' height='22' rx='11' fill='%23fff'/%3E%3C/svg%3E");
 }
-.pv.is-full { height: var(--pv-vh, 720px); }
+/* full-bleed: the note gives up the readable-line-width and its other blocks
+   step aside, exactly as .hcs.is-full does for the shelf. Without these the
+   view is a small box in the middle of a column with its own little scrollbar,
+   which is not what "takes over the window" means.
+   --pv-vh is measured off the real pane by useFitHeight; the vh is a fallback
+   for the frame before that lands. */
+.markdown-preview-sizer:has(.pv.is-full),
+.cm-sizer:has(.pv.is-full) {
+  max-width: none !important; width: 100% !important;
+  padding-left: 20px !important; padding-right: 20px !important;
+}
+.markdown-preview-sizer:has(.pv.is-full) > *:not(:has(.pv.is-full)):not(.markdown-preview-pusher),
+.cm-sizer:has(.pv.is-full) > *:not(:has(.pv.is-full)) { display: none !important; }
+
+.pv.is-full { height: var(--pv-vh, 82vh); }
 .pv:not(.is-full) { height: var(--pv-h, 760px); }
 
 .pv.medieval {
@@ -929,11 +949,11 @@ function ReadingPanel({ paper, related = [], onClose, onPick, stain = false, she
           {paper.sub && <div class="pv-read-affil">{paper.sub}</div>}
           {paper.authorsFull && <div class="pv-read-authors">{paper.authorsFull}</div>}
           {paper.affiliationLine && <div class="pv-read-affil">{paper.affiliationLine}</div>}
+          {/* The page IS the link, and the only one. There was a second row
+              under it carrying the note's filename, which opened the note —
+              two targets for one card, one of them a duplicate of the title
+              already at the top of this column. */}
           <PageSheet paper={paper} width={sheetWidth} />
-          <a class="pv-open" href="#" onClick={(e) => openNote(paper, e)}>
-            <span class="pv-lozenge" style={{ width: "7px", height: "7px" }} />
-            {paper.name}
-          </a>
         </div>
 
         <div class="pv-read-margin">

@@ -19,7 +19,7 @@
 //  THE DRAWERS       drawerContents "leaves"|"rows" · dropDepth 22 ·
 //                    rolledTop true · groupBy · order · sort · perRow · collapsed
 //  READING VIEW      readingStain false
-//  OTHER             queueSize · motion · full · webfonts
+//  OTHER             queueSize (refill size only) · motion · full · webfonts
 //
 //  `design` is mandatory. Everything else has an answer already.
 //
@@ -35,16 +35,21 @@
 //
 //  ── HOW IT BEHAVES ────────────────────────────────────────────────────────
 //  A drawer is shut until you pull it. Pulling one pushes it towards you by
-//  `dropDepth` and drops its front down on a hinge; right-clicking the drawer
-//  shuts it again. One drawer is open at a time — a chest with every drawer out
-//  is not a chest, it is a pile.
+//  `dropDepth` and drops its front down on a hinge. To shut it again, push any
+//  part of it that is not paper: the head above the tray, or the front lying
+//  flat below it. Right-clicking anywhere in the drawer does the same, and so
+//  does Escape. One drawer is open at a time — a chest with every drawer out is
+//  not a chest, it is a pile.
 //
 //  Inside, a paper is a leaf. Click it and it flies into the reading queue in
-//  the bottom-left corner. Double-click it and it opens. Right-click it and it
-//  dissolves into the pile beside the queue, which is not a delete: click the
-//  pile and the dissolved papers fan out to be picked back up. Nothing here
-//  writes to your vault — the queue and the pile are this session's, and the
-//  queue starts full of what you have not read yet.
+//  the bottom-left corner. Double-click it and it opens. Right-click — or
+//  alt-click, for when something else has taken the context menu — dissolves it
+//  into the pile beside the queue, which is not a delete: click the pile and
+//  the dissolved papers fan out to be picked back up.
+//
+//  THE QUEUE STARTS EMPTY. It is a list you build by clicking, not a query;
+//  the button under an empty queue fills it from unread if that is what you
+//  wanted. Nothing here writes to your vault — queue and pile are the session's.
 //
 //  Escape closes whatever is on top, innermost first.
 //
@@ -88,7 +93,7 @@ const FLY_MS = 460;
 // ════════════════════════════════════════════════════════════════════════════
 //  One paper, as a leaf in the tray
 // ════════════════════════════════════════════════════════════════════════════
-function Leaf({ paper, index, queued, flying, rolled, onQueue, onOpen, onDissolve }) {
+function Leaf({ paper, index, queued, flying, rolled, onQueue, onDissolve }) {
   return (
     <div
       class="pvd-leaf-wrap"
@@ -102,9 +107,8 @@ function Leaf({ paper, index, queued, flying, rolled, onQueue, onOpen, onDissolv
     >
       <div
         class={"pvd-leaf" + (rolled ? " is-rolled" : "")}
-        title={`${paper.title}\nclick · queue   double-click · read   right-click · dissolve`}
+        title={`${paper.title}\nclick · queue   double-click · read   right-click or alt-click · dissolve`}
         onClick={onQueue}
-        onDoubleClick={onOpen}
         onContextMenu={onDissolve}
       >
         <span class="pvd-leaf-paper" aria-hidden="true" />
@@ -138,7 +142,7 @@ function Leaf({ paper, index, queued, flying, rolled, onQueue, onOpen, onDissolv
 }
 
 /** The same paper as a line, for drawerContents="rows". */
-function Line({ paper, index, queued, flying, onQueue, onOpen, onDissolve }) {
+function Line({ paper, index, queued, flying, onQueue, onDissolve }) {
   return (
     <div
       class="pvd-line-wrap"
@@ -151,9 +155,8 @@ function Line({ paper, index, queued, flying, onQueue, onOpen, onDissolve }) {
     >
       <div
         class="pvd-line"
-        title={`${paper.title}\nclick · queue   double-click · read   right-click · dissolve`}
+        title={`${paper.title}\nclick · queue   double-click · read   right-click or alt-click · dissolve`}
         onClick={onQueue}
-        onDoubleClick={onOpen}
         onContextMenu={onDissolve}
       >
         <Pip paper={paper} size={11} />
@@ -190,10 +193,18 @@ function Drawer({
   };
 
   /**
-   * Click queues, double-click reads — so the first half of a double-click has
-   * to be held back. 230ms is inside the platform's own double-click window;
-   * the timer is cancelled the moment the second click arrives, which is why a
-   * double-click does not queue the paper on its way to opening it.
+   * Click queues, double-click reads — both off the SAME click handler.
+   *
+   * `onDoubleClick` is a React name. Preact turns an on* prop into an event by
+   * lowercasing it and checking the result against the DOM element, and while
+   * `ondblclick` is a real DOM property `ondoubleclick` is not — so the prop
+   * falls through to addEventListener("DoubleClick"), an event nothing ever
+   * fires. Counting clicks off MouseEvent.detail instead needs no second
+   * handler and cannot be spelt wrongly: detail is 1 on a single click and 2
+   * on the second click of a double, which the platform decides, not us.
+   *
+   * The single click is still held for 230ms, because it has to be: without
+   * the delay a double-click queues the paper on its way to opening it.
    */
   const pending = dc.useRef(0);
   dc.useEffect(() => () => window.clearTimeout(pending.current), []);
@@ -202,12 +213,10 @@ function Drawer({
     onQueue: (e) => {
       e.stopPropagation();
       window.clearTimeout(pending.current);
+      // alt-click dissolves too — see onDissolve for why that alternative exists
+      if (e.altKey) { onDissolve(paper.id, "leaf"); return; }
+      if (e.detail >= 2) { onRead(paper.id); return; }
       pending.current = window.setTimeout(() => onQueue(paper.id), 230);
-    },
-    onOpen: (e) => {
-      e.stopPropagation();
-      window.clearTimeout(pending.current);
-      onRead(paper.id);
     },
     onDissolve: (e) => {
       e.preventDefault();
@@ -216,7 +225,7 @@ function Drawer({
       onDissolve(paper.id, "leaf");
     },
     queued: queue.includes(paper.id),
-    flying: flying && flying.id === paper.id ? flying.to : null,
+    flying: flying.find((f) => f.id === paper.id)?.to ?? null,
     index: i,
     paper,
   });
@@ -239,14 +248,26 @@ function Drawer({
     );
   }
 
+  /**
+   * Shutting a drawer, three ways.
+   *
+   * It was right-click only, which is one gesture and a fragile one: it is the
+   * gesture Obsidian itself wants for its own menu, a leaf inside the drawer
+   * takes it first for dissolving, and there is nothing on screen to say it
+   * exists. The two visible parts of an open drawer that are NOT paper — the
+   * head above the tray and the front lying flat below it — are what you would
+   * push to close a real one, so pushing them closes this one.
+   */
+  const shut = (e) => { e.preventDefault(); e.stopPropagation(); onShut(); };
+
   return (
     <div
       class="pvd-drawer is-open"
       style={{ "--drop": `${depth}px` }}
-      onContextMenu={(e) => { e.preventDefault(); onShut(); }}
+      onContextMenu={shut}
     >
       <div class="pvd-well">
-        <div class="pvd-well-head">
+        <div class="pvd-well-head" onClick={shut} title="shut the drawer">
           <span class="pv-lozenge" />
           <span class="pvd-well-label">{drawer.label}</span>
           <span class="pvd-well-tag">{drawer.tag}</span>
@@ -288,7 +309,7 @@ function Drawer({
       {/* The drawer front, on its hinge. It belongs to the same 3D context as
           the well above it, so the two read as one box rather than as a panel
           with a picture of a panel under it. */}
-      <div class="pvd-flap">
+      <div class="pvd-flap" onClick={shut} title="shut the drawer">
         <span class="pv-lozenge" />
         <span class="pvd-flap-idx">{drawer.idx}</span>
         <span class="pvd-flap-label">{drawer.label}</span>
@@ -352,13 +373,24 @@ function Chest({
   // next, the pile is what you have pushed aside, and both are answers to
   // "what am I doing right now" rather than facts about the papers.
   const [open, setOpen] = dc.useState(null);
-  const [queue, setQueue] = dc.useState(null);      // null until the papers land
+  /**
+   * The queue starts EMPTY.
+   *
+   * It used to be seeded with everything unread, which read as broken: the
+   * papers you were most likely to click were already in it, so clicking one
+   * moved it to the front and changed nothing you could see — the stamp was
+   * already on the leaf and the count did not move. An empty queue is also the
+   * honest one: it is a list you are building right now, not a query. The
+   * REFILL button under an empty queue still fills it from unread if that is
+   * what you wanted.
+   */
+  const [queue, setQueue] = dc.useState([]);
   const [qi, setQi] = dc.useState(0);
   const [pile, setPile] = dc.useState([]);
   const [reading, setReading] = dc.useState(null);
   const [queueOpen, setQueueOpen] = dc.useState(false);
   const [fanOpen, setFanOpen] = dc.useState(false);
-  const [fly, setFly] = dc.useState(null);          // { id, to } mid-flight
+  const [fly, setFly] = dc.useState([]);            // [{ id, to }] mid-flight
   const [dissolving, setDissolving] = dc.useState(null);
   const [seen, setSeen] = dc.useState([]);
 
@@ -367,18 +399,14 @@ function Chest({
   const later = (fn, ms) => { timers.current.push(window.setTimeout(fn, ms)); };
 
   // The query resolves a tick or two after the first render, so the top drawer
-  // and the starting queue are chosen once the papers are actually there.
+  // is chosen once the papers are actually there.
   dc.useEffect(() => {
     if (open == null && drawers.length) setOpen(drawers[0].id);
   }, [drawers, open]);
-  dc.useEffect(() => {
-    if (queue == null && papers.length) setQueue(unreadOf(papers, queueSize));
-  }, [papers, queue, queueSize]);
 
-  const q = queue ?? [];
   // A paper that has been renamed or deleted since it was queued is gone; the
   // queue is a list of ids, so it has to be filtered rather than trusted.
-  const live = dc.useMemo(() => q.filter((id) => byId[id]), [q, byId]);
+  const live = dc.useMemo(() => queue.filter((id) => byId[id]), [queue, byId]);
   const livePile = dc.useMemo(() => pile.filter((id) => byId[id]), [pile, byId]);
 
   useEscape(() => {
@@ -389,25 +417,37 @@ function Chest({
   });
 
   // ── the three gestures ───────────────────────────────────────────────────
+  /**
+   * `fly` is a LIST of papers in flight, not one.
+   *
+   * It was one, guarded by "if something is already flying, ignore this" — so
+   * clicking four papers in a row queued the first and silently dropped the
+   * other three, which is indistinguishable from a broken click handler. Each
+   * flight now clears only its own entry, and a second click on a paper that
+   * is already on its way is the only thing still ignored.
+   */
+  const inFlight = (id) => fly.some((f) => f.id === id);
+  const land = (id) => setFly((prev) => prev.filter((f) => f.id !== id));
+
   const toQueue = (id) => {
-    if (fly) return;
-    setFly({ id, to: "queue" });
+    if (inFlight(id)) return;
+    setFly((prev) => prev.concat([{ id, to: "queue" }]));
     later(() => {
-      setFly(null);
-      setQueue((prev) => [id].concat((prev ?? []).filter((x) => x !== id)));
+      land(id);
+      setQueue((prev) => [id].concat(prev.filter((x) => x !== id)));
       setPile((prev) => prev.filter((x) => x !== id));
     }, FLY_MS);
   };
 
   const toPile = (id, from) => {
-    if (fly) return;
-    if (from === "leaf") setFly({ id, to: "pile" });
+    if (inFlight(id)) return;
+    if (from === "leaf") setFly((prev) => prev.concat([{ id, to: "pile" }]));
     else setDissolving(id);
     later(() => {
-      setFly(null);
+      land(id);
       setDissolving(null);
       setQueue((prev) => {
-        const next = (prev ?? []).filter((x) => x !== id);
+        const next = prev.filter((x) => x !== id);
         setQi((i) => Math.min(i, Math.max(0, next.length - 1)));
         return next;
       });
@@ -423,7 +463,7 @@ function Chest({
   const revive = (id) => {
     setFanOpen(false);
     setPile((prev) => prev.filter((x) => x !== id));
-    setQueue((prev) => [id].concat((prev ?? []).filter((x) => x !== id)));
+    setQueue((prev) => [id].concat(prev.filter((x) => x !== id)));
     setQi(0);
   };
 
@@ -463,11 +503,8 @@ function Chest({
             <i class="pv-fan" aria-hidden="true" />
             <span class="pv-name">{skin === "deco" ? "ARCHIVE" : "SCRIPTORIVM"}</span>
             <i class="pv-sep" />
-            <span class="pv-crumb">
-              {openDrawer
-                ? `${openDrawer.label} — ${skin === "deco" ? "extended" : "drawn down"}`
-                : (skin === "deco" ? "all trays closed" : "every drawer shut")}
-            </span>
+            {/* the drawer's name, and nothing about what has been done to it */}
+            <span class="pv-crumb">{openDrawer ? openDrawer.label : ""}</span>
             <span class="pv-tally">
               {`${total} PAPERS · ${drawers.length} DRAWER${drawers.length === 1 ? "" : "S"}`}
             </span>
@@ -657,7 +694,7 @@ const STYLE_ID = "paper-drawers-datacore-styles";
 const CSS = `
 /* ── the stack of drawers ─────────────────────────────────────────────── */
 .pvd-stack {
-  flex: 1; min-height: 0; overflow-y: auto;
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: 24px 30px 104px; display: flex; flex-direction: column; gap: 12px;
   perspective: 1700px; perspective-origin: 50% 26%;
 }
@@ -759,7 +796,10 @@ const CSS = `
   box-shadow: inset 0 18px 30px rgba(0,0,0,.72);
 }
 .pv.deco .pvd-well { border-radius: 0; box-shadow: inset 0 16px 28px rgba(0,0,0,.7); }
-.pvd-well-head { display: flex; align-items: center; gap: 12px; padding: 14px 22px 10px; }
+/* head and flap are the drawer's own woodwork, and both shut it */
+.pvd-well-head { display: flex; align-items: center; gap: 12px; padding: 14px 22px 10px; cursor: pointer; }
+.pvd-well-head:hover .pvd-well-label { color: var(--pv-cream); }
+.pvd-flap { cursor: pointer; }
 .pvd-well-label {
   flex: none; font-family: var(--pv-display); font-weight: 500; font-size: 11px;
   line-height: 1; letter-spacing: .2em; color: var(--pv-gold);
