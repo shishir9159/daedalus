@@ -42,6 +42,10 @@
 //  Topics are the note's TAGS minus the ones that only say what kind of note it
 //  is, exactly as in the infobox — there is no `topics:` key to keep in sync.
 //
+//  The ABSTRACT is not read from frontmatter at all if there is a PDF: it is
+//  taken off page one of the paper itself and cached against the file's mtime.
+//  `claim:` / `blurb:` / `abstract:` are the fallback. See useAbstract.
+//
 //  Relations are the LISTS the infobox already documents: builds-on, extends,
 //  compare-with, refutes, superseded-by, prereq and the unqualified `related`.
 //  They are what the constellation draws its edges from and what every reading
@@ -57,7 +61,10 @@ const pdf = await dc.require("Meta/Obsidian/_datacore/pdf/pdf.jsx");
 // and having two versions of that answer drift apart is how it comes back.
 const shared = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
 
-const { resolvePdf, parseLink, usePageImage, useCitations, writeFields, openAt } = pdf;
+const {
+  resolvePdf, parseLink, usePageImage, useCitations, writeFields, openAt,
+  getDoc, usePdfjsReady,
+} = pdf;
 const { clamp, hashOf, baseName, isIgnored, useFitHeight, useEdgeScroll } = shared;
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -240,6 +247,13 @@ function readPaper(path, rev, collectedBy = null) {
     }
   }
 
+  // The PDF is resolved here rather than at render time, because two questions
+  // that used to be guesses are answered by it: whether there is a paper behind
+  // this note at all, and whether it has been marked up.
+  const pdfLink = get("paper") ?? get("pdf") ?? get("title");
+  const pdfFile = resolvePdf(pdfLink, path);
+  const highlights = num(get("highlights"));
+
   return {
     id: path,
     path,
@@ -266,7 +280,20 @@ function readPaper(path, rev, collectedBy = null) {
     progress,
     pct: pages > 0 ? clamp(0, progress / pages, 1) : (done ? 1 : 0),
     coverage: num(get("coverage")),
-    highlights: num(get("highlights")),
+    highlights,
+    /**
+     * Is this paper being read RIGHT NOW?
+     *
+     * A coffee ring is not decoration and it is not a property of the note —
+     * it is what a paper looks like after it has been sat with. So it is
+     * derived, not passed in: there has to be a PDF (a paper you cannot open
+     * has not been read out of), and it has to carry marks. `highlights` is
+     * written back by the infobox after every read, so this moves on its own.
+     * A `status:` of reading or skimming says the same thing in words and
+     * counts too, for the paper you have started but not yet marked.
+     */
+    active: !!pdfFile && !done &&
+      ((highlights ?? 0) > 0 || READING.includes(status) || progress > 0),
     tags,
     topics,
     topic: topics[0] ?? "untagged",
@@ -278,8 +305,8 @@ function readPaper(path, rev, collectedBy = null) {
     site: get("site"),
     course: get("course"),
     relations,
-    // resolved lazily by the panel that actually rasterises a page
-    pdfLink: get("paper") ?? get("pdf") ?? get("title"),
+    pdfLink,
+    pdfPath: pdfFile?.path ?? null,
     mtime: app.vault.getAbstractFileByPath(path)?.stat?.mtime ?? null,
     _rev: rev,
   };
@@ -311,10 +338,10 @@ function usePapers({ tag = "paper", folder = null } = {}) {
 
   // A fresh array every render would re-read every paper every render, so the
   // dependency is the joined string and the Set is rebuilt only when it moves.
-  const tagKey = tags.join(" ").toLowerCase();
+  const tagKey = tags.join(" ").toLowerCase();
 
   return dc.useMemo(() => {
-    const collectedBy = new Set(tagKey ? tagKey.split(" ") : []);
+    const collectedBy = new Set(tagKey ? tagKey.split(" ") : []);
     const inFolder = (p) =>
       !folder || p === folder || p.startsWith(String(folder).replace(/\/?$/, "/"));
     return (all ?? [])
@@ -334,9 +361,14 @@ const indexBy = (papers) => {
 // ── grouping ────────────────────────────────────────────────────────────────
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
 
+/**
+ * "unpublished" is not a fact about a paper with no `venue:` — it is a claim
+ * about the world made from a blank field, and it was wrong for every preprint
+ * and every note filled in halfway. A missing venue is a missing venue.
+ */
 const GROUPERS = {
   topic: (p) => p.topic,
-  venue: (p) => p.venue ?? "unpublished",
+  venue: (p) => p.venue ?? "no venue",
   year: (p) => (p.year == null ? "undated" : String(p.year)),
   status: (p) => p.status || "unfiled",
   tier: (p) => p.tier ?? "unrated",
@@ -409,13 +441,33 @@ const unreadOf = (papers, cap = 8) =>
  * Declared relations first — you wrote those down, so they outrank anything
  * inferred — then papers sharing a topic, then the rest of the same drawer.
  */
-function relatedTo(paper, papers, byId, cap = 3) {
+/**
+ * Do these two papers carry exactly the same topics — no more, no less?
+ *
+ * Not "overlaps". Every paper in a drawer overlaps; that is what the drawer
+ * is. Two papers filed under precisely the same set of tags are a different
+ * animal: you have already decided they belong in the same place for the same
+ * reasons, and listing those reasons back at you says nothing. So the tag row
+ * is replaced by the fact itself.
+ *
+ * An untagged pair is not a pair. Sharing nothing is not sharing everything.
+ */
+function mirrorTwins(a, b) {
+  if (!a || !b) return false;
+  const A = new Set(a.topics.map((t) => t.toLowerCase()));
+  const B = new Set(b.topics.map((t) => t.toLowerCase()));
+  if (!A.size || A.size !== B.size) return false;
+  for (const t of A) if (!B.has(t)) return false;
+  return true;
+}
+
+function relatedTo(paper, papers, byId, cap = 5) {
   if (!paper) return [];
   const out = [], seen = new Set([paper.id]);
   const push = (p, why) => {
     if (!p || seen.has(p.id) || out.length >= cap) return;
     seen.add(p.id);
-    out.push({ paper: p, why });
+    out.push({ paper: p, why, mirror: mirrorTwins(paper, p) });
   };
   for (const r of paper.relations) push(r.path ? byId[r.path] : null, r.label);
   for (const p of papers) {
@@ -470,6 +522,129 @@ function edgesOf(papers, byId, mode = "all") {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  The abstract, taken off the paper
+//
+//  Frontmatter is where you write what YOU think a paper says — `claim:` is one
+//  sentence in your own words, and it is the more useful of the two. The
+//  abstract is what the AUTHORS say it says, it is already sitting on page one
+//  of the PDF, and copying it into a note by hand is a chore nobody does. So it
+//  is read off the paper, cached against the file's mtime, and `claim:` /
+//  `blurb:` / `abstract:` are the fallback when there is no PDF or no heading
+//  to find in it.
+// ════════════════════════════════════════════════════════════════════════════
+const ABSTRACTS = new Map();
+const ABSTRACT_CAP = 40;
+
+/** Where the abstract stops. The first of these wins. */
+const ABS_END = [
+  /\n\s*(?:[IVX0-9]+\s*[.)]?\s*)?introduction\b/i,
+  /\n\s*(?:index terms|keywords?|key words|ccs concepts|general terms|acm reference)\b/i,
+  /\n\s*(?:[IVX0-9]+\s*[.)]?\s*)?(?:background|motivation|related work)\b/i,
+];
+
+/**
+ * Page text, as close to reading order as pdf.js will give without laying the
+ * glyphs out again. `hasEOL` is the flag the text layer sets on the last item
+ * of a visual line, which is what makes the headings above findable at all —
+ * without the newlines "Abstract" and "1 Introduction" are just words in a
+ * soup and every regex here matches the wrong one.
+ */
+async function pageText(doc, n) {
+  const page = await doc.getPage(n);
+  const tc = await page.getTextContent();
+  let out = "";
+  for (const it of tc.items) {
+    if (typeof it.str !== "string") continue;
+    out += it.str;
+    if (it.hasEOL) out += "\n";
+    else if (it.str && !/\s$/.test(it.str)) out += " ";
+  }
+  return out;
+}
+
+async function readAbstract(file) {
+  const key = `${file.path}:${file.stat.mtime}`;
+  if (ABSTRACTS.has(key)) return ABSTRACTS.get(key);
+
+  const doc = await getDoc(file);
+  // Two pages, because a two-column paper often carries the tail of the
+  // abstract onto the second — and never more, because by page three you are
+  // scanning the whole document to find something that is always on page one.
+  let text = "";
+  for (let n = 1; n <= Math.min(2, doc.numPages); n++) text += await pageText(doc, n);
+
+  const found = findAbstract(text);
+  ABSTRACTS.set(key, found);
+  while (ABSTRACTS.size > ABSTRACT_CAP) ABSTRACTS.delete(ABSTRACTS.keys().next().value);
+  return found;
+}
+
+/** The parsing half, kept separate so it can be reasoned about on its own. */
+function findAbstract(raw) {
+  const text = String(raw ?? "")
+    .replace(/\r/g, "")
+    // a word broken across a line break is one word
+    .replace(/([a-z])-\n\s*/gi, "$1")
+    .replace(/[ \t ]+/g, " ");
+
+  // The heading, however it was set: "Abstract", "ABSTRACT", "A B S T R A C T".
+  const head = text.match(/(?:^|\n)\s*a\s?b\s?s\s?t\s?r\s?a\s?c\s?t(?![a-z])\s*[:.\-—]?\s*/i);
+  if (!head) return null;
+
+  let body = text.slice(head.index + head[0].length);
+  let cut = -1;
+  for (const re of ABS_END) {
+    const m = body.match(re);
+    if (m && (cut < 0 || m.index < cut)) cut = m.index;
+  }
+
+  if (cut >= 0) {
+    body = body.slice(0, cut);
+  } else if (body.length > 2400) {
+    // Nothing said where to stop, so this is running on into the paper. Break
+    // at the last full stop inside a sensible length rather than mid-sentence.
+    const stop = body.lastIndexOf(". ", 2400);
+    body = body.slice(0, stop > 400 ? stop + 1 : 2400);
+  }
+
+  const out = body.replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+  // Anything this short is a mis-hit — a running header, a figure caption, the
+  // word "abstract" in a title. Better nothing than a fragment.
+  return out.length >= 120 ? out : null;
+}
+
+/**
+ * The abstract for one paper: the PDF's, or the note's, in that order.
+ *
+ * Returns `{ text, from }` so a view can say where it came from — the panel
+ * does not, but "why is this different from what I typed" is a question worth
+ * being able to answer.
+ */
+function useAbstract(paper) {
+  const file = dc.useMemo(
+    () => resolvePdf(paper?.pdfLink, paper?.path),
+    [paper?.path, paper?.pdfLink]
+  );
+  const ready = usePdfjsReady();
+  const [scraped, setScraped] = dc.useState(null);
+  const sig = file ? `${file.path}:${file.stat.mtime}` : "";
+
+  dc.useEffect(() => {
+    setScraped(null);
+    if (!file || !ready) return;
+    let alive = true;
+    readAbstract(file)
+      .then((t) => alive && setScraped(t))
+      .catch(() => alive && setScraped(null));
+    return () => { alive = false; };
+  }, [sig, ready]);
+
+  if (scraped) return { text: scraped, from: "paper" };
+  if (paper?.abstract) return { text: paper.abstract, from: "note" };
+  return { text: null, from: null };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  Pieces every view shares
 // ════════════════════════════════════════════════════════════════════════════
 /**
@@ -503,7 +678,7 @@ function Pip({ paper, size = 12 }) {
  * panel opens the PDF either way and the image appears by itself the moment
  * any PDF is opened anywhere.
  */
-function PageSheet({ paper, width = 420, page = null, className = "" }) {
+function PageSheet({ paper, width = 420, page = null, className = "", fit = false }) {
   const file = dc.useMemo(
     () => resolvePdf(paper?.pdfLink, paper?.path),
     [paper?.path, paper?.pdfLink]
@@ -513,7 +688,7 @@ function PageSheet({ paper, width = 420, page = null, className = "" }) {
 
   return (
     <div
-      class={"pv-sheet " + className + (file ? " is-openable" : "")}
+      class={"pv-sheet " + className + (fit ? " is-fit" : "") + (file ? " is-openable" : "")}
       role={file ? "button" : undefined}
       tabIndex={file ? 0 : undefined}
       title={file ? `${file.name} — page ${at}` : "no `paper:` link"}
@@ -749,6 +924,13 @@ const CSS = `
   transition: border-color .16s ease-out, box-shadow .16s ease-out;
 }
 .pv-sheet img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+/* fit mode: the page is as tall as the room it is given and takes whatever
+   width that implies. aspect-ratio with a fixed height IS the width, so the
+   column beside it sizes itself off the paper rather than off a guess; contain
+   keeps a landscape or A4 page whole, and the ground behind it is page-white
+   so the letterbox does not read as a border. */
+.pv-sheet.is-fit { height: 100%; width: auto; max-width: 100%; }
+.pv-sheet.is-fit img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .pv-sheet.is-openable { cursor: pointer; }
 .pv-sheet.is-openable:hover { border-color: var(--pv-gold); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 .pv-sheet.is-openable:focus-visible { outline: 2px solid var(--pv-gold); outline-offset: 3px; }
@@ -760,37 +942,43 @@ const CSS = `
 /* ── the reading panel, shared by every view ──────────────────────────── */
 .pv-veil {
   position: absolute; inset: 0; z-index: 80; display: flex; align-items: center;
-  justify-content: center; padding: 30px; background: var(--pv-veil);
+  justify-content: center; background: var(--pv-veil);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   animation: pvFade .2s ease both;
 }
+/* 90% of the pane, both ways. Not a box in the middle of the window: opening a
+   paper is the thing you came here to do, so it gets the room. The two slabs
+   are separate, with cork showing between them, rather than one panel split by
+   a rule — the picture is the paper and the column beside it is your notes on
+   it, and they are not the same object. */
 .pv-read {
-  display: flex; max-height: 100%; max-width: 100%; overflow: hidden;
-  border: 1px solid var(--pv-line); box-shadow: 0 34px 70px rgba(0,0,0,.62);
+  display: flex; align-items: stretch; gap: 20px;
+  width: 90%; height: 90%; background: none; border: none;
 }
-/* LEFT — the paper itself. The abstract does NOT live here: it used to sit
-   under the page image, where a long one pushed the picture off the top of a
-   scrolling column and you read the paper's own summary before you had seen
-   the paper. It is in the margin now, beside the metadata it belongs with. */
-/* Both columns shrink rather than being clipped: a sidebar leaf is nowhere
-   near 856px wide, and a rigid flex: none there meant the margin disappeared
-   behind the overflow rather than getting narrower. */
+/* LEFT — the page, full height, nothing else in the column. The heading and
+   the byline moved to the margin: they were stacked on top of the picture,
+   which made the one thing worth seeing at full size the one thing being
+   squeezed into what was left. */
 .pv-read-face {
-  flex: 0 1 470px; min-width: 300px; overflow-y: auto; padding: 32px 36px 36px;
-  display: flex; flex-direction: column; gap: 16px;
+  flex: 0 0 auto; max-width: 62%; height: 100%;
+  display: flex; align-items: stretch; justify-content: flex-end;
 }
-.pv.medieval .pv-read-face { background: var(--pv-paper-flat); color: var(--pv-ink); }
-.pv.deco .pv-read-face { background: #14132e; }
-.pv-read-face .pv-sheet { border-color: rgba(42,29,16,.2); box-shadow: 0 4px 16px rgba(42,29,16,.22); }
+.pv-read-face .pv-sheet {
+  border-color: var(--pv-line); box-shadow: 0 24px 54px rgba(0,0,0,.6);
+}
 
 .pv-read-margin {
-  position: relative; flex: 0 1 386px; min-width: 260px;
-  overflow-y: auto; overflow-x: hidden; padding: 32px 28px 34px;
-  display: flex; flex-direction: column; gap: 18px; border-left: 1px solid var(--pv-line);
+  position: relative; flex: 1 1 380px; min-width: 300px; max-width: 620px; height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto; overflow-x: hidden; padding: 30px 28px 34px;
+  display: flex; flex-direction: column; gap: 16px;
+  border: 1px solid var(--pv-line); box-shadow: 0 24px 54px rgba(0,0,0,.6);
 }
-/* A coffee ring in the margin, for a case that has been read in. Two rings and
-   a splash, multiplied into the paper — off by default, because it is a joke
-   that stops being funny on the twentieth paper. */
+/* A coffee ring in the margin. Two rings and a splash, multiplied into the
+   paper. It is not decoration and it is not on every paper: it appears when
+   this one is being read — there is a PDF and the PDF has marks in it — which
+   is the only thing a ring on a page has ever meant. See the active flag in
+   readPaper, and the stain prop on the panel for the manual override. */
 .pv-stain, .pv-stain::after {
   position: absolute; pointer-events: none; mix-blend-mode: multiply;
   background:
@@ -811,8 +999,7 @@ const CSS = `
 }
 .pv.medieval .pv-eyebrow { color: var(--pv-accent); }
 .pv.deco .pv-eyebrow { color: var(--pv-gold); }
-.pv-read-face .pv-rule, .pv-read-margin .pv-rule { flex: 1; }
-.pv.medieval .pv-read-face .pv-rule { background: rgba(42,29,16,.2); }
+.pv-read-margin .pv-rule { flex: 1; }
 .pv.medieval .pv-read-margin .pv-rule { background: rgba(42,29,16,.2); }
 
 .pv-read-title { margin: 0; font-size: 28px; line-height: 1.24; font-weight: 400; text-wrap: pretty; }
@@ -862,6 +1049,38 @@ const CSS = `
 .pv-mini-f { font-family: var(--pv-mono); font-size: 8.5px; letter-spacing: .1em; }
 .pv.medieval .pv-mini-f { color: rgba(42,29,16,.5); }
 .pv.deco .pv-mini-f { color: rgba(240,233,216,.45); }
+/* title on the left, the one button on the right */
+.pv-mini-head { display: flex; align-items: flex-start; gap: 8px; }
+.pv-mini-head .pv-mini-t { flex: 1; min-width: 0; }
+.pv-mini-add {
+  flex: none; width: 20px; height: 20px; padding: 0; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pv-mono); font-size: 12px;
+  background: transparent; border: 1px solid var(--pv-line); color: var(--pv-gold);
+  transition: background .14s ease-out, color .14s ease-out, border-color .14s ease-out;
+}
+.pv-mini-add:hover { background: var(--pv-gold); color: var(--pv-ink); border-color: var(--pv-gold); }
+.pv-mini-add.is-in { cursor: default; opacity: .5; }
+.pv-mini-add.is-in:hover { background: transparent; color: var(--pv-gold); }
+.pv.medieval .pv-mini-add { border-color: rgba(141,47,38,.4); color: var(--pv-accent); }
+.pv.medieval .pv-mini-add:hover { background: var(--pv-accent); color: #f6ecd3; }
+
+/* what the related paper is filed under */
+.pv-mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
+.pv-tag {
+  font-family: var(--pv-mono); font-style: normal; font-size: 8px; letter-spacing: .08em;
+  padding: 2px 5px; border: 1px solid var(--pv-line-soft);
+}
+.pv-tag::before { content: "#"; opacity: .45; }
+.pv.medieval .pv-tag { color: rgba(42,29,16,.55); border-color: rgba(42,29,16,.16); }
+.pv.deco .pv-tag { color: rgba(240,233,216,.5); }
+/* filed under exactly the same tags — no more, no less */
+.pv-twin {
+  align-self: flex-start; margin-top: 1px; padding: 2px 7px;
+  font-family: var(--pv-mono); font-size: 8px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--pv-accent); border: 1px double var(--pv-accent); opacity: .82;
+}
+.pv.deco .pv-twin { color: var(--pv-gold); border: 1px solid var(--pv-gold); }
 
 .pv-open {
   margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 9px;
@@ -869,9 +1088,7 @@ const CSS = `
   font-family: var(--pv-mono); font-size: 9.5px; letter-spacing: .18em; padding: 11px 0;
   cursor: pointer; background: transparent; transition: background .15s;
 }
-.pv.medieval .pv-read-face .pv-open { color: var(--pv-accent); border-color: rgba(141,47,38,.45); }
 .pv-open:hover { background: rgba(227,194,74,.12); }
-.pv.medieval .pv-read-face .pv-open:hover { background: rgba(141,47,38,.1); }
 
 /* ── misc ─────────────────────────────────────────────────────────────── */
 .pv-fault {
@@ -928,20 +1145,52 @@ function Styles({ webfonts = true }) {
 //  a drawer, a card off the queue, a node in the constellation, a frame on the
 //  contact sheet — this is what opens, so a paper looks like itself everywhere.
 //
-//  Left: the paper. Right: the abstract, then the margin notes. The abstract
-//  moved out of the left column deliberately; see .pv-read-face above.
+//  It takes 90% of the pane, and it is two slabs with a gap between them:
+//
+//    LEFT   the page named by `figure:`, fitted to the full height. Nothing
+//           else — no heading, no byline, nothing that makes the picture
+//           smaller. It is the paper; you should be able to read it.
+//    RIGHT  everything you would otherwise have to open the note for: the
+//           heading, the abstract off the PDF, the fields, and what to read
+//           next.
+//
+//  It used to be a box a third that size with the title and byline stacked
+//  above a thumbnail, which meant the one thing worth showing full size was
+//  the one thing being squeezed.
 // ════════════════════════════════════════════════════════════════════════════
-function ReadingPanel({ paper, related = [], onClose, onPick, stain = false, sheetWidth = 400, children }) {
-  if (!paper) return null;
+/* Guard and body are two components on purpose: the body calls hooks, and a
+   component that returns early on some renders and calls useAbstract on others
+   is a "rendered fewer hooks than expected" crash the first time a caller lets
+   `paper` go null while the panel is still mounted. */
+function ReadingPanel(props) {
+  if (!props.paper) return null;
+  return <ReadingPanelBody {...props} />;
+}
+
+function ReadingPanelBody({
+  paper, related = [], onClose, onPick, onQueue, queued = [],
+  stain = "auto", sheetWidth = 620, children,
+}) {
   const fields = fieldsOf(paper);
+  const abstract = useAbstract(paper);
+  // "auto" is the answer: a ring means this paper is being read, and whether it
+  // is being read is something the vault already knows. true/false still force
+  // it, for a view that wants the joke on or off regardless.
+  const ringed = stain === true || (stain !== false && paper.active);
 
   return (
     <div class="pv-veil" onClick={onClose}>
       <div class="pv-read" onClick={(e) => e.stopPropagation()}>
+        {/* LEFT — the page named by `figure:`, and only the page. */}
         <div class="pv-read-face">
+          <PageSheet paper={paper} width={sheetWidth} fit />
+        </div>
+
+        <div class="pv-read-margin">
+          {ringed && <span class="pv-stain" aria-hidden="true" />}
           <div class="pv-eyebrow">
             <span class="pv-lozenge" />
-            <span>{[paper.venue, paper.year].filter(Boolean).join(" · ") || "unpublished"}</span>
+            <span>{[paper.venue, paper.year].filter(Boolean).join(" · ")}</span>
             <i class="pv-rule" />
             <span>{paper.tier ?? ""}</span>
           </div>
@@ -949,19 +1198,13 @@ function ReadingPanel({ paper, related = [], onClose, onPick, stain = false, she
           {paper.sub && <div class="pv-read-affil">{paper.sub}</div>}
           {paper.authorsFull && <div class="pv-read-authors">{paper.authorsFull}</div>}
           {paper.affiliationLine && <div class="pv-read-affil">{paper.affiliationLine}</div>}
-          {/* The page IS the link, and the only one. There was a second row
-              under it carrying the note's filename, which opened the note —
-              two targets for one card, one of them a duplicate of the title
-              already at the top of this column. */}
-          <PageSheet paper={paper} width={sheetWidth} />
-        </div>
 
-        <div class="pv-read-margin">
-          {stain && <span class="pv-stain" aria-hidden="true" />}
-          {paper.abstract && (
+          {abstract.text && (
             <div class="pv-abstract">
-              <span class="pv-caps">Abstract</span>
-              <p>{paper.abstract}</p>
+              <span class="pv-caps">
+                Abstract{abstract.from === "note" ? " · from the note" : ""}
+              </span>
+              <p>{abstract.text}</p>
             </div>
           )}
           {fields.map((f) => (
@@ -976,8 +1219,33 @@ function ReadingPanel({ paper, related = [], onClose, onPick, stain = false, she
               <div class="pv-cards">
                 {related.map((r) => (
                   <div class="pv-mini" key={r.paper.id} onClick={() => onPick?.(r.paper.id)}>
-                    <span class="pv-mini-t">{r.paper.title}</span>
+                    <span class="pv-mini-head">
+                      <span class="pv-mini-t">{r.paper.title}</span>
+                      {/* Queues it and does nothing else — you are still
+                          reading this paper, you have just decided that one is
+                          next. Without stopPropagation the click would open it
+                          instead, which is the opposite of what the + means. */}
+                      {onQueue && (
+                        <button
+                          class={"pv-mini-add" + (queued.includes(r.paper.id) ? " is-in" : "")}
+                          title={queued.includes(r.paper.id) ? "already in the queue" : "add to the queue"}
+                          onClick={(e) => { e.stopPropagation(); onQueue(r.paper.id); }}
+                        >{queued.includes(r.paper.id) ? "✓" : "+"}</button>
+                      )}
+                    </span>
                     <span class="pv-mini-f">{footOf(r.paper) || r.why}</span>
+                    {/* What this paper is filed under — or, when that is the
+                        same set of tags as the one you are reading, the fact
+                        that it is, which is the more useful sentence. */}
+                    {r.mirror ? (
+                      <span class="pv-twin">mirror twins</span>
+                    ) : r.paper.topics.length > 0 ? (
+                      <span class="pv-mini-tags">
+                        {r.paper.topics.slice(0, 5).map((t) => (
+                          <i class="pv-tag" key={t}>{t}</i>
+                        ))}
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -1010,7 +1278,9 @@ return {
   // model
   usePapers, readPaper, indexBy, useDrawers, unreadOf, relatedTo, edgesOf,
   splitTitle, authorLine, firstAuthor, compact, num, listOf, fieldsOf, footOf,
-  TIER_RANK, READING, UPCOMING, DONE, RELATIONS, NON_TOPIC_TAGS, ROMAN,
+  mirrorTwins, TIER_RANK, READING, UPCOMING, DONE, RELATIONS, NON_TOPIC_TAGS, ROMAN,
+  // the abstract, off the paper
+  useAbstract, readAbstract, findAbstract,
   // components
   Pip, PageSheet, ReadingPanel, Styles, openNote,
   // layout

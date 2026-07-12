@@ -18,7 +18,7 @@
 //  WHAT TO COLLECT   tag "paper" (or a list) · folder null
 //  THE DRAWERS       drawerContents "leaves"|"rows" · dropDepth 22 ·
 //                    rolledTop true · groupBy · order · sort · perRow · collapsed
-//  READING VIEW      readingStain false
+//  READING VIEW      readingStain "auto" | true | false
 //  OTHER             queueSize (refill size only) · motion · full · webfonts
 //
 //  `design` is mandatory. Everything else has an answer already.
@@ -41,11 +41,15 @@
 //  does Escape. One drawer is open at a time — a chest with every drawer out is
 //  not a chest, it is a pile.
 //
-//  Inside, a paper is a leaf. Click it and it flies into the reading queue in
-//  the bottom-left corner. Double-click it and it opens. Right-click — or
-//  alt-click, for when something else has taken the context menu — dissolves it
-//  into the pile beside the queue, which is not a delete: click the pile and
-//  the dissolved papers fan out to be picked back up.
+//  Inside, a paper is a leaf. Click it and it joins the reading queue in the
+//  bottom-left corner, immediately — the flight across the screen is what
+//  happens next, not what has to finish first. A double-click queues it and
+//  opens it. Right-click — or alt-click, for when something else has taken the
+//  context menu — dissolves it into the pile beside the queue, which is not a
+//  delete: click the pile and the dissolved papers fan out to be picked back up.
+//
+//  A leaf with a ring on it is one you are in the middle of: it has a PDF and
+//  the PDF has marks in it. Nothing to set — see `active` in core.jsx.
 //
 //  THE QUEUE STARTS EMPTY. It is a list you build by clicking, not a query;
 //  the button under an empty queue fills it from unread if that is what you
@@ -62,7 +66,9 @@
 //  rolledTop       scriptorium only: whether a leaf is a sheet with a torn edge
 //                  or a scroll with a rolled head. Ignored by art deco, which
 //                  has no torn edges anywhere in it.
-//  readingStain    a coffee ring in the margin of the reading panel.
+//  readingStain    the coffee ring in the reading panel's margin. "auto" is the
+//                  default and means what the ring has always meant: this paper
+//                  is being read. true and false override it either way.
 //
 //  ── ONE THING WORTH KNOWING ───────────────────────────────────────────────
 //  A full-bleed view is as tall as its pane and scrolls inside itself. Not a
@@ -77,7 +83,7 @@ const core = await dc.require("Meta/Obsidian/_datacore/paper/core.jsx");
 
 const {
   designClass, DesignError, usePapers, indexBy, useDrawers, unreadOf, relatedTo,
-  Pip, ReadingPanel, Styles, useFitHeight, useEscape, footOf, clamp,
+  Pip, PageSheet, ReadingPanel, Styles, useFitHeight, useEscape, footOf, clamp,
 } = core;
 
 // ── code-level constants (not user tweaks) ──────────────────────────────────
@@ -112,7 +118,10 @@ function Leaf({ paper, index, queued, flying, rolled, onQueue, onDissolve }) {
         onContextMenu={onDissolve}
       >
         <span class="pvd-leaf-paper" aria-hidden="true" />
-        <span class="pvd-leaf-stain" aria-hidden="true" />
+        {/* A ring means this one is open on your desk right now — it has a PDF
+            and the PDF has marks in it. Not every leaf gets one; a tray where
+            everything is stained says nothing about anything. */}
+        {paper.active && <span class="pvd-leaf-stain" aria-hidden="true" />}
         <span class="pvd-leaf-fanlet" aria-hidden="true" />
         <span class="pvd-leaf-rubric" aria-hidden="true" />
         <div class="pvd-leaf-body">
@@ -193,35 +202,32 @@ function Drawer({
   };
 
   /**
-   * Click queues, double-click reads — both off the SAME click handler.
+   * A click queues, NOW. Nothing is deferred and nothing is conditional.
    *
-   * `onDoubleClick` is a React name. Preact turns an on* prop into an event by
-   * lowercasing it and checking the result against the DOM element, and while
-   * `ondblclick` is a real DOM property `ondoubleclick` is not — so the prop
-   * falls through to addEventListener("DoubleClick"), an event nothing ever
-   * fires. Counting clicks off MouseEvent.detail instead needs no second
-   * handler and cannot be spelt wrongly: detail is 1 on a single click and 2
-   * on the second click of a double, which the platform decides, not us.
+   * The previous version held the click for 230ms so it could tell a single
+   * click from a double, and cancelled it if a second click arrived. That is
+   * the standard trick and it was the bug: a timer set inside an event handler
+   * survives only as long as the closure that owns it, the tray re-renders
+   * whenever the index ticks, and any of half a dozen ordinary things — the
+   * leaf flying, the drawer re-sorting, the effect cleanup on a re-key — ate
+   * the callback before it fired. The visible result is a click that does
+   * nothing, which is exactly what was reported, twice.
    *
-   * The single click is still held for 230ms, because it has to be: without
-   * the delay a double-click queues the paper on its way to opening it.
+   * So: click queues, on the spot. A double-click queues on the first click and
+   * opens on the second, which is additive and cannot race with itself. There
+   * is no case where a click does nothing at all.
    */
-  const pending = dc.useRef(0);
-  dc.useEffect(() => () => window.clearTimeout(pending.current), []);
-
   const handlers = (paper, i) => ({
     onQueue: (e) => {
       e.stopPropagation();
-      window.clearTimeout(pending.current);
       // alt-click dissolves too — see onDissolve for why that alternative exists
       if (e.altKey) { onDissolve(paper.id, "leaf"); return; }
-      if (e.detail >= 2) { onRead(paper.id); return; }
-      pending.current = window.setTimeout(() => onQueue(paper.id), 230);
+      onQueue(paper.id);
+      if (e.detail >= 2) onRead(paper.id);
     },
     onDissolve: (e) => {
       e.preventDefault();
       e.stopPropagation();
-      window.clearTimeout(pending.current);
       onDissolve(paper.id, "leaf");
     },
     queued: queue.includes(paper.id),
@@ -346,7 +352,7 @@ function Chest({
   drawerContents = "leaves",
   dropDepth = 22,
   rolledTop = true,
-  readingStain = false,
+  readingStain = "auto",
   // how the chest is filled
   groupBy = "topic",
   order = "count",
@@ -429,14 +435,22 @@ function Chest({
   const inFlight = (id) => fly.some((f) => f.id === id);
   const land = (id) => setFly((prev) => prev.filter((f) => f.id !== id));
 
+  /**
+   * The queue moves on the click; the flight is decoration.
+   *
+   * It was the other way round — the paper flew for 460ms and joined the queue
+   * when it landed — which meant every click had almost half a second where
+   * nothing had happened yet, and a click whose flight was interrupted by a
+   * re-render never arrived at all. State first, animation after: the QUEUE
+   * count in the corner moves under your finger, and if the animation is cut
+   * short the paper is still in the queue.
+   */
   const toQueue = (id) => {
+    setQueue((prev) => [id].concat(prev.filter((x) => x !== id)));
+    setPile((prev) => prev.filter((x) => x !== id));
     if (inFlight(id)) return;
     setFly((prev) => prev.concat([{ id, to: "queue" }]));
-    later(() => {
-      land(id);
-      setQueue((prev) => [id].concat(prev.filter((x) => x !== id)));
-      setPile((prev) => prev.filter((x) => x !== id));
-    }, FLY_MS);
+    later(() => land(id), FLY_MS);
   };
 
   const toPile = (id, from) => {
@@ -629,20 +643,31 @@ function Chest({
                         onClick={() => read(id)}
                         onContextMenu={(e) => { e.preventDefault(); toPile(id, "queue"); }}
                       >
-                        <div class="pvd-qtop">
-                          <span class="pvd-qvenue">
-                            {[paper.venue, paper.year].filter(Boolean).join(" · ") || "unpublished"}
-                          </span>
-                          <i class="pv-rule" />
-                          <Pip paper={paper} size={16} />
-                        </div>
-                        <span class="pvd-qtitle">{paper.title}</span>
-                        <span class="pvd-qauthors">{paper.authorsFull}</span>
-                        {paper.affiliationLine && (
-                          <span class="pvd-qaffil">{paper.affiliationLine}</span>
+                        {/* The page named by `figure:`, so the card in front of
+                            you is recognisably the paper rather than a
+                            paragraph about it. Only the front card renders one
+                            — the four behind it are 80px of edge. */}
+                        {i === 0 && (
+                          <div class="pvd-qsheet">
+                            <PageSheet paper={paper} width={300} fit />
+                          </div>
                         )}
-                        <i class="pvd-grow" />
-                        <span class="pvd-qfoot">{footOf(paper)}</span>
+                        <div class="pvd-qtext">
+                          <div class="pvd-qtop">
+                            <span class="pvd-qvenue">
+                              {[paper.venue, paper.year].filter(Boolean).join(" · ")}
+                            </span>
+                            <i class="pv-rule" />
+                            <Pip paper={paper} size={16} />
+                          </div>
+                          <span class="pvd-qtitle">{paper.title}</span>
+                          <span class="pvd-qauthors">{paper.authorsFull}</span>
+                          {paper.affiliationLine && (
+                            <span class="pvd-qaffil">{paper.affiliationLine}</span>
+                          )}
+                          <i class="pvd-grow" />
+                          <span class="pvd-qfoot">{footOf(paper)}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -673,7 +698,9 @@ function Chest({
             <ReadingPanel
               paper={current}
               related={related}
-              stain={!!readingStain}
+              stain={readingStain}
+              queued={live}
+              onQueue={toQueue}
               onClose={() => setReading(null)}
               onPick={(id) => read(id)}
             />
@@ -1130,8 +1157,13 @@ const CSS = `
 .pv.medieval .pvd-fan-foot { color: rgba(42,29,16,.5); }
 .pv.deco .pvd-fan-foot { color: rgba(240,233,216,.45); }
 
-/* the queue, as a stack you look down onto */
-.pvd-stackbox { position: relative; width: 520px; height: 330px; }
+/* The queue, as a stack you look down onto. Sized off the pane rather than
+   fixed at 520x330: the card carries a page image now, and a 520px box put
+   that page at about the size of a postage stamp. */
+.pvd-stackbox {
+  position: relative; width: min(880px, 78%); height: min(460px, 62%);
+  min-width: 440px; min-height: 300px;
+}
 .pvd-qwrap {
   position: absolute; inset: 0;
   transform: translateY(calc(var(--i) * -13px)) scale(calc(1 - var(--i) * .045));
@@ -1139,10 +1171,14 @@ const CSS = `
 }
 .pvd-qcard {
   position: relative; height: 100%; box-sizing: border-box; cursor: pointer;
-  padding: 26px 28px 22px 34px; display: flex; flex-direction: column; gap: 11px;
+  padding: 26px 28px 22px 34px; display: flex; gap: 26px;
   background: var(--pv-paper); border: 1px solid var(--pv-line);
   box-shadow: 0 22px 42px rgba(0,0,0,.55);
 }
+/* the page on the left, at whatever width its height implies */
+.pvd-qsheet { flex: 0 0 auto; max-width: 42%; display: flex; align-items: stretch; }
+.pvd-qsheet .pv-sheet { box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.pvd-qtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
 .pv.medieval .pvd-qcard {
   border-color: rgba(90,58,32,.4); color: var(--pv-ink);
   border-left: 6px solid transparent;

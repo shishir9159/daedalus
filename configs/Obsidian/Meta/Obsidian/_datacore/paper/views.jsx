@@ -526,7 +526,7 @@ function PinboardBody({
                       <div class="pvv-card-top">
                         <Pip paper={p} size={10} />
                         <span class="pvv-card-venue">
-                          {[p.venue, p.year].filter(Boolean).join(" ") || "—"}
+                          {[p.venue, p.year].filter(Boolean).join(" ")}
                         </span>
                       </div>
                       <span class="pvv-card-title">{p.title}</span>
