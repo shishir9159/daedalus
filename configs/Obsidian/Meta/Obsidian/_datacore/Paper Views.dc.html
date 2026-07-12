@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Jost:wght@300;400;500&family=Limelight&family=Federo&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#e6ddc9;font-family:'EB Garamond',Georgia,serif;
+--ad-tl:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-40.612917,-83.589496)'%3E%3Cg transform='matrix(-0.30334715,0,0,0.30338915,92.930632,58.413673)' style='fill:none;stroke:%23000000;stroke-width:1.7443;'%3E%3Cpath d='M 171.59602,116.47005 A 32.748245,32.748245 0 0 1 138.84811,83.879621' /%3E%3Cpath d='M 171.61279,121.24895 A 37.527149,37.527149 0 0 1 134.06919,83.8863' /%3E%3Cpath d='m 40.612917,89.673823 125.163343,-10e-7 V 214.83716' /%3E%3Cpath d='M 154.16388,83.854096 V 101.28619 H 128.32241' /%3E%3Cpath d='m 84.85534,89.673823 v 4.818481 h 50.79229' /%3E%3Cpath d='M 171.59598,149.44348 V 83.854099 l -65.58938,-1e-6' /%3E%3Cpath d='m 171.59598,101.2862 h -17.43209 v 25.84147' /%3E%3Cpath d='m 165.77626,170.59474 h -4.81848 v -50.79229' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-tr:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-40.612917,-83.589496)'%3E%3Cg transform='matrix(0.30334715,0,0,0.30338915,28.293104,58.413673)' style='fill:none;stroke:%23000000;stroke-width:1.7443;'%3E%3Cpath d='M 171.59602,116.47005 A 32.748245,32.748245 0 0 1 138.84811,83.879621' /%3E%3Cpath d='M 171.61279,121.24895 A 37.527149,37.527149 0 0 1 134.06919,83.8863' /%3E%3Cpath d='m 40.612917,89.673823 125.163343,-10e-7 V 214.83716' /%3E%3Cpath d='M 154.16388,83.854096 V 101.28619 H 128.32241' /%3E%3Cpath d='m 84.85534,89.673823 v 4.818481 h 50.79229' /%3E%3Cpath d='M 171.59598,149.44348 V 83.854099 l -65.58938,-1e-6' /%3E%3Cpath d='m 171.59598,101.2862 h -17.43209 v 25.84147' /%3E%3Cpath d='m 165.77626,170.59474 h -4.81848 v -50.79229' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-bl:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-40.612917,-83.589496)'%3E%3Cg transform='matrix(-0.30334715,0,0,-0.30338915,92.930632,148.76876)' style='fill:none;stroke:%23000000;stroke-width:1.7443;'%3E%3Cpath d='M 171.59602,116.47005 A 32.748245,32.748245 0 0 1 138.84811,83.879621' /%3E%3Cpath d='M 171.61279,121.24895 A 37.527149,37.527149 0 0 1 134.06919,83.8863' /%3E%3Cpath d='m 40.612917,89.673823 125.163343,-10e-7 V 214.83716' /%3E%3Cpath d='M 154.16388,83.854096 V 101.28619 H 128.32241' /%3E%3Cpath d='m 84.85534,89.673823 v 4.818481 h 50.79229' /%3E%3Cpath d='M 171.59598,149.44348 V 83.854099 l -65.58938,-1e-6' /%3E%3Cpath d='m 171.59598,101.2862 h -17.43209 v 25.84147' /%3E%3Cpath d='m 165.77626,170.59474 h -4.81848 v -50.79229' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-br:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-40.612917,-83.589496)'%3E%3Cg transform='matrix(0.30334715,0,0,-0.30338915,28.293104,148.76876)' style='fill:none;stroke:%23000000;stroke-width:1.7443;'%3E%3Cpath d='M 171.59602,116.47005 A 32.748245,32.748245 0 0 1 138.84811,83.879621' /%3E%3Cpath d='M 171.61279,121.24895 A 37.527149,37.527149 0 0 1 134.06919,83.8863' /%3E%3Cpath d='m 40.612917,89.673823 125.163343,-10e-7 V 214.83716' /%3E%3Cpath d='M 154.16388,83.854096 V 101.28619 H 128.32241' /%3E%3Cpath d='m 84.85534,89.673823 v 4.818481 h 50.79229' /%3E%3Cpath d='M 171.59598,149.44348 V 83.854099 l -65.58938,-1e-6' /%3E%3Cpath d='m 171.59598,101.2862 h -17.43209 v 25.84147' /%3E%3Cpath d='m 165.77626,170.59474 h -4.81848 v -50.79229' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-hrl:url("data:image/svg+xml,%0A%3Csvg width='9.624218mm' height='2.7450519mm' viewBox='0 0 9.624218 2.7450517' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-39.117826,-11.26231)' style='fill:%23000000'%3E%3Ccircle cx='47.369518' cy='12.634836' r='1.3725259' /%3E%3Ccircle cx='44.282711' cy='12.634836' r='1.0417968' /%3E%3Ccircle cx='41.758148' cy='12.634836' r='0.8102864' /%3E%3Ccircle cx='39.696602' cy='12.634836' r='0.578776' /%3E%3C/g%3E%3C/svg%3E%0A");--ad-hrr:url("data:image/svg+xml,%0A%3Csvg width='9.624218mm' height='2.7450519mm' viewBox='0 0 9.624218 2.7450517' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-39.117826,-11.26231)' style='fill:%23000000'%3E%3Cg transform='scale(-1,1)'%3E%3Ccircle cx='-40.490353' cy='12.634836' r='1.3725259' /%3E%3Ccircle cx='-43.57716' cy='12.634836' r='1.0417968' /%3E%3Ccircle cx='-46.101723' cy='12.634836' r='0.8102864'/%3E%3Ccircle cx='-48.163269' cy='12.634836' r='0.578776' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-fan:url("data:image/svg+xml,%0A%3Csvg width='13.533353mm' height='13.665177mm' viewBox='0 0 13.533353 13.665177' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-86.292633,-113.41824)'%3E%3Cg style='fill:none;stroke:%23000000;stroke-width:0.264999;'%3E%3Cpath d='m 93.059653,127.08343 a 6.766336,6.766336 0 0 1 6.766336,-6.76634' /%3E%3Cpath d='m 86.293106,120.31709 a 6.766336,6.766336 0 0 1 6.766336,6.76634' /%3E%3Cpath d='m 86.29772,120.31709 a 6.766336,6.766336 0 0 1 6.766336,-6.76633 6.766336,6.766336 0 0 1 6.766336,6.76633' /%3E%3Cpath d='m 93.059874,127.1504 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 93.059133,127.15011 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 93.059678,127.12677 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='m 93.05944,127.14092 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 93.060181,127.14063 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 93.059636,127.11729 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 93.059651,127.08342 V 113.55076' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");--ad-flag:url("data:image/svg+xml,%3Csvg width='34.440971mm' height='48.040325mm' viewBox='0 0 34.440971 48.040324' version='1.1' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:svg='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(-52.501418,-100.37747)' style='fill:none;stroke:%23000000;stroke-width:0.705556;'%3E%3Cpath d='m 52.854196,100.37747 v 40.1793 h 16.86771 16.867706 v -40.1793' /%3E%3Cpath d='m 62.113134,140.55677 -9.258938,-9.13941' /%3E%3Cpath d='m 77.330681,140.55677 9.258931,-9.13941' /%3E%3Cpath d='m 66.328675,144.71787 h 6.786469' /%3E%3Cpath d='m 52.854196,140.55677 4.629465,-4.56971' /%3E%3Cpath d='m 86.589612,140.55677 -4.629466,-4.56971' /%3E%3Cpath d='m 75.234872,138.48801 11.35474,-11.20819' /%3E%3Cpath d='m 52.854196,127.27982 11.354752,11.20819' /%3E%3C/g%3E%3C/svg%3E%0A")}}
+a{color:#8d2f26}a:hover{color:#6f231c}
+.dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(34,30,25,.10)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:500 10px 'IBM Plex Mono',monospace;padding:3px 7px;background:#221e19;color:#f6f1e6;border-radius:4px;text-decoration:none}
+.dv-tname{font:500 13px/1.2 'IBM Plex Mono',monospace;color:#221e19}
+.dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:500 10.5px 'IBM Plex Mono',monospace;padding:3px 7px;background:rgba(34,30,25,.09);color:#221e19;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:9px;font:400 12px/1.3 'IBM Plex Mono',monospace;color:rgba(34,30,25,.55)}
+.dv-card{position:relative;max-width:100%;border:1px solid rgba(34,30,25,.16);border-radius:3px;box-shadow:0 3px 14px rgba(34,30,25,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#8d2f26;color:#fff}
+.dv-next{margin:24px 0 0;font:12px/1.6 'IBM Plex Mono',monospace;color:rgba(34,30,25,.5)}
+@keyframes layerIn{from{opacity:0}to{opacity:1}}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:rgba(217,185,110,.3);border-radius:5px}::-webkit-scrollbar-track{background:transparent}
+</style></helmet>
+
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Three other ways in — constellation, pinboard, contact sheet · two skins</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="4b"><div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>Constellation — citation edges, drawers as clusters</div>
+<div class="dv-card" style="width:1160px">
+<sc-if value="{{ isScript }}" hint-placeholder-val="{{ true }}">
+<div style="width:1160px;height:600px;display:flex;flex-direction:column;background:#12100c">
+<div style="flex:none;height:54px;display:flex;align-items:center;gap:15px;padding:0 24px;background:linear-gradient(180deg,#231a13,#1a130e);border-bottom:1px solid rgba(198,158,86,.24)">
+<span style="font:500 14px/1 Cinzel,Georgia,serif;letter-spacing:.22em;color:#d9b96e">CONSTELLATION</span>
+<span style="width:1px;height:16px;background:rgba(198,158,86,.3)"></span>
+<span style="font:400 12.5px/1;font-style:italic;color:rgba(240,224,196,.6)">{{ cnCrumb }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(217,185,110,.5)">{{ cnEdgeLabel }}</span>
+</div>
+<div style="flex:1;display:flex;overflow:hidden">
+<div style="flex:1;position:relative">
+<svg viewBox="0 0 820 546" style="position:absolute;inset:0;width:100%;height:100%" data-om-raster="true">
+<sc-for list="{{ cnEdges }}" as="e" hint-placeholder-count="12">
+<line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ e.w }}"></line>
+</sc-for>
+</svg>
+<sc-for list="{{ cnNodes }}" as="n" hint-placeholder-count="12">
+<div onClick="{{ n.onClick }}" style="{{ n.wrapCss }}">
+<span style="{{ n.dotCss }}"></span>
+<span style="{{ n.labelCss }}">{{ n.short }}</span>
+</div>
+</sc-for>
+<div style="position:absolute;left:18px;bottom:16px;display:flex;flex-wrap:wrap;gap:8px;max-width:520px">
+<sc-for list="{{ cnLegend }}" as="l" hint-placeholder-count="7">
+<span style="{{ l.css }}">{{ l.name }}</span>
+</sc-for>
+</div>
+</div>
+<div style="width:318px;flex:none;background:#1c1610;border-left:1px solid rgba(198,158,86,.22);padding:22px 20px 26px;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+<span style="font:500 10.5px/1 Cinzel,Georgia,serif;letter-spacing:.2em;color:#d9b96e">SELECTED</span>
+<span style="font:400 17px/1.32;color:#f3e6c8;text-wrap:pretty">{{ cnP.title }}</span>
+<span style="font:400 12px/1.5;font-style:italic;color:rgba(240,224,196,.6)">{{ cnP.authors }}</span>
+<sc-for list="{{ cnFields }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:4px;padding-bottom:12px;border-bottom:1px solid rgba(198,158,86,.16)">
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.15em;color:rgba(217,185,110,.55)">{{ f.label }}</span>
+<span style="font:400 12.5px/1.5;color:rgba(243,230,200,.9)">{{ f.value }}</span>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.15em;color:rgba(217,185,110,.55)">CITES · CITED BY</span>
+<sc-for list="{{ cnLinks }}" as="x" hint-placeholder-count="3">
+<div onClick="{{ x.onClick }}" style="cursor:pointer;padding:9px 10px;background:#241a12;border:1px solid rgba(198,158,86,.2);display:flex;flex-direction:column;gap:3px" style-hover="border-color:rgba(217,185,110,.55)">
+<span style="font:400 12px/1.4;color:#f3e6c8">{{ x.title }}</span>
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;color:rgba(240,224,196,.45)">{{ x.foot }}</span>
+</div>
+</sc-for>
+</div>
+<a href="{{ cnP.obsidian }}" style="margin-top:2px;text-align:center;text-decoration:none;border:1px solid rgba(217,185,110,.4);color:#d9b96e;font:400 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;padding:11px 0" style-hover="background:rgba(217,185,110,.1)">OPEN THE NOTE</a>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDeco }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;width:1160px;height:600px;display:flex;flex-direction:column;background:#0e0d20;background-image:radial-gradient(120% 90% at 50% -20%,#1b1a3f 0%,#0b0a1a 100%)">
+<div style="position:absolute;inset:8px;z-index:6;pointer-events:none;background:rgba(227,194,74,.42);-webkit-mask-image:linear-gradient(90deg,#000 1px,transparent 0),linear-gradient(#000 1px,transparent 0),var(--ad-tl),var(--ad-tr),var(--ad-bl),var(--ad-br);-webkit-mask-size:calc(100% - 7px) calc(100% - 84px),calc(100% - 84px) calc(100% - 7px),42px 42px,42px 42px,42px 42px,42px 42px;-webkit-mask-position:3px 50%,50% 3px,left top,right top,left bottom,right bottom;-webkit-mask-repeat:repeat-x,repeat-y,no-repeat,no-repeat,no-repeat,no-repeat"></div>
+<div style="position:relative;flex:none;height:60px;display:flex;align-items:center;gap:16px;padding:0 34px;overflow:hidden;border-bottom:1px solid rgba(227,194,74,.42)">
+<span style="position:absolute;right:26px;top:-18px;width:96px;height:96px;background:#e3c24a;opacity:.14;-webkit-mask-image:var(--ad-fan);-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;pointer-events:none"></span>
+<span style="font:400 16px/1 'Park Lane NF',Limelight,Georgia,serif;letter-spacing:.26em;color:#e3c24a">CONSTELLATION</span>
+<span style="width:1px;height:20px;background:rgba(227,194,74,.42)"></span>
+<span style="font:400 13px/1 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(240,233,216,.62)">{{ cnCrumb }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.2em;color:rgba(227,194,74,.55)">{{ cnEdgeLabel }}</span>
+</div>
+<div style="flex:1;display:flex;overflow:hidden">
+<div style="flex:1;position:relative">
+<svg viewBox="0 0 820 546" style="position:absolute;inset:0;width:100%;height:100%" data-om-raster="true">
+<sc-for list="{{ cnEdges }}" as="e" hint-placeholder-count="12">
+<line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ e.w }}"></line>
+</sc-for>
+</svg>
+<sc-for list="{{ cnNodes }}" as="n" hint-placeholder-count="12">
+<div onClick="{{ n.onClick }}" style="{{ n.wrapCss }}">
+<span style="{{ n.dotCss }}"></span>
+<span style="{{ n.labelCss }}">{{ n.short }}</span>
+</div>
+</sc-for>
+<div style="position:absolute;left:20px;bottom:18px;display:flex;flex-wrap:wrap;gap:8px;max-width:520px">
+<sc-for list="{{ cnLegend }}" as="l" hint-placeholder-count="7">
+<span style="{{ l.css }}">{{ l.name }}</span>
+</sc-for>
+</div>
+</div>
+<div style="width:318px;flex:none;background:#14132e;border-left:1px solid rgba(227,194,74,.42);padding:22px 22px 26px;overflow-y:auto;display:flex;flex-direction:column;gap:15px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="flex:none;width:11px;height:11px;background:#e3c24a;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></span>
+<span style="flex:none;font:400 11px/1 'Park Lane NF',Limelight,Georgia,serif;letter-spacing:.2em;color:#e3c24a">SELECTED</span>
+<span style="flex:1;height:12px;background:rgba(227,194,74,.42);-webkit-mask-image:linear-gradient(to right,transparent 26px,#000 26px,#000 calc(100% - 26px),transparent calc(100% - 26px)),var(--ad-hrl),var(--ad-hrr);-webkit-mask-size:100% 1px,26px 12px,26px 12px;-webkit-mask-position:center,left center,right center;-webkit-mask-repeat:no-repeat"></span>
+</div>
+<span style="font:400 18px/1.36 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#f4eedd;text-wrap:pretty">{{ cnP.title }}</span>
+<span style="font:400 12px/1.5 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(240,233,216,.52)">{{ cnP.authors }}</span>
+<sc-for list="{{ cnFields }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:5px;padding-bottom:12px;border-bottom:1px solid rgba(227,194,74,.2)">
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.18em;color:rgba(227,194,74,.6)">{{ f.label }}</span>
+<span style="font:400 12.5px/1.5 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(244,238,221,.88)">{{ f.value }}</span>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.18em;color:rgba(227,194,74,.6)">CITES · CITED BY</span>
+<sc-for list="{{ cnLinks }}" as="x" hint-placeholder-count="3">
+<div onClick="{{ x.onClick }}" style="cursor:pointer;padding:10px 11px;background:#1a1940;border:1px solid rgba(227,194,74,.22);display:flex;flex-direction:column;gap:4px" style-hover="border-color:rgba(227,194,74,.62)">
+<span style="font:400 12px/1.42 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#f4eedd">{{ x.title }}</span>
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.12em;color:rgba(240,233,216,.45)">{{ x.foot }}</span>
+</div>
+</sc-for>
+</div>
+<a href="{{ cnP.obsidian }}" style="margin-top:2px;display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;border:1px solid rgba(227,194,74,.45);color:#e3c24a;font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.2em;padding:12px 0" style-hover="background:rgba(227,194,74,.12)">
+<span style="width:7px;height:7px;background:#e3c24a;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></span>OPEN THE NOTE</a>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div class="dv-opt" id="4c"><div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>Pinboard — 2400×1600 board, drag the cards, thread by shared topic</div>
+<div class="dv-card" style="width:1160px">
+<sc-if value="{{ isScript }}" hint-placeholder-val="{{ true }}">
+<div style="width:1160px;height:660px;display:flex;flex-direction:column;background:#3c2a16">
+<div style="flex:none;height:52px;display:flex;align-items:center;gap:14px;padding:0 24px;background:rgba(28,20,12,.6);border-bottom:1px solid rgba(0,0,0,.34)">
+<span style="font:500 14px/1 Cinzel,Georgia,serif;letter-spacing:.22em;color:#f0dfb4">PINBOARD</span>
+<span style="width:1px;height:16px;background:rgba(240,223,180,.3)"></span>
+<span style="font:400 12.5px/1;font-style:italic;color:rgba(240,223,180,.66)">{{ pbCrumb }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(240,223,180,.44)">{{ pbHint }}</span>
+</div>
+<div style="flex:1;overflow:auto;background:#5c4023;background-image:radial-gradient(140% 100% at 50% 0%,#6b4b29 0%,#4a3319 100%)">
+<div onMouseMove="{{ pbOnMove }}" onMouseUp="{{ pbOnUp }}" onMouseLeave="{{ pbOnUp }}" style="position:relative;width:2400px;height:1600px">
+<svg viewBox="0 0 2400 1600" style="position:absolute;inset:0;width:2400px;height:1600px;pointer-events:none" data-om-raster="true">
+<sc-for list="{{ pbThreads }}" as="t" hint-placeholder-count="10">
+<path d="{{ t.d }}" fill="none" stroke="{{ t.stroke }}" stroke-width="{{ t.w }}" stroke-linecap="round"></path>
+</sc-for>
+</svg>
+<sc-for list="{{ pbCards }}" as="c" hint-placeholder-count="14">
+<div onMouseDown="{{ c.onDown }}" onClick="{{ c.onClick }}" style="{{ c.css }}">
+<span style="position:absolute;left:50%;top:-7px;transform:translateX(-50%);width:13px;height:13px;border-radius:50%;background:radial-gradient(60% 60% at 34% 28%,#f6d9a0,#9c2f24 62%,#5d1a13 100%);box-shadow:0 2px 4px rgba(0,0,0,.5)"></span>
+<sc-if value="{{ c.full }}" hint-placeholder-val="{{ true }}">
+<div style="padding:18px 14px 13px;display:flex;flex-direction:column;gap:7px;height:100%;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:7px">
+<span style="{{ c.pipCss }}"></span>
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(42,29,16,.58)">{{ c.venue }} {{ c.year }}</span>
+</div>
+<span style="font:500 13px/1.4;color:#2a1d10;text-wrap:pretty">{{ c.title }}</span>
+<span style="flex:1"></span>
+<span style="font:400 10.5px/1.35;font-style:italic;color:rgba(42,29,16,.6)">{{ c.first }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ c.compact }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 10px 8px;display:flex;align-items:center;gap:7px;height:100%;box-sizing:border-box">
+<span style="{{ c.pipCss }}"></span>
+<span style="font:400 10px/1.3;color:#2a1d10;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.short }}</span>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDeco }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;width:1160px;height:660px;display:flex;flex-direction:column;background:#12112b">
+<div style="position:absolute;inset:8px;z-index:6;pointer-events:none;background:rgba(227,194,74,.42);-webkit-mask-image:linear-gradient(90deg,#000 1px,transparent 0),linear-gradient(#000 1px,transparent 0),var(--ad-tl),var(--ad-tr),var(--ad-bl),var(--ad-br);-webkit-mask-size:calc(100% - 7px) calc(100% - 84px),calc(100% - 84px) calc(100% - 7px),42px 42px,42px 42px,42px 42px,42px 42px;-webkit-mask-position:3px 50%,50% 3px,left top,right top,left bottom,right bottom;-webkit-mask-repeat:repeat-x,repeat-y,no-repeat,no-repeat,no-repeat,no-repeat"></div>
+<div style="position:relative;flex:none;height:58px;display:flex;align-items:center;gap:16px;padding:0 34px;overflow:hidden;border-bottom:1px solid rgba(227,194,74,.42)">
+<span style="position:absolute;right:26px;top:-18px;width:96px;height:96px;background:#e3c24a;opacity:.14;-webkit-mask-image:var(--ad-fan);-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;pointer-events:none"></span>
+<span style="font:400 16px/1 'Park Lane NF',Limelight,Georgia,serif;letter-spacing:.26em;color:#e3c24a">PINBOARD</span>
+<span style="width:1px;height:20px;background:rgba(227,194,74,.42)"></span>
+<span style="font:400 13px/1 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(240,233,216,.62)">{{ pbCrumb }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.2em;color:rgba(227,194,74,.55)">{{ pbHint }}</span>
+</div>
+<div style="flex:1;overflow:auto;background:#151433;background-image:radial-gradient(130% 100% at 50% 0%,#26235a 0%,#0d0c1e 100%)">
+<div onMouseMove="{{ pbOnMove }}" onMouseUp="{{ pbOnUp }}" onMouseLeave="{{ pbOnUp }}" style="position:relative;width:2400px;height:1600px;background-image:repeating-linear-gradient(90deg,rgba(227,194,74,.05) 0 1px,transparent 1px 96px),repeating-linear-gradient(0deg,rgba(227,194,74,.05) 0 1px,transparent 1px 96px)">
+<svg viewBox="0 0 2400 1600" style="position:absolute;inset:0;width:2400px;height:1600px;pointer-events:none" data-om-raster="true">
+<sc-for list="{{ pbThreads }}" as="t" hint-placeholder-count="10">
+<path d="{{ t.d }}" fill="none" stroke="{{ t.stroke }}" stroke-width="{{ t.w }}" stroke-linecap="round"></path>
+</sc-for>
+</svg>
+<sc-for list="{{ pbCards }}" as="c" hint-placeholder-count="14">
+<div onMouseDown="{{ c.onDown }}" onClick="{{ c.onClick }}" style="{{ c.css }}">
+<span style="position:absolute;left:50%;top:-8px;transform:translateX(-50%) rotate(45deg);width:13px;height:13px;background:linear-gradient(135deg,#f6e29a,#c9a63a);box-shadow:0 3px 5px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.4)"></span>
+<sc-if value="{{ c.full }}" hint-placeholder-val="{{ true }}">
+<div style="padding:19px 15px 13px;display:flex;flex-direction:column;gap:7px;height:100%;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:8px">
+<span style="{{ c.pipCss }}"></span>
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.18em;color:rgba(22,21,71,.6)">{{ c.venue }} {{ c.year }}</span>
+</div>
+<span style="font:400 13px/1.44 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#16154a;text-wrap:pretty">{{ c.title }}</span>
+<span style="flex:1"></span>
+<span style="flex:none;height:1px;background:rgba(22,21,71,.26)"></span>
+<span style="font:400 10px/1.35 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(22,21,71,.6)">{{ c.first }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ c.compact }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 11px 8px;display:flex;align-items:center;gap:8px;height:100%;box-sizing:border-box">
+<span style="{{ c.pipCss }}"></span>
+<span style="font:400 10px/1.3 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#16154a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.short }}</span>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div class="dv-opt" id="4d"><div class="dv-olabel"><a class="dv-oid" href="#4d">4d</a>Contact Sheet — first pages, hover lifts one out</div>
+<div class="dv-card" style="width:1160px">
+<sc-if value="{{ isScript }}" hint-placeholder-val="{{ true }}">
+<div style="width:1160px;height:620px;display:flex;flex-direction:column;background:#0f0b08">
+<div style="flex:none;height:46px;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid rgba(198,158,86,.2)">
+<span style="font:500 12px/1 Cinzel,Georgia,serif;letter-spacing:.22em;color:#d9b96e">CONTACT SHEET</span>
+<span style="flex:1"></span>
+<span style="font:400 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(217,185,110,.45)">{{ csCount }} · HOVER TO LIFT · CLICK TO READ</span>
+</div>
+<div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:30px 30px 40px;display:grid;grid-template-columns:repeat(10,1fr);gap:13px;align-content:start">
+<sc-for list="{{ csSheets }}" as="s" hint-placeholder-count="30">
+<div onClick="{{ s.onClick }}" style="{{ s.css }}" style-hover="transform:scale(1.26) translateY(-4px);box-shadow:0 16px 28px rgba(0,0,0,.6);border-color:#8d2f26;z-index:9">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 5px,rgba(42,29,16,.16) 5px 6px);margin:14px 8px 12px"></div>
+<span style="position:absolute;left:7px;top:5px;font:400 6.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(42,29,16,.62)">{{ s.year }}</span>
+<span style="{{ s.pipCss }}"></span>
+<span style="{{ s.titleCss }}">{{ s.title }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ csOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ csClose }}" style="position:absolute;inset:0;z-index:60;background:rgba(16,10,6,.64);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:26px;animation:layerIn .2s ease both">
+<div onClick="{{ stop }}" style="display:flex;max-height:100%;border:1px solid rgba(198,158,86,.5);box-shadow:0 30px 60px rgba(0,0,0,.6)">
+<div style="width:430px;flex:none;overflow-y:auto;background:#f3e6c8;padding:30px 34px 34px;display:flex;flex-direction:column;gap:15px">
+<span style="font:400 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8d2f26">{{ csP.venue }} · {{ csP.year }}</span>
+<h2 style="margin:0;font:400 24px/1.26;color:#22170d;text-wrap:pretty">{{ csP.title }}</h2>
+<span style="font:400 13px/1.5;font-style:italic;color:rgba(42,29,16,.66)">{{ csP.authors }}</span>
+<a href="{{ csP.obsidian }}" style="position:relative;display:block;aspect-ratio:17/22;background:#fffdf4;border:1px solid rgba(42,29,16,.22);text-decoration:none" style-hover="border-color:rgba(141,47,38,.5)">
+<span style="position:absolute;inset:14px;background:repeating-linear-gradient(135deg,rgba(42,29,16,.06) 0 7px,transparent 7px 14px);display:flex;align-items:center;justify-content:center">
+<span style="background:#fffdf4;padding:7px 11px;font:400 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(42,29,16,.5)">first page — drop image</span>
+</span>
+<span style="position:absolute;left:0;right:0;bottom:0;padding:7px 11px;background:rgba(243,230,200,.92);font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(42,29,16,.6)">CLICK · OPEN THE NOTE</span>
+</a>
+<p style="margin:0;font:400 14px/1.7;color:#2c2016;text-wrap:pretty">{{ csP.abstract }}</p>
+</div>
+<div style="width:290px;flex:none;overflow-y:auto;background:linear-gradient(178deg,#e7d5af,#dbc79c);border-left:1px solid rgba(42,29,16,.24);padding:22px 20px 26px;display:flex;flex-direction:column;gap:17px">
+<span style="font:500 10.5px/1 Cinzel,Georgia,serif;letter-spacing:.2em;color:#8d2f26">THE STATE</span>
+<sc-for list="{{ csFields }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:5px;padding-bottom:13px;border-bottom:1px solid rgba(42,29,16,.14)">
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.15em;color:rgba(42,29,16,.5)">{{ f.label }}</span>
+<span style="font:400 13px/1.55;color:#22170d">{{ f.value }}</span>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.15em;color:rgba(42,29,16,.5)">RELATED</span>
+<sc-for list="{{ csRelated }}" as="x" hint-placeholder-count="3">
+<div onClick="{{ x.onClick }}" style="cursor:pointer;padding:9px 10px;background:rgba(255,253,244,.55);border:1px solid rgba(42,29,16,.16);display:flex;flex-direction:column;gap:3px" style-hover="border-color:rgba(141,47,38,.5);background:#fffdf4">
+<span style="font:400 12px/1.4;color:#22170d">{{ x.title }}</span>
+<span style="font:400 8.5px/1 'IBM Plex Mono',monospace;color:rgba(42,29,16,.5)">{{ x.foot }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isDeco }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;width:1160px;height:620px;display:flex;flex-direction:column;background:#0b0a1a;background-image:radial-gradient(120% 90% at 50% -20%,#1b1a3f 0%,#0a0918 100%)">
+<div style="position:absolute;inset:8px;z-index:6;pointer-events:none;background:rgba(227,194,74,.42);-webkit-mask-image:linear-gradient(90deg,#000 1px,transparent 0),linear-gradient(#000 1px,transparent 0),var(--ad-tl),var(--ad-tr),var(--ad-bl),var(--ad-br);-webkit-mask-size:calc(100% - 7px) calc(100% - 84px),calc(100% - 84px) calc(100% - 7px),42px 42px,42px 42px,42px 42px,42px 42px;-webkit-mask-position:3px 50%,50% 3px,left top,right top,left bottom,right bottom;-webkit-mask-repeat:repeat-x,repeat-y,no-repeat,no-repeat,no-repeat,no-repeat"></div>
+<div style="position:relative;flex:none;height:54px;display:flex;align-items:center;gap:14px;padding:0 30px;overflow:hidden;border-bottom:1px solid rgba(227,194,74,.42)">
+<span style="position:absolute;right:26px;top:-18px;width:96px;height:96px;background:#e3c24a;opacity:.14;-webkit-mask-image:var(--ad-fan);-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;pointer-events:none"></span>
+<span style="font:400 14px/1 'Park Lane NF',Limelight,Georgia,serif;letter-spacing:.26em;color:#e3c24a">CONTACT SHEET</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.2em;color:rgba(227,194,74,.5)">{{ csCount }} · HOVER TO LIFT · CLICK TO READ</span>
+</div>
+<div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:30px 30px 40px;display:grid;grid-template-columns:repeat(10,1fr);gap:13px;align-content:start">
+<sc-for list="{{ csSheets }}" as="s" hint-placeholder-count="30">
+<div onClick="{{ s.onClick }}" style="{{ s.css }}" style-hover="transform:scale(1.26) translateY(-4px);box-shadow:0 16px 28px rgba(0,0,0,.7);border-color:#e3c24a;z-index:9">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 5px,rgba(22,21,71,.14) 5px 6px);margin:14px 8px 12px"></div>
+<span style="position:absolute;left:7px;top:5px;font:400 6.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.12em;color:rgba(22,21,71,.6)">{{ s.year }}</span>
+<span style="{{ s.pipCss }}"></span>
+<span style="{{ s.titleCss }}">{{ s.title }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ csOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ csClose }}" style="position:absolute;inset:0;z-index:60;background:rgba(8,7,20,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:26px;animation:layerIn .2s ease both">
+<div onClick="{{ stop }}" style="display:flex;max-height:100%;border:1px solid rgba(227,194,74,.55);box-shadow:0 30px 60px rgba(0,0,0,.7)">
+<div style="width:430px;flex:none;overflow-y:auto;background:#f4eedd;padding:30px 34px 34px;display:flex;flex-direction:column;gap:15px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="flex:none;width:9px;height:9px;background:#9a7a22;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></span>
+<span style="flex:none;font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.2em;color:#9a7a22">{{ csP.venue }} · {{ csP.year }}</span>
+<span style="flex:1;height:12px;background:rgba(22,21,71,.34);-webkit-mask-image:linear-gradient(to right,transparent 26px,#000 26px,#000 calc(100% - 26px),transparent calc(100% - 26px)),var(--ad-hrl),var(--ad-hrr);-webkit-mask-size:100% 1px,26px 12px,26px 12px;-webkit-mask-position:center,left center,right center;-webkit-mask-repeat:no-repeat"></span>
+</div>
+<h2 style="margin:0;font:400 25px/1.28 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#16154a;text-wrap:pretty">{{ csP.title }}</h2>
+<span style="font:400 12.5px/1.5 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(22,21,71,.6)">{{ csP.authors }}</span>
+<a href="{{ csP.obsidian }}" style="position:relative;display:block;aspect-ratio:17/22;background:#fbf6e6;border:1px solid rgba(22,21,71,.2);text-decoration:none" style-hover="border-color:rgba(154,122,34,.7)">
+<span style="position:absolute;inset:14px;background:repeating-linear-gradient(135deg,rgba(22,21,71,.07) 0 7px,transparent 7px 14px);display:flex;align-items:center;justify-content:center">
+<span style="background:#fbf6e6;padding:8px 12px;font:400 9.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.16em;color:rgba(22,21,71,.55)">first page — drop image</span>
+</span>
+<span style="position:absolute;left:0;right:0;bottom:0;padding:7px 11px;background:rgba(244,238,221,.94);font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.16em;color:rgba(22,21,71,.6)">CLICK · OPEN THE NOTE</span>
+</a>
+<p style="margin:0;font:400 13.5px/1.72 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:rgba(22,21,71,.84);text-wrap:pretty">{{ csP.abstract }}</p>
+</div>
+<div style="width:290px;flex:none;overflow-y:auto;background:linear-gradient(178deg,#1a1940,#141330);border-left:1px solid rgba(227,194,74,.42);padding:22px 20px 26px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="flex:none;width:11px;height:11px;background:#e3c24a;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></span>
+<span style="flex:none;font:400 11px/1 'Park Lane NF',Limelight,Georgia,serif;letter-spacing:.2em;color:#e3c24a">THE STATE</span>
+<span style="flex:1;height:12px;background:rgba(227,194,74,.42);-webkit-mask-image:linear-gradient(to right,transparent 26px,#000 26px,#000 calc(100% - 26px),transparent calc(100% - 26px)),var(--ad-hrl),var(--ad-hrr);-webkit-mask-size:100% 1px,26px 12px,26px 12px;-webkit-mask-position:center,left center,right center;-webkit-mask-repeat:no-repeat"></span>
+</div>
+<sc-for list="{{ csFields }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:5px;padding-bottom:13px;border-bottom:1px solid rgba(227,194,74,.2)">
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.18em;color:rgba(227,194,74,.6)">{{ f.label }}</span>
+<span style="font:400 12.5px/1.55 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#f4eedd">{{ f.value }}</span>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.18em;color:rgba(227,194,74,.6)">RELATED</span>
+<sc-for list="{{ csRelated }}" as="x" hint-placeholder-count="3">
+<div onClick="{{ x.onClick }}" style="cursor:pointer;padding:10px 11px;background:#1d1c46;border:1px solid rgba(227,194,74,.22);display:flex;flex-direction:column;gap:4px" style-hover="border-color:rgba(227,194,74,.62)">
+<span style="font:400 12px/1.42 Semplicita,Jost,Optima,'Gill Sans',sans-serif;color:#f4eedd">{{ x.title }}</span>
+<span style="font:400 8.5px/1 Federo,'Gill Sans',sans-serif;letter-spacing:.12em;color:rgba(240,233,216,.45)">{{ x.foot }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</sc-if>
+</div>
+</div>
+</div>
+
+<p class="dv-next">Drawers: <a href="Paper Drawers v2.dc.html">drop-open, queue and dissolved pile</a></p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;scriptorium&quot;,&quot;deco&quot;],&quot;default&quot;:&quot;scriptorium&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Skin&quot;},&quot;pinboardMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cards&quot;,&quot;threads&quot;],&quot;default&quot;:&quot;cards&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Pinboard&quot;}}">
+const DATA = [
+['Graph Learning','#graph-learning','#c98a2f',
+ [['Message Passing Saturation on Sparse Molecular Graphs','R. Aiyer, M. Solberg, T. Okonkwo','NeurIPS',2023,412,'We characterise the depth at which message passing saturates on sparse molecular graphs, relating receptive-field growth to the variance of node degree.',0.64],
+  ['Spectral Rewiring Without Loss of Locality','J. Halvorsen, P. Rao','ICLR',2024,188,'A rewiring scheme that widens the spectral gap while bounding the displacement of every edge, preserving the local structure task performance depends on.',0.28],
+  ['Positional Encodings Are Not Enough','L. Chatterjee, D. Munoz, S. Weill','ICML',2023,301,'An empirical study across fourteen benchmarks showing that Laplacian positional encodings recover only part of the structural information subgraph counting provides.',1],
+  ['Heterophily and the Failure of Smoothing Priors','A. Nakamura, F. Bexell','JMLR',2022,527,'Homophily assumptions live in the aggregation step rather than the architecture. We give a diagnostic for the regimes where they actively hurt.',0],
+  ['Scaling Laws for Graph Pretraining','M. Ferreira, K. Yildiz, R. Aiyer','arXiv',2025,64,'Pretraining curves over graph corpora spanning six orders of magnitude, with a break in the power law where motif diversity plateaus.',0.4]]],
+['Protein Structure','#protein','#5f9e5a',
+ [['Coevolutionary Signal Under Shallow Alignments','H. Lindqvist, O. Adeyemi','Nature Methods',2023,744,'Quantifies how contact prediction degrades as alignment depth falls, and identifies the regime where structural templates outperform coevolution entirely.',1],
+  ['Side-Chain Packing as Discrete Optimisation','T. Brandt, V. Sreenivasan','Proteins',2021,296,'Reformulates packing as weighted constraint satisfaction and shows exact solutions remain tractable for most natural rotamer libraries.',0],
+  ['Disordered Regions Confound Global Confidence Scores','S. Okafor, M. Beaulieu, J. Tan','Bioinformatics',2024,133,'Per-residue confidence is well calibrated in ordered cores but systematically overconfident across intrinsically disordered stretches.',0.52],
+  ['Cryptic Pockets from Short Molecular Dynamics','D. Rossi, A. Kaur','JACS',2022,410,'Short unbiased trajectories reveal transient pockets that static structures miss, ranked by a heuristic on solvent exposure lifetime.',1],
+  ['Ensemble Averaging Hides Functional States','M. Beaulieu, D. Rossi','eLife',2023,164,'Single-structure predictions collapse functionally distinct states into one average conformation, which we detect from residue-level disagreement.',0]]],
+['Causal Inference','#causal','#8d6bb0',
+ [['Instrument Strength and the Cost of Weak Overlap','E. Vasquez, M. Thorne','Econometrica',2022,620,'Derives variance bounds under weak overlap and shows the trimming rules used in practice induce a bias of predictable sign.',0.34],
+  ['Do Double Machine Learning Estimators Transfer?','K. Ibrahim, S. Lund','JASA',2024,205,'Cross-fitted estimators compared across four observational datasets, with transfer failures traced to shifts in the propensity distribution.',1],
+  ['Negative Controls in Observational Health Data','R. Mensah, C. Duval, A. Petrov','Am. J. Epidemiol.',2023,187,'A protocol for selecting negative control outcomes, evaluated against forty-two pairs where trial ground truth is available.',0],
+  ['Discovery Under Latent Confounding: A Sober Look','W. Nakashima, B. Aluko','UAI',2021,344,'Structure learning algorithms evaluated when faithfulness is violated mildly. Most degrade non-gracefully rather than approximately.',0.7],
+  ['Sensitivity Analysis Practitioners Will Actually Run','M. Thorne, J. Okada','arXiv',2025,40,'Proposes a single-number sensitivity summary with a direct interpretation in terms of unmeasured confounder strength.',0]]],
+['Efficient Attention','#attention','#4f93b8',
+ [['Sparse Attention Recovers Dense Behaviour at Scale','Y. Sato, N. Berhane','NeurIPS',2023,890,'Fixed sparsity patterns match dense attention on long-context retrieval once model width passes a threshold that scales with sequence length.',1],
+  ['The Memory Wall in Autoregressive Decoding','A. Kowalski, T. Mbeki','MLSys',2024,415,'Decode throughput is bounded by key-value cache bandwidth rather than compute, across every configuration measured.',0.46],
+  ['Linear Attention and the Recency Prior','F. Duarte, M. Chandra','ICML',2022,502,'Linear attention imposes an implicit exponential recency prior, which explains its weakness on tasks requiring distant exact recall.',1],
+  ['Position Interpolation Beyond the Training Window','S. Grover, E. Lindahl, J. Park','ICLR',2024,366,'Interpolated rotary embeddings extrapolate cleanly to roughly four times the training context, then fail abruptly rather than gradually.',0.2],
+  ['Attention Sinks Are Load-Bearing','N. Berhane, R. Aiyer','arXiv',2025,122,'Removing the first-token sink degrades perplexity far more than its attention mass suggests. We offer a normalisation account.',0]]],
+['Cryo-EM','#cryo-em','#b8674f',
+ [['Heterogeneity Estimation Without Discrete Classes','I. Volkov, M. Halloran','Nature Methods',2022,588,'A continuous latent-space treatment of conformational heterogeneity that avoids the arbitrary class counts of 3D classification.',1],
+  ['Preferred Orientation Correction by Tilt Scheduling','A. Sobrinho, K. Larsen','J. Struct. Biol.',2023,141,'Adaptive tilt-series scheduling reduces directional resolution anisotropy in samples with strong preferred orientation.',0],
+  ['Overfitting in Iterative Refinement','M. Halloran, D. Peng','IUCrJ',2021,263,'Gold-standard refinement still leaks information through the mask. We quantify the effect and propose a stricter split.',0.58],
+  ['Denoising Priors and the Resolution Illusion','C. Weerasinghe, L. Osei','Structure',2024,96,'Learned denoisers improve map appearance while degrading model-to-map agreement in the three to four angstrom range.',0],
+  ['Continuous Flexibility from Single Particles','I. Volkov, D. Peng','Nature Methods',2025,88,'Per-particle deformation fields recover continuous flexibility without imposing discrete states or a reference conformation.',0.36]]],
+['Quantum Error Correction','#qec','#5e8fa8',
+ [['Threshold Estimates Under Correlated Noise','V. Petrenko, S. Adhikari','PRX Quantum',2023,470,'Surface-code thresholds fall by roughly a third once spatially correlated dephasing enters the noise model.',1],
+  ['Decoding Latency as a Hard Constraint','L. Mahoney, T. Iwata','Nature Physics',2024,322,'Real-time decoding budgets derived from measurement cycle times, ruling out several otherwise competitive decoders.',0.42],
+  ['Magic State Distillation Overheads Revisited','D. Aguirre, P. Whitfield','Quantum',2022,398,'Updated resource counts for distillation under realistic connectivity, with a factor-of-two reduction from better scheduling.',0],
+  ['Bias-Tailored Codes on Biased Hardware','S. Adhikari, M. Loken','PRL',2023,251,'Tailoring the code to hardware noise bias yields larger gains than equivalent improvements in raw gate fidelity.',0.66],
+  ['Leakage Errors Break Threshold Assumptions','P. Whitfield, V. Petrenko','PRX Quantum',2024,133,'Leakage out of the computational subspace violates the error models thresholds are derived under, by a margin that matters.',0.18]]],
+['Interpretability','#interp','#a8894f',
+ [['Feature Dictionaries Are Basis-Dependent','R. Nasser, J. Okada','ICML',2024,276,'Dictionary features recovered from a model depend on the chosen basis to a degree that undermines cross-run comparison.',0.5],
+  ['Circuit Claims Need Ablation Controls','S. Weill, L. Mahoney','NeurIPS',2023,318,'Reported circuits often survive ablations that should destroy them, indicating the evidence standard is too weak.',1],
+  ['Probing Accuracy Overstates Representation','D. Munoz, K. Ibrahim','TMLR',2024,141,'A probe can reach high accuracy on information the model never uses downstream. We separate presence from use.',0],
+  ['Superposition Under Distribution Shift','F. Bexell, M. Chandra','arXiv',2025,47,'Feature superposition patterns reorganise under shift, so interpretations fitted in-distribution do not carry over.',0],
+  ['Attribution Maps Disagree With Each Other','O. Adeyemi, T. Mbeki','ICLR',2022,489,'Six attribution methods compared on identical inputs, agreeing less with one another than with a random baseline in places.',0.3]]]
+];
+
+const DECO = ['#e3c24a','#4f9e86','#cd5f45','#5a72b5','#9268b8','#3f9aa8','#c76f8e'];
+const TOPICS = [], ALL = [], byId = {};
+DATA.forEach(function (t, ti) {
+  var topic = { id: 't' + ti, name: t[0], tag: t[1], color: t[2], deco: DECO[ti % DECO.length], papers: [] };
+  t[3].forEach(function (p, pi) {
+    var last = p[1].split(',')[0].trim().split(' ').pop().toLowerCase();
+    var file = 'Papers/' + t[1].slice(1) + '/' + last + '-' + p[3] + '.md';
+    var paper = {
+      id: 'P-' + (ti + 1) + String(pi + 1).padStart(2, '0'),
+      title: p[0], authors: p[1], venue: p[2], year: p[3], cites: p[4],
+      abstract: p[5], progress: p[6], topic: topic,
+      first: p[1].split(',')[0].trim() + (p[1].indexOf(',') > 0 ? ' et al.' : ''),
+      obsidian: 'obsidian://open?file=' + encodeURIComponent(file)
+    };
+    topic.papers.push(paper); ALL.push(paper); byId[paper.id] = paper;
+  });
+  TOPICS.push(topic);
+});
+
+const EDGES = [];
+ALL.forEach(function (p, i) {
+  var pool = p.topic.papers.filter(function (q) { return q.year < p.year; });
+  if (pool.length) EDGES.push([p.id, pool[i % pool.length].id, 'in']);
+  if (i % 3 === 0) {
+    var out = ALL.filter(function (q) { return q.year < p.year && q.topic !== p.topic; });
+    if (out.length) EDGES.push([p.id, out[(i * 7) % out.length].id, 'out']);
+  }
+});
+
+const NODE_POS = {};
+TOPICS.forEach(function (t, ti) {
+  var cx = 130 + (ti % 4) * 200, cy = ti < 4 ? 150 : 400;
+  t.papers.forEach(function (p, pi) {
+    var a = (pi / t.papers.length) * Math.PI * 2 + ti;
+    NODE_POS[p.id] = { x: cx + Math.cos(a) * 64, y: cy + Math.sin(a) * 62 };
+  });
+});
+
+// pinboard: scattered across a 2400x1600 board, deterministic
+const PB_START = {};
+ALL.forEach(function (p, i) {
+  var col = i % 6, row = Math.floor(i / 6);
+  var jx = ((i * 37) % 11) * 9, jy = ((i * 53) % 9) * 11;
+  PB_START[p.id] = {
+    x: 70 + col * 372 + jx,
+    y: 70 + row * 262 + jy,
+    rot: [-3.2, 2.4, -1.6, 3, -2.2, 1.8][i % 6]
+  };
+});
+
+class Component extends DCLogic {
+  state = { cn: 'P-101', pb: 'P-101', pos: PB_START, drag: null, cs: null };
+
+  pip(p, size) {
+    var pct = Math.round(p.progress * 100), d = this.deco;
+    return {
+      width: size + 'px', height: size + 'px', flex: 'none',
+      borderRadius: d ? '1px' : '50%',
+      transform: d ? 'rotate(45deg)' : 'none',
+      background: 'conic-gradient(' + (d ? p.topic.deco : p.topic.color) + ' 0 ' + pct + '%, '
+        + (d ? 'rgba(22,21,71,.16)' : 'rgba(42,29,16,.18)') + ' ' + pct + '% 100%)',
+      boxShadow: d ? 'inset 0 0 0 1px rgba(22,21,71,.34)' : 'inset 0 0 0 1px rgba(42,29,16,.24)'
+    };
+  }
+
+  fields(p) {
+    return [
+      { label: 'AUTHORS', value: p.authors },
+      { label: 'CITATION', value: p.first + ', ' + p.venue + ' ' + p.year },
+      { label: 'CITED BY', value: p.cites + ' papers' }
+    ];
+  }
+
+  renderVals() {
+    var self = this, st = this.state;
+    var deco = (this.props.theme || 'scriptorium') === 'deco';
+    this.deco = deco;
+    var threadsOnly = (this.props.pinboardMode || 'cards') === 'threads';
+    var W = threadsOnly ? 150 : 196, H = threadsOnly ? 54 : 138;
+
+    // constellation
+    var cnP = byId[st.cn];
+    var cnEdges = EDGES.map(function (e) {
+      var a = NODE_POS[e[0]], b = NODE_POS[e[1]];
+      var hot = e[0] === st.cn || e[1] === st.cn;
+      return {
+        x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+        stroke: deco
+          ? (hot ? '#f2d67c' : (e[2] === 'in' ? 'rgba(227,194,74,.26)' : 'rgba(227,194,74,.13)'))
+          : (hot ? '#e0c47f' : (e[2] === 'in' ? 'rgba(198,158,86,.22)' : 'rgba(198,158,86,.12)')),
+        w: hot ? 1.6 : 0.8
+      };
+    });
+    var cnNodes = ALL.map(function (p) {
+      var pos = NODE_POS[p.id], on = p.id === st.cn;
+      var linked = EDGES.some(function (e) {
+        return (e[0] === p.id && e[1] === st.cn) || (e[1] === p.id && e[0] === st.cn);
+      });
+      var r = 8 + Math.min(Math.round(p.cites / 90), 9);
+      return {
+        short: p.title.length > 26 ? p.title.slice(0, 24) + '…' : p.title,
+        wrapCss: {
+          position: 'absolute', left: (pos.x / 820 * 100) + '%', top: (pos.y / 546 * 100) + '%',
+          width: 0, height: 0, cursor: 'pointer', zIndex: on ? 10 : 2
+        },
+        dotCss: {
+          position: 'absolute', left: '50%', top: '50%',
+          transform: 'translate(-50%,-50%)' + (deco ? ' rotate(45deg)' : ''), display: 'block',
+          width: r + 'px', height: r + 'px',
+          borderRadius: deco ? '1px' : '50%',
+          background: deco ? p.topic.deco : p.topic.color,
+          boxShadow: deco
+            ? (on ? '0 0 0 3px rgba(227,194,74,.75),0 0 16px rgba(227,194,74,.45)'
+              : (linked ? '0 0 0 2px rgba(227,194,74,.4)' : '0 0 0 1px rgba(0,0,0,.5)'))
+            : (on ? '0 0 0 3px rgba(224,196,127,.7),0 0 14px rgba(224,196,127,.5)'
+              : (linked ? '0 0 0 2px rgba(224,196,127,.35)' : '0 0 0 1px rgba(0,0,0,.4)')),
+          opacity: on || linked ? 1 : 0.72,
+          transition: 'box-shadow .2s,opacity .2s'
+        },
+        labelCss: {
+          position: 'absolute', left: '50%', top: (r / 2 + 5) + 'px',
+          transform: 'translateX(-50%)', display: 'block',
+          font: deco ? "400 8.5px/1.2 Federo,'Gill Sans',sans-serif" : "400 8.5px/1.2 'IBM Plex Mono',monospace",
+          letterSpacing: deco ? '.1em' : '.03em',
+          color: deco
+            ? (on ? '#f4eedd' : 'rgba(240,233,216,' + (linked ? '.72' : '.32') + ')')
+            : (on ? '#f3e6c8' : 'rgba(240,224,196,' + (linked ? '.7' : '.34') + ')'),
+          width: '108px', textAlign: 'center', whiteSpace: 'nowrap',
+          overflow: 'hidden', textOverflow: 'ellipsis', pointerEvents: 'none'
+        },
+        onClick: function () { self.setState({ cn: p.id }); }
+      };
+    });
+    var cnLinks = EDGES.filter(function (e) { return e[0] === st.cn || e[1] === st.cn; })
+      .slice(0, 4).map(function (e) {
+        var other = byId[e[0] === st.cn ? e[1] : e[0]];
+        return {
+          title: other.title,
+          foot: (e[0] === st.cn ? 'CITES · ' : 'CITED BY · ') + other.venue.toUpperCase() + ' ' + other.year,
+          onClick: function () { self.setState({ cn: other.id }); }
+        };
+      });
+
+    // pinboard
+    var pbCards = ALL.map(function (p) {
+      var pos = st.pos[p.id], on = p.id === st.pb, dragging = st.drag && st.drag.id === p.id;
+      return {
+        title: p.title, first: p.first, venue: p.venue.toUpperCase(), year: p.year,
+        short: p.title.length > 22 ? p.title.slice(0, 20) + '…' : p.title,
+        full: !threadsOnly, compact: threadsOnly,
+        pipCss: self.pip(p, threadsOnly ? 9 : 10),
+        css: {
+          position: 'absolute', left: pos.x + 'px', top: pos.y + 'px',
+          width: W + 'px', height: H + 'px',
+          cursor: dragging ? 'grabbing' : 'grab',
+          background: deco
+            ? (on ? '#fbf6e6' : 'linear-gradient(178deg,#f4eedd,#e7dfc4)')
+            : (on ? '#fffdf4' : 'linear-gradient(178deg,#f6ecd3,#ece2c6)'),
+          border: deco ? '1px solid rgba(227,194,74,.6)' : '1px solid rgba(90,58,32,.32)',
+          boxShadow: (dragging ? '0 26px 44px rgba(0,0,0,.55)'
+            : (on ? '0 16px 30px rgba(0,0,0,.5)' : '0 8px 16px rgba(0,0,0,.4)'))
+            + (deco ? ',inset 0 0 0 3px #f4eedd,inset 0 0 0 4px rgba(22,21,71,.28)' : ''),
+          transform: 'rotate(' + (dragging ? 0 : pos.rot) + 'deg)' + (on && !dragging ? ' scale(1.03)' : ''),
+          transition: dragging ? 'none' : 'transform .2s cubic-bezier(.22,.8,.28,1),box-shadow .2s',
+          zIndex: dragging ? 60 : (on ? 20 : 5),
+          userSelect: 'none'
+        },
+        onDown: function (e) {
+          e.preventDefault();
+          self.setState({
+            pb: p.id,
+            drag: { id: p.id, dx: e.clientX - pos.x, dy: e.clientY - pos.y, ox: e.clientX, oy: e.clientY }
+          });
+        },
+        onClick: function () { self.setState({ pb: p.id }); }
+      };
+    });
+
+    var pbThreads = [];
+    TOPICS.forEach(function (t) {
+      t.papers.forEach(function (p, i) {
+        t.papers.forEach(function (q, j) {
+          if (j <= i) return;
+          var a = st.pos[p.id], b = st.pos[q.id];
+          var x1 = a.x + W / 2, y1 = a.y + 6, x2 = b.x + W / 2, y2 = b.y + 6;
+          var hot = p.id === st.pb || q.id === st.pb;
+          pbThreads.push({
+            d: 'M' + x1 + ' ' + y1 + ' Q' + ((x1 + x2) / 2) + ' ' + (Math.max(y1, y2) + 120) + ' ' + x2 + ' ' + y2,
+            stroke: deco
+              ? (hot ? 'rgba(227,194,74,.85)' : 'rgba(227,194,74,.17)')
+              : (hot ? 'rgba(156,47,36,.9)' : 'rgba(156,47,36,.16)'),
+            w: hot ? 2.2 : 1
+          });
+        });
+      });
+    });
+
+    var pbSel = byId[st.pb];
+
+    // contact sheet
+    var csSheets = ALL.map(function (p) {
+      return {
+        year: p.year, title: p.title,
+        pipCss: Object.assign(self.pip(p, 8), { position: 'absolute', right: '6px', top: '5px' }),
+        css: {
+          position: 'relative', aspectRatio: '17/22', cursor: 'pointer',
+          background: deco ? 'linear-gradient(178deg,#f4eedd,#e5dcc0)' : 'linear-gradient(178deg,#f6ecd3,#e6dbbe)',
+          border: deco ? '1px solid rgba(227,194,74,.45)' : '1px solid rgba(90,58,32,.4)',
+          borderLeft: '2px solid ' + (deco ? p.topic.deco : p.topic.color),
+          transformOrigin: 'center',
+          transition: 'transform .2s cubic-bezier(.22,.8,.28,1),box-shadow .2s,border-color .2s'
+        },
+        titleCss: {
+          position: 'absolute', left: 0, right: 0, bottom: 0, padding: '4px 5px',
+          background: deco ? 'rgba(11,10,26,.9)' : 'rgba(26,17,10,.86)',
+          color: deco ? '#f4eedd' : '#f3e6c8',
+          font: deco ? "400 6.5px/1.34 Federo,'Gill Sans',sans-serif" : "400 6.5px/1.34 'IBM Plex Mono',monospace",
+          maxHeight: '44%', overflow: 'hidden'
+        },
+        onClick: function () { self.setState({ cs: p.id }); }
+      };
+    });
+    var csP = st.cs ? byId[st.cs] : ALL[0];
+
+    return {
+      isDeco: deco, isScript: !deco,
+      stop: function (e) { e.stopPropagation(); },
+
+      cnCrumb: cnP.topic.name + ' · ' + cnP.id,
+      cnEdgeLabel: EDGES.length + ' CITATION EDGES · NODE SIZE = TIMES CITED',
+      cnEdges: cnEdges, cnNodes: cnNodes, cnP: cnP,
+      cnFields: this.fields(cnP), cnLinks: cnLinks,
+      cnLegend: TOPICS.map(function (t) {
+        return {
+          name: t.name,
+          css: {
+            font: deco ? "400 8.5px/1 Federo,'Gill Sans',sans-serif" : "400 8.5px/1 'IBM Plex Mono',monospace",
+            letterSpacing: deco ? '.14em' : '.08em',
+            color: deco ? 'rgba(240,233,216,.72)' : 'rgba(240,224,196,.7)', padding: '5px 8px',
+            borderLeft: '3px solid ' + (deco ? t.deco : t.color),
+            background: deco ? 'rgba(10,9,24,.72)' : 'rgba(28,20,12,.6)',
+            boxShadow: deco ? 'inset 0 0 0 1px rgba(227,194,74,.2)' : 'none'
+          }
+        };
+      }),
+
+      pbCrumb: pbSel.title.length > 50 ? pbSel.title.slice(0, 48) + '…' : pbSel.title,
+      pbHint: (threadsOnly ? 'THREADS ONLY' : 'FULL CARDS') + ' · DRAG TO MOVE · SCROLL THE BOARD',
+      pbCards: pbCards, pbThreads: pbThreads,
+      pbOnMove: function (e) {
+        var d = st.drag;
+        if (!d) return;
+        var pos = Object.assign({}, st.pos);
+        pos[d.id] = {
+          x: Math.max(0, Math.min(2400 - W, e.clientX - d.dx)),
+          y: Math.max(0, Math.min(1600 - H, e.clientY - d.dy)),
+          rot: pos[d.id].rot
+        };
+        self.setState({ pos: pos });
+      },
+      pbOnUp: function () { if (st.drag) self.setState({ drag: null }); },
+
+      csCount: ALL.length + ' FIRST PAGES',
+      csSheets: csSheets,
+      csOpen: !!st.cs, csP: csP, csFields: this.fields(csP),
+      csRelated: csP.topic.papers.filter(function (x) { return x.id !== csP.id; }).slice(0, 3).map(function (x) {
+        return {
+          title: x.title, foot: x.venue.toUpperCase() + ' · ' + x.year + ' · ' + x.cites,
+          onClick: function () { self.setState({ cs: x.id }); }
+        };
+      }),
+      csClose: function () { self.setState({ cs: null }); }
+    };
+  }
+}
+
+</script>
+</body>
+</html>
