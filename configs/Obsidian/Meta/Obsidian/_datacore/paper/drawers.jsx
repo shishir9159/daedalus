@@ -17,7 +17,8 @@
 //  REQUIRED          design "medieval" | "art deco"
 //  WHAT TO COLLECT   tag "paper" (or a list) · folder null
 //  THE DRAWERS       drawerContents "leaves"|"rows" · dropDepth 22 ·
-//                    rolledTop true · groupBy · order · sort · perRow · collapsed
+//                    leaf "scroll"|"sheet" · groupBy · order · sort · perRow ·
+//                    collapsed
 //  READING VIEW      readingStain "auto" | true | false
 //  OTHER             queueSize (refill size only) · motion · full · webfonts
 //
@@ -63,9 +64,13 @@
 //                  denser, sortable by eye, no picture of anything.
 //  dropDepth       how far an open drawer comes towards you, in px. 0 is a flat
 //                  accordion; past ~50 the perspective starts to shear.
-//  rolledTop       scriptorium only: whether a leaf is a sheet with a torn edge
-//                  or a scroll with a rolled head. Ignored by art deco, which
-//                  has no torn edges anywhere in it.
+//  leaf            scriptorium only, and it names a FACE rather than toggling
+//                  one: "scroll" is the sheet with the rolled top, "sheet" is
+//                  the flat one torn on all four edges. Both are the study's
+//                  own photographed paper, so both are exactly what it drew.
+//                  Ignored by art deco, which has no torn edges in it at all.
+//                  `rolledTop={false}` is the older spelling of leaf="sheet"
+//                  and still works; `leaf` wins when both are given.
 //  readingStain    the coffee ring in the reading panel's margin. "auto" is the
 //                  default and means what the ring has always meant: this paper
 //                  is being read. true and false override it either way.
@@ -83,7 +88,7 @@ const core = await dc.require("Meta/Obsidian/_datacore/paper/core.jsx");
 
 const {
   designClass, DesignError, usePapers, indexBy, useDrawers, unreadOf, relatedTo,
-  Pip, PageSheet, ReadingPanel, Styles, useFitHeight, useEscape, footOf, clamp,
+  Pip, ReadingPanel, Styles, useFitHeight, useEscape, footOf, clamp,
 } = core;
 
 // ── code-level constants (not user tweaks) ──────────────────────────────────
@@ -96,10 +101,33 @@ const ROW_STEP = { medieval: 268, deco: 216 };
 /* Long enough for the flight to land before the list re-sorts under it. */
 const FLY_MS = 460;
 
+/**
+ * The two leaf faces the scriptorium draws, by name.
+ *
+ * These are the study's own photographed sheets, not a shape generated in CSS
+ * — see --pv-leaf-scroll / --pv-leaf-sheet in core.jsx. There is no third one
+ * to choose from because the study does not have a third one; if it grows one,
+ * it goes here and in that variable block, and nowhere else.
+ *
+ *   scroll   a sheet whose top is rolled. The study's default.
+ *   sheet    a flat sheet, torn on all four edges.
+ *
+ * `rolledTop` is the older boolean spelling of the same choice and still
+ * works; the name wins when both are given.
+ */
+const LEAF_FACES = ["scroll", "sheet"];
+
+function faceOf(leaf, rolledTop) {
+  const named = String(leaf ?? "").toLowerCase().trim();
+  if (named === "sheet" || named === "flat") return "sheet";
+  if (named === "scroll" || named === "rolled") return "scroll";
+  return rolledTop === false ? "sheet" : "scroll";
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 //  One paper, as a leaf in the tray
 // ════════════════════════════════════════════════════════════════════════════
-function Leaf({ paper, index, queued, flying, rolled, onQueue, onDissolve }) {
+function Leaf({ paper, index, queued, flying, flat, onQueue, onDissolve }) {
   return (
     <div
       class="pvd-leaf-wrap"
@@ -112,7 +140,7 @@ function Leaf({ paper, index, queued, flying, rolled, onQueue, onDissolve }) {
       }}
     >
       <div
-        class={"pvd-leaf" + (rolled ? " is-rolled" : "")}
+        class={"pvd-leaf" + (flat ? " is-flat" : "")}
         title={`${paper.title}\nclick · queue   double-click · read   right-click or alt-click · dissolve`}
         onClick={onQueue}
         onContextMenu={onDissolve}
@@ -186,7 +214,7 @@ function Line({ paper, index, queued, flying, onQueue, onDissolve }) {
 //  One drawer
 // ════════════════════════════════════════════════════════════════════════════
 function Drawer({
-  drawer, open, depth, leaves, rolled, perRow, collapsed, step,
+  drawer, open, depth, leaves, flat, perRow, collapsed, step,
   queue, flying, onOpen, onShut, onQueue, onRead, onDissolve,
 }) {
   const trayRef = dc.useRef(null);
@@ -293,7 +321,7 @@ function Drawer({
             {rows.map((row, ri) => (
               <div class="pvd-row" key={ri}>
                 {row.map((p, i) => (
-                  <Leaf key={p.id} rolled={rolled} {...handlers(p, ri * perRow + i)} />
+                  <Leaf key={p.id} flat={flat} {...handlers(p, ri * perRow + i)} />
                 ))}
               </div>
             ))}
@@ -312,9 +340,9 @@ function Drawer({
         )}
       </div>
 
-      {/* The drawer front, on its hinge. It belongs to the same 3D context as
-          the well above it, so the two read as one box rather than as a panel
-          with a picture of a panel under it. */}
+      {/* The drawer front, on its hinge — folded by the perspective on the
+          drawer itself rather than by sharing a flattened 3D context with the
+          well, which is what used to eat the clicks on the leaves. */}
       <div class="pvd-flap" onClick={shut} title="shut the drawer">
         <span class="pv-lozenge" />
         <span class="pvd-flap-idx">{drawer.idx}</span>
@@ -351,7 +379,8 @@ function Chest({
   // the four tweaks
   drawerContents = "leaves",
   dropDepth = 22,
-  rolledTop = true,
+  leaf = "scroll",
+  rolledTop = undefined,
   readingStain = "auto",
   // how the chest is filled
   groupBy = "topic",
@@ -371,7 +400,7 @@ function Chest({
 
   const leaves = String(drawerContents ?? "leaves") !== "rows";
   const depth = clamp(0, Number(dropDepth) || 0, 70);
-  const rolled = skin === "medieval" && rolledTop !== false;
+  const flat = skin === "medieval" && faceOf(leaf, rolledTop) === "sheet";
   const step = ROW_STEP[skin];
 
   // ── session state ────────────────────────────────────────────────────────
@@ -404,11 +433,21 @@ function Chest({
   dc.useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
   const later = (fn, ms) => { timers.current.push(window.setTimeout(fn, ms)); };
 
-  // The query resolves a tick or two after the first render, so the top drawer
-  // is chosen once the papers are actually there.
+  /**
+   * The top drawer opens ONCE, when the papers first arrive.
+   *
+   * This used to be "if nothing is open, open the first one", which meant a
+   * chest that could not be shut: every way of closing a drawer set open to
+   * null, the effect saw null on the very next pass and pulled drawer one
+   * straight back out, replaying the opening animation. Right-click looked
+   * like it was re-opening the drawer because it was.
+   */
+  const opened = dc.useRef(false);
   dc.useEffect(() => {
-    if (open == null && drawers.length) setOpen(drawers[0].id);
-  }, [drawers, open]);
+    if (opened.current || !drawers.length) return;
+    opened.current = true;
+    setOpen(drawers[0].id);
+  }, [drawers]);
 
   // A paper that has been renamed or deleted since it was queued is gone; the
   // queue is a list of ids, so it has to be filtered rather than trusted.
@@ -537,7 +576,7 @@ function Chest({
                 open={d.id === open}
                 depth={depth}
                 leaves={leaves}
-                rolled={rolled}
+                flat={flat}
                 perRow={perRow}
                 collapsed={collapsed}
                 step={step}
@@ -619,7 +658,7 @@ function Chest({
                 <span class="pvd-veil-title">THE READING QUEUE</span>
                 <i class="pv-sep" />
                 <span class="pvd-veil-pos">
-                  {live.length ? `${qi + 1} of ${live.length}` : "nothing waiting"}
+                  {live.length ? `${qi + 1} of ${live.length}` : "the queue is empty"}
                 </span>
               </div>
 
@@ -643,31 +682,25 @@ function Chest({
                         onClick={() => read(id)}
                         onContextMenu={(e) => { e.preventDefault(); toPile(id, "queue"); }}
                       >
-                        {/* The page named by `figure:`, so the card in front of
-                            you is recognisably the paper rather than a
-                            paragraph about it. Only the front card renders one
-                            — the four behind it are 80px of edge. */}
-                        {i === 0 && (
-                          <div class="pvd-qsheet">
-                            <PageSheet paper={paper} width={300} fit />
-                          </div>
-                        )}
-                        <div class="pvd-qtext">
-                          <div class="pvd-qtop">
-                            <span class="pvd-qvenue">
-                              {[paper.venue, paper.year].filter(Boolean).join(" · ")}
-                            </span>
-                            <i class="pv-rule" />
-                            <Pip paper={paper} size={16} />
-                          </div>
-                          <span class="pvd-qtitle">{paper.title}</span>
-                          <span class="pvd-qauthors">{paper.authorsFull}</span>
-                          {paper.affiliationLine && (
-                            <span class="pvd-qaffil">{paper.affiliationLine}</span>
-                          )}
-                          <i class="pvd-grow" />
-                          <span class="pvd-qfoot">{footOf(paper)}</span>
+                        {/* No page image here. A card put a rasterised page in
+                            a 520px box, which is a thumbnail of a thumbnail,
+                            and it pushed the pip and the venue out of line to
+                            make room. The card is a card; the page is what you
+                            get when you open it. */}
+                        <div class="pvd-qtop">
+                          <span class="pvd-qvenue">
+                            {[paper.venue, paper.year].filter(Boolean).join(" · ")}
+                          </span>
+                          <i class="pv-rule" />
+                          <Pip paper={paper} size={16} />
                         </div>
+                        <span class="pvd-qtitle">{paper.title}</span>
+                        <span class="pvd-qauthors">{paper.authorsFull}</span>
+                        {paper.affiliationLine && (
+                          <span class="pvd-qaffil">{paper.affiliationLine}</span>
+                        )}
+                        <i class="pvd-grow" />
+                        <span class="pvd-qfoot">{footOf(paper)}</span>
                       </div>
                     </div>
                   ))}
@@ -725,7 +758,22 @@ const CSS = `
   padding: 24px 30px 104px; display: flex; flex-direction: column; gap: 12px;
   perspective: 1700px; perspective-origin: 50% 26%;
 }
-.pvd-drawer { transform-style: preserve-3d; transform: translateZ(0); filter: brightness(.96); }
+/* THE DRAWER IS NOT A preserve-3d CONTEXT, and this is the reason clicking a
+   leaf did nothing for three rounds.
+   Inside a preserve-3d subtree Chromium hit-tests against the flattening
+   plane, and every descendant that gets its own composited layer — a leaf has
+   a transform, a filter and a running animation, so it gets three reasons —
+   drops out of the hit test. elementFromPoint over the whole face of a leaf
+   returned .pvd-row, its grandparent, which has no handler on it: the click
+   was landing on the tray behind the paper. elementsFromPoint still listed the
+   leaf, which is what made this look impossible; that call penetrates, and a
+   real pointer does not.
+   The 3D is kept where it is actually wanted — perspective here so the flap
+   folds on a hinge, translateZ from the stack's perspective so an open drawer
+   comes forward — and neither of those needs the children flattened together. */
+.pvd-drawer {
+  perspective: 1400px; transform: translateZ(0); filter: brightness(.96);
+}
 .pvd-drawer.is-open { transform: translateZ(var(--drop)); filter: none; }
 .pv.has-motion .pvd-drawer { transition: transform .4s cubic-bezier(.22,.8,.28,1), filter .3s; }
 
@@ -904,33 +952,39 @@ const CSS = `
 }
 
 /* — scriptorium: a torn sheet — */
+/* which face this leaf wears. One variable, two values, named in the props. */
+.pv.medieval .pvd-leaf { --pv-leaf: var(--pv-leaf-scroll); }
+.pv.medieval .pvd-leaf.is-flat { --pv-leaf: var(--pv-leaf-sheet); }
 .pv.medieval .pvd-leaf { filter: drop-shadow(0 7px 11px rgba(0,0,0,.55)); }
 .pv.medieval .pvd-leaf:hover {
   transform: translateY(-14px) rotate(0deg);
   filter: drop-shadow(0 16px 20px rgba(0,0,0,.6)) brightness(1.03);
 }
+/* The leaf face IS the mask: the same photographed sheet supplies the paper's
+   fibre and its torn outline, which is why the two agree. --pv-leaf is set per
+   leaf style, so a whole tray changes face by swapping one variable.
+   Alternate leaves are mirrored, exactly as the study does it, so five sheets
+   in a row are not five prints of the same tear. */
 .pv.medieval .pvd-leaf-paper {
   position: absolute; inset: 0; pointer-events: none;
   background:
     repeating-linear-gradient(180deg,rgba(90,58,32,0) 0 20px,rgba(90,58,32,.1) 20px 21px),
-    linear-gradient(178deg,#f6ecd3,#e9dcbd);
-  -webkit-mask-image: var(--pv-deckle); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
-  mask-image: var(--pv-deckle); mask-size: 100% 100%; mask-repeat: no-repeat;
+    var(--pv-leaf);
+  background-size: 100% 100%, 100% 100%; background-repeat: no-repeat, no-repeat;
+  -webkit-mask-image: var(--pv-leaf); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
+  mask-image: var(--pv-leaf); mask-size: 100% 100%; mask-repeat: no-repeat;
+  transform: translateZ(0);
 }
-.pv.medieval .pvd-leaf.is-rolled .pvd-leaf-paper {
-  -webkit-mask-image: var(--pv-deckle-roll); mask-image: var(--pv-deckle-roll);
-}
-/* the rolled head: a cylinder of paper across the top of the scroll */
-.pv.medieval .pvd-leaf.is-rolled .pvd-leaf-paper::after {
-  content: ""; position: absolute; left: 2%; right: 2%; top: 4px; height: 24px;
-  border-radius: 12px;
-  background: linear-gradient(180deg,#e2d0a8,#fbf3e0 34%,#e6d5ae 72%,#c6ad7c);
-  box-shadow: inset 0 -2px 3px rgba(90,58,32,.28), 0 2px 4px rgba(0,0,0,.25);
-}
-/* a light foxing stain, so no two sheets are the same age */
+.pv.medieval .pvd-leaf-wrap:nth-child(even) .pvd-leaf-paper { transform: scaleX(-1) translateZ(0); }
+/* a light foxing stain, clipped to the sheet it is on */
 .pv.medieval .pvd-leaf-stain {
-  position: absolute; right: 2px; bottom: 9px; width: 84px; height: 78px;
-  pointer-events: none; opacity: .85; transform: rotate(-13deg);
+  position: absolute; inset: 0; pointer-events: none;
+  -webkit-mask-image: var(--pv-leaf); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
+  mask-image: var(--pv-leaf); mask-size: 100% 100%; mask-repeat: no-repeat;
+}
+.pv.medieval .pvd-leaf-stain::before {
+  content: ""; position: absolute; right: 2px; bottom: 9px; width: 84px; height: 78px;
+  opacity: .85; transform: rotate(-13deg);
   background:
     radial-gradient(closest-side circle at 50% 50%,rgba(122,74,32,0) 58%,rgba(122,74,32,.3) 65%,
       rgba(86,46,14,.68) 73%,rgba(110,64,24,.34) 83%,rgba(122,74,32,0) 93%),
@@ -938,15 +992,23 @@ const CSS = `
   -webkit-mask-image: conic-gradient(from 24deg,#000 0 12%,rgba(0,0,0,.28) 20%,#000 34%,
     rgba(0,0,0,.46) 52%,#000 68%,rgba(0,0,0,.32) 82%,#000 100%);
 }
-/* the rubric: the red rule a scribe ruled the margin with */
+.pv.medieval .pvd-leaf-stain::after {
+  content: ""; position: absolute; right: 12px; bottom: 2px; width: 9px; height: 8px;
+  border-radius: 50%; opacity: .5;
+  background: radial-gradient(closest-side circle,rgba(88,48,16,.52),rgba(92,52,18,0));
+}
+/* the rubric: the red rule a scribe ruled the margin with, and its hairline */
 .pv.medieval .pvd-leaf-rubric {
   position: absolute; left: 15px; top: 32px; bottom: 16px; width: 3px; pointer-events: none;
   background: linear-gradient(180deg,#8d2f26,#5f1f18); opacity: .88;
-  box-shadow: 8px 0 0 -2px rgba(141,47,38,.22);
 }
-.pv.medieval .pvd-leaf:not(.is-rolled) .pvd-leaf-rubric { top: 14px; bottom: 14px; left: 11px; }
+.pv.medieval .pvd-leaf-rubric::after {
+  content: ""; position: absolute; left: 8px; top: -3px; bottom: -4px; width: 1px;
+  background: rgba(141,47,38,.22);
+}
+.pv.medieval .pvd-leaf.is-flat .pvd-leaf-rubric { top: 14px; bottom: 14px; left: 11px; }
 .pv.medieval .pvd-leaf-body { padding: 31px 17px 16px 30px; }
-.pv.medieval .pvd-leaf:not(.is-rolled) .pvd-leaf-body { padding: 20px 17px 16px 26px; }
+.pv.medieval .pvd-leaf.is-flat .pvd-leaf-body { padding: 20px 17px 16px 26px; }
 .pv.medieval .pvd-leaf-fanlet, .pv.medieval .pvd-leaf-inner,
 .pv.medieval .pvd-leaf-corners, .pv.medieval .pvd-leaf-hr { display: none; }
 
@@ -1157,13 +1219,8 @@ const CSS = `
 .pv.medieval .pvd-fan-foot { color: rgba(42,29,16,.5); }
 .pv.deco .pvd-fan-foot { color: rgba(240,233,216,.45); }
 
-/* The queue, as a stack you look down onto. Sized off the pane rather than
-   fixed at 520x330: the card carries a page image now, and a 520px box put
-   that page at about the size of a postage stamp. */
-.pvd-stackbox {
-  position: relative; width: min(880px, 78%); height: min(460px, 62%);
-  min-width: 440px; min-height: 300px;
-}
+/* the queue, as a stack you look down onto — the study's size, which was right */
+.pvd-stackbox { position: relative; width: 520px; height: 330px; }
 .pvd-qwrap {
   position: absolute; inset: 0;
   transform: translateY(calc(var(--i) * -13px)) scale(calc(1 - var(--i) * .045));
@@ -1171,14 +1228,10 @@ const CSS = `
 }
 .pvd-qcard {
   position: relative; height: 100%; box-sizing: border-box; cursor: pointer;
-  padding: 26px 28px 22px 34px; display: flex; gap: 26px;
+  padding: 26px 28px 22px 34px; display: flex; flex-direction: column; gap: 11px;
   background: var(--pv-paper); border: 1px solid var(--pv-line);
   box-shadow: 0 22px 42px rgba(0,0,0,.55);
 }
-/* the page on the left, at whatever width its height implies */
-.pvd-qsheet { flex: 0 0 auto; max-width: 42%; display: flex; align-items: stretch; }
-.pvd-qsheet .pv-sheet { box-shadow: 0 6px 18px rgba(0,0,0,.3); }
-.pvd-qtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
 .pv.medieval .pvd-qcard {
   border-color: rgba(90,58,32,.4); color: var(--pv-ink);
   border-left: 6px solid transparent;
@@ -1236,4 +1289,7 @@ function DrawerStyles() {
   return null;
 }
 
-return { Drawers, Chest, DrawerStyles, Leaf, Line, Drawer, LEAF_TILT, ROW_STEP };
+return {
+  Drawers, Chest, DrawerStyles, Leaf, Line, Drawer,
+  LEAF_TILT, ROW_STEP, LEAF_FACES, faceOf,
+};
