@@ -1,0 +1,77 @@
+body {
+    --line-height-normal: 1.6;
+    /* default 1.5 */
+    --p-spacing: 1.2rem;
+    /* default 1rem */
+    --file-line-width: 46rem;
+    /* needs Settings → Editor → Readable line length */
+    --metadata-display-reading: none;
+
+    --code-size: 0.9em;
+
+    --table-row-alt-background: var(--background-secondary);
+    --table-header-weight: var(--font-semibold);
+
+    --note-codeblock-rule: 3px solid var(--color-accent);
+    --note-syntax-opacity: 0.7;
+    /* fade for #, **, [[ ]] and friends */
+    --note-active-line: var(--background-modifier-hover);
+}
+
+
+/* ── Headings ────────────────────────────────────────────────────────────
+   text-wrap:balance stops a two-line heading from leaving one orphan word,
+   and scroll-margin keeps a heading clear of the banner when you jump to it
+   from an outline or a [[note#heading]] link. */
+.markdown-rendered :is(h1, h2, h3, h4, h5, h6),
+.markdown-source-view.mod-cm6 :is(.HyperMD-header) {
+    text-wrap: balance;
+}
+
+.markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
+    /* scroll-margin-top: var(--size-4-4); */
+    scroll-margin-top: 2rem;
+}
+
+/* Avoid ragged last lines in body text. Cheap in Chromium, and only paragraphs. */
+.markdown-rendered p,
+.markdown-rendered li {
+    text-wrap: pretty;
+}
+
+
+/* ── Editor legibility ───────────────────────────────────────────────────
+   De-emphasise markdown syntax characters. But, NOT list bullets, task
+   checkboxes or table pipes. */
+.markdown-source-view.mod-cm6 .cm-formatting:not(.cm-formatting-list,
+    .cm-formatting-task,
+    .cm-formatting-quote) {
+    opacity: var(--note-syntax-opacity);
+}
+
+.markdown-source-view.mod-cm6 .cm-line.cm-active {
+    background-color: var(--note-active-line);
+}
+
+.markdown-source-view.mod-cm6.mod-image-selected .cm-line.cm-active {
+    background-color: transparent;
+}
+
+.markdown-rendered pre,
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock {
+    border-left: var(--note-codeblock-rule);
+}
+
+/* keep the rule continuous instead of re-drawn per line */
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock {
+    border-radius: 0;
+}
+
+.markdown-rendered table {
+    font-variant-numeric: tabular-nums;
+}
+
+.markdown-rendered .image-embed:not([src^="banner-" i], [src*="/banner-" i], [src^="background-" i], [src*="/background-" i]) img {
+    max-height: 80vh;
+    object-fit: contain;
+}

@@ -1,0 +1,349 @@
+/* ============================================================================
+   🖼️  AUTO BANNERS
+   ----------------------------------------------------------------------------
+
+     ![[banner-sunset-over-dhaka.png]]         →  banner across the top
+     ![[banner-gradient-sunset.png]]           →  banner that fades out at the bottom
+     ![[banner-round-sunset.png]]              →  banner + circular icon
+     ![[banner-gradient-square-sunset.png]]    →  tokens combine, any order
+
+   Note backgrounds live in their own snippet: "🎨 background.css".
+
+   The BANNER ICON is whatever icon Iconize already assigned to the note
+   (Iconize → "Toggle icon above title" must be on, position "above"). Its
+   vertical centre is parked exactly on the bottom edge of the banner.
+
+   Recognised name tokens (case-insensitive, anywhere after the prefix):
+     -gradient-            fade the bottom of the banner into the page
+     -round- / -circle-    circular banner icon for this note
+     -square-              square banner icon for this note
+     -hNNN-                banner height for this note, 100…300 in steps of 10
+                           e.g. banner-h260-sunset.png
+
+   Put the embed on a line of its own, near the top of the note.
+   Nothing renders taller than --ab-height-cap (300px).
+   ========================================================================== */
+
+
+/* ── knobs ───────────────────────────────────────────────────────────────── */
+body {
+    --ab-height: 210px;
+    --ab-height-cap: 300px;      /* hard ceiling; nothing renders taller */
+
+    /* every rule below uses --ab-h, never --ab-height directly, so the cap and
+       the per-note -hNNN- token both flow through one place */
+    --ab-h: min(var(--ab-height), var(--ab-height-cap));
+    --ab-radius: 0px;
+    --ab-object-position: 50% 50%;
+    --ab-gradient-fade: 55%;
+
+    --ab-icon-size: 88px;
+    --ab-icon-radius: 22px;
+    --ab-icon-ring: 4px;
+    --ab-icon-ring-color: var(--background-primary);
+    --ab-icon-bg: var(--background-secondary);
+    --ab-icon-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    --ab-gap: 12px;
+
+    /* Obsidian core calls it --file-margins-x; Fancy-a-Story calls it
+       --file-margins-inline. Never use --file-margins inside calc(): since
+       1.12 it is a two-value shorthand ("32px 32px") and calc() rejects it.
+       That one change is what silently broke most older banner snippets. */
+    --ab-mx: var(--file-margins-inline, var(--file-margins-x, var(--size-4-8)));
+    --ab-my: var(--file-margins-block, var(--file-margins-y, var(--size-4-8)));
+}
+
+@media (max-width: 700px) {
+    body {
+        --ab-height: 140px;
+        --ab-icon-size: 64px;
+    }
+}
+
+
+/* ============================================================================
+   1. RESERVE THE SPACE
+   ----------------------------------------------------------------------------
+   The banner is taken out of flow, so the note's sizer has to be padded to
+   make room. Two steps, because a note without an Iconize icon needs no room
+   for the half icon that hangs below the banner.
+   ========================================================================== */
+
+.view-content>.markdown-reading-view>.markdown-preview-view>.markdown-preview-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *)),
+.view-content>.markdown-source-view.mod-cm6>.cm-editor>.cm-scroller>.cm-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *)) {
+    padding-top: calc(var(--ab-h) - var(--ab-my) + var(--ab-gap));
+}
+
+.view-content>.markdown-reading-view>.markdown-preview-view>.markdown-preview-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *)):has(.iconize-title-icon:not([style*="display: none"])),
+.view-content>.markdown-source-view.mod-cm6>.cm-editor>.cm-scroller>.cm-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *)):has(.iconize-title-icon:not([style*="display: none"])) {
+    padding-top: calc(var(--ab-h) - var(--ab-my) + var(--ab-icon-size) / 2);
+}
+
+
+/* ============================================================================
+   2. FLATTEN EVERY BOX BETWEEN THE <img> AND THE SCROLLER
+   ----------------------------------------------------------------------------
+   The banner <img> is positioned against the scroller — .markdown-preview-view
+   in reading view, .cm-scroller in live preview. Both are position:relative and
+   both carry padding:var(--file-margins), so top/left:0 + width:100% lands
+   edge to edge across the pane and still scrolls away with the note.
+   Everything in between must therefore be unpositioned and zero height.
+   ========================================================================== */
+
+/* the embed wrapper itself: a <span> in reading view, a <div> in live preview */
+.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *) {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    /* Obsidian forces `contain: paint !important` on live preview block
+       widgets; that would make the embed the containing block and clip the
+       banner into a zero height box. */
+    contain: none !important;
+}
+
+/* Obsidian's own rule for live preview block widgets is
+       .markdown-source-view.mod-cm6 .cm-content > [contenteditable=false] { contain: paint !important }
+   which is (0,4,0) — the rule above only reaches (0,3,0) and loses even though
+   both are !important. This one is (0,6,0) and wins. Without it the banner
+   stays trapped inside a zero-height box in the editor. */
+.markdown-source-view.mod-cm6 .cm-content>.internal-embed:is([src^="banner-" i], [src*="/banner-" i]) {
+    contain: none !important;
+    display: block !important;
+    height: 0 !important;
+    overflow: visible !important;
+}
+
+/* live preview adds .image-wrapper (position:relative) — neutralise it */
+.internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *) .image-wrapper {
+    display: block !important;
+    position: static !important;
+    height: 0 !important;
+}
+
+/* reading view wraps the embed in <div class="el-p"><p> … </p></div> */
+.markdown-preview-section>div:has(> p > .internal-embed:is([src^="banner-" i], [src*="/banner-" i])) {
+    position: static !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+}
+
+.markdown-preview-section>div>p:has(> .internal-embed:is([src^="banner-" i], [src*="/banner-" i])) {
+    position: static !important;
+    margin: 0 !important;
+}
+
+.markdown-preview-section>div>p:has(> .internal-embed:is([src^="banner-" i], [src*="/banner-" i]))>br {
+    display: none !important;
+}
+
+
+/* ============================================================================
+   3. THE BANNER
+   ========================================================================== */
+
+.view-content>.markdown-reading-view>.markdown-preview-view .internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *) img,
+.view-content>.markdown-source-view.mod-cm6>.cm-editor>.cm-scroller .internal-embed:is([src^="banner-" i], [src*="/banner-" i]):not(.markdown-embed *) img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: var(--ab-h) !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: cover;
+    object-position: var(--ab-object-position);
+    border-radius: var(--ab-radius) !important;
+    box-shadow: none !important;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* -gradient- → dissolve the bottom of the banner into the page */
+.internal-embed[src*="banner-" i][src*="-gradient-" i]:not(.markdown-embed *) img {
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--ab-gradient-fade), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 var(--ab-gradient-fade), transparent 100%);
+}
+
+/* editor chrome that would otherwise float over the banner */
+.internal-embed:is([src^="banner-" i], [src*="/banner-" i]) :is(.image-resize-corner, .embed-actions) {
+    display: none !important;
+}
+
+/* only the first banner in a note wins */
+.cm-content>.internal-embed:is([src^="banner-" i], [src*="/banner-" i])~.internal-embed:is([src^="banner-" i], [src*="/banner-" i]) img,
+.markdown-preview-section>div:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i]))~div .internal-embed:is([src^="banner-" i], [src*="/banner-" i]) img {
+    display: none !important;
+}
+
+
+/* ============================================================================
+   4. THE BANNER ICON  (Iconize's note icon, reused)
+   ----------------------------------------------------------------------------
+   Iconize builds
+       .iconize-inline-title-wrapper > .iconize-title-icon + .inline-title
+   and writes display / width / transform / font-size as *inline* styles, hence
+   the !important on exactly those. When a note has no icon it sets
+   display:none on .iconize-title-icon — that is what the :not() guards against.
+
+   The icon stays in flow, so it lines up with the text column for free, and is
+   pulled up by exactly one icon height. Since the sizer reserves
+   height + size/2, the icon's centre lands precisely on the banner's bottom
+   edge and the title still starts where the padding ends.
+   ========================================================================== */
+
+/* keep the negative margin from collapsing out and dragging the title up too */
+.markdown-preview-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i])) .iconize-inline-title-wrapper,
+.cm-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i])) .iconize-inline-title-wrapper {
+    display: flow-root !important;
+}
+
+.markdown-preview-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i])) .iconize-title-icon:not([style*="display: none"]),
+.cm-sizer:has(.internal-embed:is([src^="banner-" i], [src*="/banner-" i])) .iconize-title-icon:not([style*="display: none"]) {
+    position: relative;
+    z-index: 1;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    width: var(--ab-icon-size) !important;
+    height: var(--ab-icon-size) !important;
+    padding: calc(var(--ab-icon-size) * 0.15);
+    margin: calc(-1 * var(--ab-icon-size)) 0 var(--ab-gap) 0 !important;
+    transform: none !important;
+
+    font-size: calc(var(--ab-icon-size) * 0.5) !important;
+    line-height: 1;
+
+    overflow: hidden;
+    border-radius: var(--ab-icon-radius);
+    background-color: var(--ab-icon-bg);
+    box-shadow:
+        0 0 0 var(--ab-icon-ring) var(--ab-icon-ring-color),
+        var(--ab-icon-shadow);
+}
+
+.iconize-title-icon>svg {
+    width: 100% !important;
+    height: 100% !important;
+    color: var(--text-normal);
+}
+
+/* per note shape overrides, taken from the banner's file name */
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-round" i], [src*="-circle" i])) .iconize-title-icon,
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-round" i], [src*="-circle" i])) .iconize-title-icon {
+    border-radius: 50%;
+}
+
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i][src*="-square" i]) .iconize-title-icon,
+.cm-sizer:has(.internal-embed[src*="banner-" i][src*="-square" i]) .iconize-title-icon {
+    border-radius: 6px;
+}
+
+/* ============================================================================
+   5. PER-NOTE HEIGHT  —  banner-hNNN-name.png
+   ----------------------------------------------------------------------------
+   The height is set on the SIZER, not on the embed, and that is deliberate:
+   custom properties inherit downwards only, and the sizer is what carries the
+   padding-top that reserves the space. Setting it here means the padding and
+   the image height are driven by one value and can never disagree.
+
+   --ab-h is assigned directly rather than recomputed through min(), because a
+   var() chain declared on <body> has already been substituted by the time it
+   inherits down here. Only values within the 300px cap are generated.
+
+   Token must sit between hyphens (or before the extension):
+     banner-h260-sunset.png      banner-gradient-h240-round-sunset.png
+   ========================================================================== */
+
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h100-" i], [src*="-h100." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h100-" i], [src*="-h100." i])) { --ab-h: 100px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h110-" i], [src*="-h110." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h110-" i], [src*="-h110." i])) { --ab-h: 110px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h120-" i], [src*="-h120." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h120-" i], [src*="-h120." i])) { --ab-h: 120px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h130-" i], [src*="-h130." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h130-" i], [src*="-h130." i])) { --ab-h: 130px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h140-" i], [src*="-h140." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h140-" i], [src*="-h140." i])) { --ab-h: 140px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h150-" i], [src*="-h150." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h150-" i], [src*="-h150." i])) { --ab-h: 150px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h160-" i], [src*="-h160." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h160-" i], [src*="-h160." i])) { --ab-h: 160px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h170-" i], [src*="-h170." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h170-" i], [src*="-h170." i])) { --ab-h: 170px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h180-" i], [src*="-h180." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h180-" i], [src*="-h180." i])) { --ab-h: 180px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h190-" i], [src*="-h190." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h190-" i], [src*="-h190." i])) { --ab-h: 190px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h200-" i], [src*="-h200." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h200-" i], [src*="-h200." i])) { --ab-h: 200px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h210-" i], [src*="-h210." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h210-" i], [src*="-h210." i])) { --ab-h: 210px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h220-" i], [src*="-h220." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h220-" i], [src*="-h220." i])) { --ab-h: 220px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h230-" i], [src*="-h230." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h230-" i], [src*="-h230." i])) { --ab-h: 230px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h240-" i], [src*="-h240." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h240-" i], [src*="-h240." i])) { --ab-h: 240px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h250-" i], [src*="-h250." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h250-" i], [src*="-h250." i])) { --ab-h: 250px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h260-" i], [src*="-h260." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h260-" i], [src*="-h260." i])) { --ab-h: 260px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h270-" i], [src*="-h270." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h270-" i], [src*="-h270." i])) { --ab-h: 270px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h280-" i], [src*="-h280." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h280-" i], [src*="-h280." i])) { --ab-h: 280px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h290-" i], [src*="-h290." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h290-" i], [src*="-h290." i])) { --ab-h: 290px; }
+.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h300-" i], [src*="-h300." i])),
+.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h300-" i], [src*="-h300." i])) { --ab-h: 300px; }
+
+
+/* ============================================================================
+   6. HOUSEKEEPING
+   ========================================================================== */
+
+/* don't drag banners into transclusions, hover previews, canvas */
+:is(.markdown-embed, .hover-popover, .canvas-node-content) .internal-embed:is([src^="banner-" i], [src*="/banner-" i]) {
+    display: none !important;
+}
+
+/* The scroll-margin-top rule that used to sit here was a duplicate of the one
+   in "📝 note.css" and its comment was wrong — the banner scrolls away with the
+   content, so it never covers a heading you jump to. Typography lives there. */
+
+/* ── OPTIONAL ────────────────────────────────────────────────────────────────
+   The banner's embed line is zero-height, so in Live Preview there is nothing
+   to click when you want to change or remove the banner. Uncomment to get the
+   same file-name pill that "🎨 background.css" shows. It sits under the banner,
+   at the top of the note body. */
+
+/*
+.markdown-source-view.mod-cm6 .cm-content > .internal-embed:is([src^="banner-" i], [src*="/banner-" i]) {
+    height: auto !important;
+}
+
+.markdown-source-view.mod-cm6 .cm-content > .internal-embed:is([src^="banner-" i], [src*="/banner-" i])::after {
+    content: "🖼️ " attr(src);
+    display: inline-block;
+    padding: 0.15em 0.6em;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-ui-smaller);
+    line-height: 1.5;
+    white-space: nowrap;
+}
+*/

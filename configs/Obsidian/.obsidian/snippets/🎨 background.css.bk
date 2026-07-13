@@ -1,0 +1,221 @@
+/* ============================================================================
+   🎨  NOTE BACKGROUND  —  per-note wallpaper, no plugin, no cssclass
+   ----------------------------------------------------------------------------
+   Nothing to declare in frontmatter. Embed an image whose file name starts
+   with "background-" and it becomes the backdrop for that note only:
+
+     ![[background-paper-texture.png]]        →  backdrop at the default opacity
+     ![[background-opacity-45-paper.png]]     →  ...at 45% opacity
+     ![[background-opacity-10-grid.png]]      →  NN in steps of 5, from 5 to 100
+
+   Works with a bare file name or a folder path (Attachments/background-x.png),
+   in Reading view and Live Preview, and is case-insensitive.
+
+   Put the embed on a line of its own, near the top of the note — Obsidian
+   unloads content that is far off-screen, and the backdrop goes with it.
+
+   Independent of "🖼️ banner.css"; the two compose fine on the same note.
+   Verified against Obsidian 1.13.7. Uses :has().
+   ========================================================================== */
+
+
+/* @settings
+
+name: 🎨 Note Background
+id: note-background
+settings:
+    -
+        id: nb-opacity
+        title: Default opacity
+        description: Overridden per note by the -opacity-NN- token.
+        type: variable-number-slider
+        default: 0.25
+        min: 0
+        max: 1
+        step: 0.05
+    -
+        id: nb-blur
+        title: Blur
+        type: variable-number-slider
+        default: 0
+        min: 0
+        max: 20
+        step: 1
+        format: px
+    -
+        id: nb-saturate
+        title: Saturation
+        type: variable-number-slider
+        default: 1
+        min: 0
+        max: 3
+        step: 0.1
+    -
+        id: nb-position
+        title: Crop focus
+        type: variable-select
+        default: 50% 50%
+        options:
+            - 50% 50%
+            - 50% 0%
+            - 50% 100%
+            - 0% 50%
+            - 100% 50%
+*/
+
+
+/* ── knobs ───────────────────────────────────────────────────────────────── */
+body {
+    --nb-opacity: 0.25;
+    --nb-blur: 0px;
+    --nb-saturate: 1;
+    --nb-position: 50% 50%;
+}
+
+
+/* ============================================================================
+   1. SCOPE position:fixed TO THE PANE
+   ----------------------------------------------------------------------------
+   A plain position:fixed backdrop would cover the whole window, spilling over
+   sidebars and the other half of a split. contain:paint on .view-content makes
+   it the containing block for fixed descendants *and* clips to it, so the
+   backdrop fills exactly this leaf and holds still while the note scrolls.
+
+   Safe next to the banner snippet: .markdown-preview-view and .cm-scroller are
+   both position:relative, so they remain the containing block for the banner's
+   absolutely positioned image — only `fixed` is captured here.
+   ========================================================================== */
+
+.view-content:has(.internal-embed:is([src^="background-" i], [src*="/background-" i]):not(.markdown-embed *)) {
+    contain: paint;
+}
+
+
+/* ============================================================================
+   2. FLATTEN THE EMBED
+   ----------------------------------------------------------------------------
+   The embed itself must take no space and must not become a containing block,
+   or the backdrop gets trapped inside a zero-height box where the link sits.
+   ========================================================================== */
+
+.internal-embed:is([src^="background-" i], [src*="/background-" i]):not(.markdown-embed *) {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    contain: none !important;
+}
+
+/* Obsidian's own rule for live preview block widgets is
+       .markdown-source-view.mod-cm6 .cm-content > [contenteditable=false] { contain: paint !important }
+   which is (0,4,0) — the rule above only reaches (0,3,0) and loses even though
+   both are !important. This one is (0,6,0) and wins. */
+.markdown-source-view.mod-cm6 .cm-content > .internal-embed:is([src^="background-" i], [src*="/background-" i]) {
+    contain: none !important;
+    display: block !important;
+    height: 0 !important;
+    overflow: visible !important;
+}
+
+/* live preview wraps the image in .image-wrapper (position:relative) */
+.internal-embed:is([src^="background-" i], [src*="/background-" i]):not(.markdown-embed *) .image-wrapper {
+    display: block !important;
+    position: static !important;
+    height: 0 !important;
+}
+
+/* reading view wraps the embed in <div class="el-p"><p> … </p></div> */
+.markdown-preview-section > div:has(> p > .internal-embed:is([src^="background-" i], [src*="/background-" i])) {
+    position: static !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+}
+
+.markdown-preview-section > div > p:has(> .internal-embed:is([src^="background-" i], [src*="/background-" i])) {
+    position: static !important;
+    margin: 0 !important;
+}
+
+.internal-embed:is([src^="background-" i], [src*="/background-" i]) :is(.image-resize-corner, .embed-actions) {
+    display: none !important;
+}
+
+
+/* ============================================================================
+   3. THE BACKDROP
+   ========================================================================== */
+
+.view-content:has(.internal-embed:is([src^="background-" i], [src*="/background-" i])) .internal-embed:is([src^="background-" i], [src*="/background-" i]) img {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    object-fit: cover;
+    object-position: var(--nb-position);
+    opacity: var(--nb-opacity);
+    filter: blur(var(--nb-blur)) saturate(var(--nb-saturate));
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    /* negative z-index paints behind the note's content but still in front of
+       .view-content's own background */
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* the note surfaces paint their own opaque background over the backdrop */
+.view-content:has(.internal-embed:is([src^="background-" i], [src*="/background-" i])) :is(.markdown-preview-view,
+    .markdown-source-view,
+    .cm-editor,
+    .cm-scroller,
+    .cm-content,
+    .cm-gutters) {
+    background-color: transparent !important;
+}
+
+
+/* ============================================================================
+   4. OPACITY TOKEN
+   ----------------------------------------------------------------------------
+   CSS cannot read a number out of a file name, so each step gets its own rule.
+   Add a line here if you want a value that isn't a multiple of 5.
+   ========================================================================== */
+
+.internal-embed[src*="-opacity-5-" i],
+.internal-embed[src*="-opacity-05-" i] { --nb-opacity: 0.05; }
+.internal-embed[src*="-opacity-10-" i] { --nb-opacity: 0.10; }
+.internal-embed[src*="-opacity-15-" i] { --nb-opacity: 0.15; }
+.internal-embed[src*="-opacity-20-" i] { --nb-opacity: 0.20; }
+.internal-embed[src*="-opacity-25-" i] { --nb-opacity: 0.25; }
+.internal-embed[src*="-opacity-30-" i] { --nb-opacity: 0.30; }
+.internal-embed[src*="-opacity-35-" i] { --nb-opacity: 0.35; }
+.internal-embed[src*="-opacity-40-" i] { --nb-opacity: 0.40; }
+.internal-embed[src*="-opacity-45-" i] { --nb-opacity: 0.45; }
+.internal-embed[src*="-opacity-50-" i] { --nb-opacity: 0.50; }
+.internal-embed[src*="-opacity-55-" i] { --nb-opacity: 0.55; }
+.internal-embed[src*="-opacity-60-" i] { --nb-opacity: 0.60; }
+.internal-embed[src*="-opacity-65-" i] { --nb-opacity: 0.65; }
+.internal-embed[src*="-opacity-70-" i] { --nb-opacity: 0.70; }
+.internal-embed[src*="-opacity-75-" i] { --nb-opacity: 0.75; }
+.internal-embed[src*="-opacity-80-" i] { --nb-opacity: 0.80; }
+.internal-embed[src*="-opacity-85-" i] { --nb-opacity: 0.85; }
+.internal-embed[src*="-opacity-90-" i] { --nb-opacity: 0.90; }
+.internal-embed[src*="-opacity-95-" i] { --nb-opacity: 0.95; }
+.internal-embed[src*="-opacity-100-" i] { --nb-opacity: 1; }
+
+
+/* ============================================================================
+   5. HOUSEKEEPING
+   ========================================================================== */
+
+/* don't drag a note's backdrop into transclusions, hover previews, canvas */
+:is(.markdown-embed, .hover-popover, .canvas-node-content) .internal-embed:is([src^="background-" i], [src*="/background-" i]) {
+    display: none !important;
+}
