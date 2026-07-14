@@ -322,15 +322,16 @@ function Timeline(props) {
   const d = props.data, w = rhythmWindow(d);
   const at = function (m) { return ((m - w.a) / w.span) * 100; };
   const hours = [];
-  for (let h = w.hA; h <= w.hB; h++) if (h === w.hA || h === w.hB || h % 3 === 0) hours.push(h);
+  for (let hr = w.hA; hr <= w.hB; hr++) if (hr === w.hA || hr === w.hB || hr % 3 === 0) hours.push(hr);
   return (
     <div>
       <div class="tk-ax">
-        {hours.map(function (h) {
-          return <span key={h} style={{
-            left: at(h * 60) + "%",
-            transform: h === w.hA ? "translateX(0)" : h === w.hB ? "translateX(-100%)" : "translateX(-50%)"
-          }}>{String(h).padStart(2, "0")}</span>;
+        {/* never bind `h` in a scope that builds JSX — it is the pragma */}
+        {hours.map(function (hr) {
+          return <span key={hr} style={{
+            left: at(hr * 60) + "%",
+            transform: hr === w.hA ? "translateX(0)" : hr === w.hB ? "translateX(-100%)" : "translateX(-50%)"
+          }}>{String(hr).padStart(2, "0")}</span>;
         })}
       </div>
       {d.perDay.map(function (p) {
@@ -338,9 +339,9 @@ function Timeline(props) {
           <div class="tk-tr" key={p.day.name}>
             <div class="tk-tday">{p.day.weekdayShort}</div>
             <div class="tk-track">
-              {hours.filter(function (h) { return h > w.hA && h < w.hB; }).map(function (h) {
-                return <div key={h} class={"tk-tick" + (h % 6 === 0 ? " maj" : "")}
-                  style={{ left: at(h * 60) + "%" }} />;
+              {hours.filter(function (hr) { return hr > w.hA && hr < w.hB; }).map(function (hr) {
+                return <div key={hr} class={"tk-tick" + (hr % 6 === 0 ? " maj" : "")}
+                  style={{ left: at(hr * 60) + "%" }} />;
               })}
               {p.blocks.map(function (b, i) {
                 return <div key={i} class={"tk-blk" + (b.done ? "" : " undone")}
