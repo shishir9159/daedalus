@@ -8,24 +8,72 @@
    Usage inside a note:
      ```datacorejsx
      const { WeeklyReport } = await dc.require("Meta/Obsidian/_datacore/report/tracker-report.jsx");
-     return function View() { return <WeeklyReport theme="glass-dark" />; };
+     return function View() { return <WeeklyReport />; };
      ```
+
+   Props (all optional)
+     theme      skin id.  Omitted -> picked from the active Obsidian theme,
+                unless a swatch was clicked before (that choice is remembered).
+     density    "comfortable" | "compact"
+     fullWidth  true (default) | false — false caps the report at 900px
+     folder     read the daily notes of another folder instead of this one
    ========================================================================== */
 
 const LIB = "Meta/Obsidian/_datacore/report";
 const core = await dc.require(LIB + "/tracker-core.jsx");
 const themes = await dc.require(LIB + "/tracker-themes.jsx");
 
-const hm = core.hm, clock = core.clock, fmtMetric = core.fmtMetric, pct = core.pct;
+const hm = core.hm, clock = core.clock, pct = core.pct;
 const MONTH_SHORT = core.MONTH_SHORT;
 const SKIN_KEY = "tracker-skin";
+const DENSITY_KEY = "tracker-density";
+
+/* ==========================================================================
+   PERFORMANCE PANEL
+   --------------------------------------------------------------------------
+   The figures shown in the "Performance" panel, in order.  Each entry pulls
+   from the tally bullets in the daily notes: `match` lists the labels that
+   feed it (compared loosely — case, punctuation and plurals are ignored).
+     kind     "duration" -> stored in seconds, shown as 3h 20m
+              anything else -> a plain count
+     tasks    also add the ": 120 - 148 Pages" tallies written on task lines
+   Add, remove or reorder entries here; nothing else needs to change.
+   ========================================================================== */
+const PERFORMANCE = [
+  { label: "Pages Read", kind: "pages", match: ["android", "book", "research paper", "paper"], tasks: true },
+  { label: "Deep Work", kind: "duration", match: ["deep work", "deepwork"] },
+  { label: "Parried Urges", kind: "times", match: ["parried urges", "parried"] },
+  { label: "Flashcard", kind: "count", match: ["flashcard", "flashcards"] }
+];
+
+const PANEL_TITLES = {
+  plain: ["Time allocation", "Daily load", "Performance", "Sections", "Section × day",
+    "Day rhythm", "Recurring tasks & streaks", "Full ledger"],
+  med: ["The Measure of the Week", "The Days", "Performance", "Where the Hours Went",
+    "The Tapestry", "The Book of Hours", "The Roll of Deeds", "The Full Ledger"],
+  deco: ["Allocation", "Daily load", "Performance", "Sections", "Section × day",
+    "Day rhythm", "Recurring & streaks", "Ledger"]
+};
 
 /* ------------------------------------------------------------------- utils */
 
 function readSkin(fallback) {
-  try { return window.localStorage.getItem(SKIN_KEY) || fallback; } catch (e) { return fallback; }
+  try {
+    const v = window.localStorage.getItem(SKIN_KEY);
+    if (v && themes.normalise(v) === v) return v;
+  } catch (e) { /* ignore */ }
+  return fallback ? themes.normalise(fallback) : themes.detectSkin("industry");
 }
 function writeSkin(v) { try { window.localStorage.setItem(SKIN_KEY, v); } catch (e) { } }
+
+function readDensity(fallback) {
+  try {
+    const v = window.localStorage.getItem(DENSITY_KEY);
+    if (v === "compact" || v === "comfortable") return v;
+  } catch (e) { /* ignore */ }
+  return fallback === "compact" ? "compact" : "comfortable";
+}
+function writeDensity(v) { try { window.localStorage.setItem(DENSITY_KEY, v); } catch (e) { } }
 
 function openTarget(t, e) {
   e.preventDefault(); e.stopPropagation();
@@ -34,6 +82,56 @@ function openTarget(t, e) {
     const tgt = t.link ? t.link.target : t.dayName;
     app.workspace.openLinkText(tgt, t.dayPath || "", e.ctrlKey || e.metaKey);
   } catch (err) { /* ignore */ }
+}
+
+/* Art-Deco fills get the little inlaid-metal sheen the skin is built around. */
+function decoFill(color, on) {
+  if (!on) return color;
+  return "linear-gradient(150deg," + color + " 0%,color-mix(in lab," + color + ",white 3%) 26%," +
+    "color-mix(in lab," + color + ",white 20%) 45%,color-mix(in lab," + color + ",white 40%) 51%," +
+    "color-mix(in lab," + color + ",white 7%) 80%)";
+}
+
+const ROMAN = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
+[50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+function roman(n) {
+  n = Math.max(0, Math.round(n || 0));
+  if (!n) return "";
+  let out = "";
+  ROMAN.forEach(function (r) { while (n >= r[0]) { out += r[1]; n -= r[0]; } });
+  return out;
+}
+
+/* Performance figures, folded out of the week's tally bullets. */
+function perfCards(d, pal) {
+  const want = PERFORMANCE.map(function (p) {
+    return p.match.map(function (m) { return core.normKey(m); });
+  });
+  return PERFORMANCE.map(function (p, i) {
+    const keys = want[i];
+    const parts = d.metrics.filter(function (m) { return keys.indexOf(m.key) >= 0; });
+    const fmt = function (v) {
+      return p.kind === "duration" ? hm(Math.round(v / 60)) : String(Math.round(v * 100) / 100);
+    };
+    const series = d.days.map(function (day, di) {
+      let v = 0;
+      parts.forEach(function (m) { v += (m.series[di] ? m.series[di].value : 0); });
+      if (p.tasks) {
+        const pd = d.perDay[di];
+        if (pd) v += pd.pages || 0;
+      }
+      return { day: day, value: v, text: fmt(v) };
+    });
+    const total = series.reduce(function (a, s) { return a + s.value; }, 0);
+    const active = series.filter(function (s) { return s.value > 0; }).length;
+    return {
+      key: p.label, label: p.label, color: pal[i % pal.length],
+      total: fmt(total), series: series,
+      sub: d.days.length
+        ? (fmt(total / d.days.length) + " / day · " + active + "/" + d.days.length + " days")
+        : ""
+    };
+  });
 }
 
 /* ------------------------------------------------------------- shared parts */
@@ -51,26 +149,85 @@ function SkinPicker(props) {
 }
 
 function Corner(props) {
-  const st = { top: "auto", bottom: "auto", left: "auto", right: "auto" };
-  st[props.v] = "6px"; st[props.hz] = "6px";
-  const flip = (props.hz === "right" ? -1 : 1) + "," + (props.v === "bottom" ? -1 : 1);
+  const kind = props.kind || "med";
+  const deco = kind === "deco";
+  const box = deco ? 60 : 44;
+  const st = { top: "auto", bottom: "auto", left: "auto", right: "auto",
+    width: (deco ? 58 : 44) + "px", height: (deco ? 58 : 44) + "px", opacity: deco ? .9 : .8 };
+  st[props.v] = "9px"; st[props.hz] = "9px";
+  const sx = props.hz === "right" ? -1 : 1, sy = props.v === "bottom" ? -1 : 1;
+  const flip = "translate(" + (sx < 0 ? box : 0) + "," + (sy < 0 ? box : 0) + ") scale(" + sx + "," + sy + ")";
   return (
-    <svg class="tk-corner" style={st} viewBox="0 0 40 40" fill="none">
-      <g transform={"translate(20,20) scale(" + flip + ") translate(-20,-20)"}>
-        <path d="M4 4 L4 16 M4 4 L16 4" stroke="currentColor" stroke-width="1.2" />
-        <path d="M8 8 C8 14, 14 8, 20 8" stroke="currentColor" stroke-width="1" opacity=".8" />
-        <path d="M8 8 C14 8, 8 14, 8 20" stroke="currentColor" stroke-width="1" opacity=".8" />
-        <circle cx="8" cy="8" r="1.6" fill="currentColor" />
+    <svg class="tk-corner" style={st} viewBox={"0 0 " + box + " " + box} fill="none">
+      <g transform={flip}>
+        {deco
+          ? [
+            <path key="a" d="M6 54 V6 H54" stroke="currentColor" stroke-width="1.5" />,
+            <path key="b" d="M12 44 V12 H44" stroke="currentColor" stroke-width="1" opacity=".72" />,
+            <path key="c" d="M18 31 V18 H31" stroke="currentColor" stroke-width="1" opacity=".48" />,
+            <path key="d" d="M6 24 A18 18 0 0 1 24 6" stroke="currentColor" stroke-width="1" opacity=".55" />,
+            <path key="e" d="M6 6 H11 V11 H6 Z" fill="currentColor" opacity=".85" />
+          ]
+          : [
+            <path key="a" d="M3 3 H18 M3 3 V18" stroke="currentColor" stroke-width="1.3" />,
+            <path key="b" d="M8 8 C8 17 17 8 26 8" stroke="currentColor" stroke-width="1" opacity=".85" />,
+            <path key="c" d="M8 8 C17 8 8 17 8 26" stroke="currentColor" stroke-width="1" opacity=".85" />,
+            <circle key="d" cx="8" cy="8" r="1.9" fill="currentColor" />,
+            <path key="e" d="M26 8 q5 0 5 5 q0 -5 5 -5 q-5 0 -5 -5 q0 5 -5 5 z" fill="currentColor" opacity=".7" />
+          ]}
       </g>
     </svg>
   );
 }
 
+function Reg(props) {
+  const st = { top: "auto", bottom: "auto", left: "auto", right: "auto" };
+  st[props.v] = "-7px"; st[props.hz] = "-7px";
+  return (
+    <svg class="tk-reg" style={st} viewBox="0 0 14 14" fill="none">
+      <path d="M7 0 V14 M0 7 H14" stroke="currentColor" stroke-width="1" />
+    </svg>
+  );
+}
+
+const CORNERS = [["top", "left"], ["top", "right"], ["bottom", "left"], ["bottom", "right"]];
+
+function Ornaments(props) {
+  const f = props.flags;
+  if (f.med) {
+    return [
+      <div key="f1" class="tk-frame" />, <div key="f2" class="tk-frame in" />
+    ].concat(CORNERS.map(function (c, i) {
+      return <Corner key={"c" + i} v={c[0]} hz={c[1]} kind="med" />;
+    }));
+  }
+  if (f.deco) {
+    return CORNERS.map(function (c, i) {
+      return <Corner key={"c" + i} v={c[0]} hz={c[1]} kind="deco" />;
+    });
+  }
+  if (f.ornate) {
+    return [<div key="f1" class="tk-frame" />].concat(CORNERS.map(function (c, i) {
+      return <Corner key={"c" + i} v={c[0]} hz={c[1]} kind="med" />;
+    }));
+  }
+  if (f.ind) {
+    return CORNERS.map(function (c, i) { return <Reg key={"r" + i} v={c[0]} hz={c[1]} />; });
+  }
+  return null;
+}
+
+/* Panel with the new header (ornament mark · title · rule · optional slot). */
 function Panel(props) {
   return (
-    <div class={"tk-panel " + (props.span || "s12")}>
-      {props.title ? <h3><span class="dot" style={{ background: props.color }} />{props.title}</h3> : null}
-      {props.note ? <p class="n">{props.note}</p> : null}
+    <div class="tk-panel">
+      <div class="tk-ph">
+        <span class="mk">{props.mark}</span>
+        <h3>{props.title}</h3>
+        <span class="rule" />
+        {props.tools || null}
+        {props.note ? <span class="note">{props.note}</span> : null}
+      </div>
       {props.children}
     </div>
   );
@@ -80,27 +237,30 @@ function Tile(props) {
   return (
     <div class="tk-tile">
       <div class="cap" style={{ background: props.color }} />
-      <b>{props.value}</b><i>{props.label}</i>
-      {props.sub ? <em>{props.sub}</em> : null}
+      <i>{props.label}</i>
+      <b>{props.value}</b>
+      <em>{props.sub}</em>
+      <div class="tk-meter">
+        <i style={{ width: Math.max(2, Math.min(100, props.meter || 0)) + "%", background: props.color }} />
+      </div>
     </div>
   );
 }
 
 function Donut(props) {
-  const size = props.size || 166, stroke = props.stroke || 21;
-  const r = (size - stroke) / 2 - 4, c = 2 * Math.PI * r;
+  const size = 170, stroke = 20, r = 72, c = 2 * Math.PI * r;
   let acc = 0;
   const total = props.segments.reduce(function (s, x) { return s + x.value; }, 0) || 1;
   return (
     <div class="tk-donut" style={{ width: size + "px", height: size + "px" }}>
       <svg width={size} height={size} viewBox={"0 0 " + size + " " + size}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--tk-trk)" stroke-width={stroke} />
+        <circle cx={85} cy={85} r={r} fill="none" stroke="var(--tk-trk)" stroke-width={stroke} />
         {props.segments.map(function (s, i) {
           const len = (s.value / total) * c;
           const el = (
-            <circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={s.color} stroke-width={stroke}
+            <circle key={i} cx={85} cy={85} r={r} fill="none" stroke={s.color} stroke-width={stroke}
               stroke-dasharray={Math.max(0, len - 1.5) + " " + (c - Math.max(0, len - 1.5))}
-              stroke-dashoffset={-acc} transform={"rotate(-90 " + (size / 2) + " " + (size / 2) + ")"}>
+              stroke-dashoffset={-acc} transform="rotate(-90 85 85)">
               <title>{s.name + " — " + s.label}</title>
             </circle>
           );
@@ -116,11 +276,12 @@ function Donut(props) {
 /* --------------------------------------------------------------- big panels */
 
 function DayColumns(props) {
-  const max = Math.max.apply(null, props.data.perDay.map(function (p) { return p.minutes; }).concat([1]));
+  const d = props.data;
+  const max = Math.max.apply(null, d.perDay.map(function (p) { return p.minutes; }).concat([1]));
   return (
     <div class="tk-days">
-      {props.data.perDay.map(function (p) {
-        const bh = Math.max(4, Math.round((p.minutes / max) * 120));
+      {d.perDay.map(function (p) {
+        const bh = Math.max(5, Math.round((p.minutes / max) * 128));
         const dh = p.minutes ? Math.round((p.doneMinutes / p.minutes) * 100) : 0;
         return (
           <div class="tk-day" key={p.day.name}
@@ -128,7 +289,7 @@ function DayColumns(props) {
             <div class="tk-dv">{p.done + "/" + p.total}</div>
             <div class="tk-col">
               <div class="tk-stack" style={{ height: bh + "px" }}>
-                <i style={{ height: dh + "%", background: props.accent }} />
+                <i style={{ height: dh + "%", background: decoFill(props.accent, props.deco) }} />
               </div>
             </div>
             <div class="tk-dl">{p.day.weekdayShort}</div>
@@ -140,13 +301,36 @@ function DayColumns(props) {
   );
 }
 
+/* The rhythm axis spans the week's earliest activity to its latest, so a week
+   that never starts before 06:00 does not waste a quarter of the track. */
+function rhythmWindow(d) {
+  let a = 1440, b = 0;
+  d.perDay.forEach(function (p) {
+    if (p.day.openedAt != null) a = Math.min(a, p.day.openedAt);
+    p.blocks.forEach(function (x) {
+      a = Math.min(a, x.start);
+      b = Math.max(b, x.start + x.duration);
+    });
+  });
+  if (b <= a) { a = 0; b = 1440; }
+  a = Math.max(0, Math.floor(a / 60) * 60);
+  b = Math.min(1440, Math.ceil(b / 60) * 60);
+  return { a: a, span: Math.max(60, b - a), hA: a / 60, hB: Math.min(1440, b) / 60 };
+}
+
 function Timeline(props) {
-  const d = props.data;
+  const d = props.data, w = rhythmWindow(d);
+  const at = function (m) { return ((m - w.a) / w.span) * 100; };
+  const hours = [];
+  for (let h = w.hA; h <= w.hB; h++) if (h === w.hA || h === w.hB || h % 3 === 0) hours.push(h);
   return (
     <div>
       <div class="tk-ax">
-        {[0, 3, 6, 9, 12, 15, 18, 21, 24].map(function (hr) {
-          return <span key={hr} style={{ left: (hr / 24 * 100) + "%" }}>{String(hr).padStart(2, "0")}</span>;
+        {hours.map(function (h) {
+          return <span key={h} style={{
+            left: at(h * 60) + "%",
+            transform: h === w.hA ? "translateX(0)" : h === w.hB ? "translateX(-100%)" : "translateX(-50%)"
+          }}>{String(h).padStart(2, "0")}</span>;
         })}
       </div>
       {d.perDay.map(function (p) {
@@ -154,24 +338,25 @@ function Timeline(props) {
           <div class="tk-tr" key={p.day.name}>
             <div class="tk-tday">{p.day.weekdayShort}</div>
             <div class="tk-track">
-              {[3, 6, 9, 12, 15, 18, 21].map(function (hr) {
-                return <div key={hr} class={"tk-tick" + (hr % 6 === 0 ? " maj" : "")}
-                  style={{ left: (hr / 24 * 100) + "%" }} />;
+              {hours.filter(function (h) { return h > w.hA && h < w.hB; }).map(function (h) {
+                return <div key={h} class={"tk-tick" + (h % 6 === 0 ? " maj" : "")}
+                  style={{ left: at(h * 60) + "%" }} />;
               })}
               {p.blocks.map(function (b, i) {
                 return <div key={i} class={"tk-blk" + (b.done ? "" : " undone")}
                   style={{
-                    left: (b.start / 1440 * 100) + "%",
-                    width: (Math.max(b.duration, 6) / 1440 * 100) + "%",
-                    background: b.color, color: b.color
+                    left: at(b.start) + "%",
+                    width: (Math.max(b.duration, 6) / w.span * 100) + "%",
+                    background: decoFill(b.color, props.deco), color: b.color
                   }}
                   title={clock(b.start) + "–" + clock(b.start + b.duration) + "  " + b.title + "  ·  " + b.section + (b.done ? "  ✓" : "")} />;
               })}
               {p.day.openedAt != null
-                ? <div class="tk-open" style={{ left: (p.day.openedAt / 1440 * 100) + "%" }}
-                  title={"🛫 Note created " + clock(p.day.openedAt)} />
+                ? <div class="tk-open" style={{ left: at(p.day.openedAt) + "%" }}
+                  title={"Note created " + clock(p.day.openedAt)} />
                 : null}
             </div>
+            <div class="tk-ttot">{hm(p.minutes)}</div>
           </div>
         );
       })}
@@ -179,34 +364,25 @@ function Timeline(props) {
   );
 }
 
+function habitRows(d, min) {
+  return d.habits.filter(function (x) { return x.marked || x.habitSection || x.dayCount >= min; });
+}
+
 function Habits(props) {
   const d = props.data;
-  const [min, setMin] = dc.useState(2);
+  const rows = habitRows(d, props.min);
   const [all, setAll] = dc.useState(false);
-
-  const rows = d.habits.filter(function (x) { return x.marked || x.habitSection || x.dayCount >= min; });
   const shown = all ? rows : rows.slice(0, 20);
-
   return (
     <div>
-      <div class="tk-ctrl">
-        {[2, 3, 4, 5].map(function (n) {
-          return <button key={n} class={"tk-btn" + (min === n ? " on" : "")}
-            title={"Show tasks appearing on at least " + n + " days. Habit and Chore sections are always included."}
-            onClick={function () { setMin(n); }}>{n}</button>;
-        })}
-        <span class="tk-lbl">occurrences</span>
-        <span style={{ flex: 1 }} />
-        <span class="tk-lbl">{rows.length}</span>
-      </div>
       <div class="tk-wrap">
         <table class="tk-t">
           <thead>
             <tr>
-              <th style={{ minWidth: "180px" }}>Task</th>
+              <th style={{ minWidth: "190px" }}>Task</th>
               {d.days.map(function (x) { return <th key={x.name} style={{ textAlign: "center" }}>{x.weekdayShort}</th>; })}
               <th style={{ textAlign: "right" }}>Done</th>
-              <th style={{ minWidth: "76px" }}>Rate</th>
+              <th style={{ minWidth: "84px" }}>Rate</th>
               <th style={{ textAlign: "center" }}>Streak</th>
               <th style={{ textAlign: "right" }}>Time</th>
             </tr>
@@ -216,12 +392,16 @@ function Habits(props) {
               return (
                 <tr key={hb.key}>
                   <td>
-                    <span style={{
-                      display: "inline-block", width: "8px", height: "8px", borderRadius: "3px",
-                      background: hb.color, marginRight: "8px", verticalAlign: "middle"
-                    }} />
-                    {hb.title}
-                    <div style={{ fontSize: "11px", color: "var(--tk-fnt)" }}>{hb.section}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                      <span style={{
+                        width: "9px", height: "9px", borderRadius: "var(--tk-cell-rad)",
+                        background: hb.color, flex: "0 0 auto"
+                      }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hb.title}</div>
+                        <div style={{ fontSize: "10.5px", color: "var(--tk-fnt)" }}>{hb.section}</div>
+                      </div>
+                    </div>
                   </td>
                   {hb.cells.map(function (c, i) {
                     const g = c.state === "done" ? "✓" : c.state === "missed" ? "" : c.state === "cancelled" ? "✕" : "·";
@@ -236,7 +416,7 @@ function Habits(props) {
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{hb.hit + "/" + hb.planned}</td>
                   <td>
                     <div class="tk-mini" title={Math.round(hb.rate * 100) + "%"}>
-                      <i style={{ width: (hb.rate * 100) + "%", background: hb.color }} />
+                      <i style={{ width: (hb.rate * 100) + "%", background: decoFill(hb.color, props.deco) }} />
                     </div>
                   </td>
                   <td style={{ textAlign: "center" }}>
@@ -258,25 +438,23 @@ function Habits(props) {
   );
 }
 
-function Metrics(props) {
-  const d = props.data;
-  if (!d.metrics.length) return <div class="tk-empty">No metrics.</div>;
+function Performance(props) {
+  const cards = props.cards;
   return (
     <div class="tk-mc">
-      {d.metrics.map(function (m) {
+      {cards.map(function (m) {
         const mx = Math.max.apply(null, m.series.map(function (s) { return s.value; }).concat([1]));
         return (
           <div class="tk-card" key={m.key}>
             <h4>{m.label}</h4>
-            <b style={{ color: m.color }}>{fmtMetric(m.kind, m.total)}</b>
-            <em>{fmtMetric(m.kind, m.avg) + " / day · " + m.active + "/" + d.days.length + " days"}</em>
+            <b style={{ color: m.color }}>{m.total}</b>
+            <em>{m.sub}</em>
             <div class="tk-spark">
               {m.series.map(function (s, i) {
                 return <i key={i} style={{
                   height: Math.max(2, (s.value / mx) * 30) + "px",
                   background: s.value ? m.color : "var(--tk-trk)"
-                }}
-                  title={s.day.weekdayShort + ": " + fmtMetric(m.kind, s.value)} />;
+                }} title={s.day.weekdayShort + ": " + s.text} />;
               })}
             </div>
           </div>
@@ -288,16 +466,18 @@ function Metrics(props) {
 
 function Heat(props) {
   const d = props.data;
-  const cols = "minmax(84px,1.3fr) repeat(" + d.days.length + ", 1fr)";
   return (
     <div class="tk-wrap">
-      <div class="tk-heat" style={{ gridTemplateColumns: cols, minWidth: (110 + d.days.length * 50) + "px" }}>
+      <div class="tk-heat" style={{
+        gridTemplateColumns: "minmax(92px,1.3fr) repeat(" + d.days.length + ", 1fr)",
+        minWidth: (120 + d.days.length * 52) + "px"
+      }}>
         <div />
         {d.days.map(function (x) { return <div class="hd" key={x.name}>{x.weekdayShort}</div>; })}
         {d.heat.map(function (r) {
           return [<div class="rl" key={r.name + "-l"} title={r.name}>{r.name}</div>]
             .concat(r.cells.map(function (c, i) {
-              const a = c.minutes ? 0.2 + 0.8 * (c.minutes / d.heatMax) : 0;
+              const a = c.minutes ? 0.22 + 0.78 * (c.minutes / d.heatMax) : 0;
               return (
                 <div class="hc" key={r.name + i}
                   style={{
@@ -332,7 +512,9 @@ function Ledger(props) {
 
   const groups = [];
   if (mode === "section") {
-    d.sections.forEach(function (s) {
+    /* Sections keep the order they are written in the daily notes, not the
+       "most minutes first" order the charts above use. */
+    (d.sectionsInOrder || d.sections).forEach(function (s) {
       const rows = d.allTasks.filter(function (t) { return t.section === s.name && match(t); })
         .sort(function (a, b) { return (a.sortKey - b.sortKey) || (a.order - b.order); });
       if (rows.length) groups.push({
@@ -369,9 +551,9 @@ function Ledger(props) {
         return (
           <details class="tk-sec" key={g.key} open>
             <summary>
-              <span class="swatch" style={{ background: g.color }}>
-                {props.medieval ? g.title.charAt(0).toUpperCase() : ""}
-              </span>
+              {props.mark
+                ? <span class="swatch mark" style={{ color: g.color }}>{props.mark}</span>
+                : <span class="swatch" style={{ background: g.color }} />}
               <h4>{g.title}</h4>
               <span class="meta">{g.meta}</span>
             </summary>
@@ -396,7 +578,7 @@ function Ledger(props) {
                       {t.pages != null ? <span class="tk-chip">{t.pages + " pages"}</span> : null}
                       {mode === "day" ? <span class="tk-chip">{t.section}</span> : null}
                     </div>
-                    <div class="u">{(mode === "section" && !sub) ? (t.date.getDate() + " " + MONTH_SHORT[t.date.getMonth()]) : ""}</div>
+                    <div class="u r">{(mode === "section" && !sub) ? (t.date.getDate() + " " + MONTH_SHORT[t.date.getMonth()]) : ""}</div>
                   </div>
                 );
               })}
@@ -443,20 +625,31 @@ function useWeekData(explicitFolder) {
 
 function WeeklyReport(props) {
   props = props || {};
-  const [skin, setSkin] = dc.useState(function () { return readSkin(props.theme || "aware"); });
+  const [skin, setSkin] = dc.useState(function () { return readSkin(props.theme); });
+  const [density, setDensity] = dc.useState(function () { return readDensity(props.density); });
+  const [habitMin, setHabitMin] = dc.useState(2);
   const ctx = useWeekData(props.folder);
   const st = ctx.st;
 
   const pal = themes.palette(skin);
-  const medieval = themes.isFancy(skin);
+  const f = themes.flags(skin);
   const scope = dc.useMemo(function () { return "tkid-" + Math.random().toString(36).slice(2, 8); }, []);
-  const css = dc.useMemo(function () { return themes.skinCss(skin, "." + scope); }, [skin, scope]);
+  const css = dc.useMemo(function () {
+    return themes.skinCss(skin, "." + scope, { density: density, fullWidth: props.fullWidth !== false });
+  }, [skin, scope, density, props.fullWidth]);
   const d = dc.useMemo(function () { return core.aggregate(st.days, pal); }, [st.days, skin]);
 
   const setTheme = function (v) { setSkin(v); writeSkin(v); };
+  const setDense = function (v) { setDensity(v); writeDensity(v); };
 
-  const title = (st.payload && st.payload.title) ||
+  const T = f.med ? PANEL_TITLES.med : f.deco ? PANEL_TITLES.deco : PANEL_TITLES.plain;
+  const mark = f.ornate ? "❦" : f.deco ? "◆" : f.ind ? "+" : f.riso ? "◆" : "§";
+
+  const payload = st.payload || {};
+  const title = payload.title ||
     (ctx.path ? ctx.path.split("/").pop().replace(/\.md$/, "") : "Weekly Report");
+  const weekNo = payload.week;
+  const weekMark = weekNo == null ? "" : (f.med ? ("Week " + roman(weekNo)) : ("W" + weekNo));
 
   const segs = d.sections.slice(0, 10).map(function (s) {
     return {
@@ -464,107 +657,137 @@ function WeeklyReport(props) {
       label: hm(s.minutes) + " · " + s.done + "/" + s.count
     };
   });
+  const cards = dc.useMemo(function () { return perfCards(d, pal); }, [d, skin]);
+
+  const goodHabits = d.habits.filter(function (x) { return x.rate >= 0.8; }).length;
+  const tiles = [
+    { label: "Completion", value: d.rate + "%", sub: d.doneTop + " of " + d.totalTop + " tasks", m: d.rate },
+    { label: "Time completed", value: hm(d.doneMin), sub: "of " + hm(d.totalMin) + " scheduled", m: pct(d.doneMin, d.totalMin) },
+    { label: "Recurring", value: String(d.habits.length), sub: goodHabits + " at ≥ 80%", m: pct(goodHabits, d.habits.length) },
+    { label: "Left open", value: String(d.openTop), sub: d.cancelledTop ? (d.cancelledTop + " cancelled") : "none cancelled", m: pct(d.openTop, d.totalTop) },
+    { label: "Pages read", value: String(d.totalPages), sub: d.subs.length + " sub-tasks", m: 70 },
+    { label: "Note created", value: d.avgWake != null ? clock(d.avgWake) : "—", sub: "average of " + d.wake.length + " days", m: d.avgWake != null ? Math.round(d.avgWake / 1440 * 100) : 0 }
+  ];
 
   const header = (
     <div class="tk-hero">
       <div class="tk-hero-fx" />
       <div class="tk-hero-in">
+        {f.ind ? CORNERS.map(function (c, i) { return <Reg key={"hr" + i} v={c[0]} hz={c[1]} />; }) : null}
         <div class="tk-head-row">
-          <div>
-            <div class="tk-kick">{medieval ? "Chronicle of the Week" : "Weekly report"}</div>
-            <div class="tk-title">{title}</div>
+          <div class="who">
+            <div class="tk-kick">
+              {f.med ? "Chronicle of the Week" : f.deco ? "Weekly Report" : "Weekly report"}
+            </div>
+            <div class="tk-titlerow">
+              <div class="tk-title">{title}</div>
+              {weekMark ? <div class="tk-wkmark">{weekMark}</div> : null}
+            </div>
             <div class="tk-sub">
               {st.loading ? "Reading…"
                 : st.error ? ("Error: " + st.error)
-                  : d.days.length ? (d.range + " · " + d.days.length + " days")
+                  : d.days.length ? (d.range + " · " + d.days.length + " days · " + d.totalTop + " tasks logged")
                     : "No daily notes in this folder"}
             </div>
           </div>
-          <SkinPicker value={skin} onChange={setTheme} />
+          <div class="tk-hero-ctl">
+            <SkinPicker value={skin} onChange={setTheme} />
+            <div class="tk-seg">
+              {[["comfortable", "Roomy"], ["compact", "Compact"]].map(function (x) {
+                return <button key={x[0]} class={density === x[0] ? "on" : ""}
+                  onClick={function () { setDense(x[0]); }}>{x[1]}</button>;
+              })}
+            </div>
+          </div>
         </div>
-        {d.days.length ? <div class="tk-tiles">
-          <Tile color={pal[0]} value={d.rate + "%"} label="Completion" sub={d.doneTop + " of " + d.totalTop + " tasks"} />
-          <Tile color={pal[1]} value={hm(d.doneMin)} label="Time completed" sub={"of " + hm(d.totalMin) + " scheduled"} />
-          <Tile color={pal[2]} value={d.habits.length} label="Recurring"
-            sub={d.habits.filter(function (x) { return x.rate >= 0.8; }).length + " at ≥ 80%"} />
-          <Tile color={pal[3]} value={d.openTop} label="Left open"
-            sub={d.cancelledTop ? (d.cancelledTop + " cancelled") : "none cancelled"} />
-          <Tile color={pal[4]} value={d.totalPages} label="Pages read" sub={d.subs.length + " sub-tasks"} />
-          <Tile color={pal[5]} value={d.avgWake != null ? clock(d.avgWake) : "—"} label="Note created"
-            sub={"average of " + d.wake.length + " days"} />
-        </div> : null}
+        {d.days.length
+          ? <div class="tk-tiles">
+            {tiles.map(function (t, i) {
+              return <Tile key={t.label} color={pal[i % pal.length]} label={t.label}
+                value={t.value} sub={t.sub} meter={t.m} />;
+            })}
+          </div>
+          : null}
       </div>
     </div>
   );
 
   const body = d.days.length ? (
-    <div class="tk-grid">
-      <Panel title={medieval ? "The Measure of the Week" : "Time allocation"} span="s5" color={pal[0]}
-      >
-        <div class="tk-dw">
-          <Donut segments={segs} center={d.rate + "%"} centerSub={hm(d.totalMin) + " total"} />
-          <div class="tk-legend">
-            {segs.map(function (s) {
+    <div>
+      <div class="tk-row3">
+        <Panel mark={mark} title={T[0]}>
+          <div class="tk-dw">
+            <Donut segments={segs} center={d.rate + "%"} centerSub={hm(d.totalMin) + " total"} />
+            <div class="tk-legend">
+              {segs.map(function (s) {
+                return (
+                  <div class="tk-lg" key={s.name}>
+                    <span class="sw" style={{ background: s.color }} />
+                    <span class="nm" title={s.name}>{s.name}</span>
+                    <span class="vl">{hm(s.value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Panel>
+
+        <Panel mark={mark} title={T[1]}>
+          <DayColumns data={d} accent={pal[1]} deco={f.deco} />
+        </Panel>
+
+        <Panel mark={mark} title={T[2]}>
+          <Performance cards={cards} />
+        </Panel>
+      </div>
+
+      <div class="tk-row2">
+        <Panel mark={mark} title={T[3]}>
+          <div class="tk-bars">
+            {d.sections.map(function (s) {
+              const mx = (d.sections[0] && d.sections[0].minutes) || 1;
               return (
-                <div class="tk-lg" key={s.name}>
-                  <span class="sw" style={{ background: s.color }} />
-                  <span class="nm" title={s.name}>{s.name}</span>
-                  <span class="vl">{hm(s.value)}</span>
+                <div class="tk-bar" key={s.name}>
+                  <div class="lb" title={s.name}>{s.name}</div>
+                  <div class="tk-track2">
+                    <div class="fl" style={{ width: ((s.minutes / mx) * 100) + "%", background: s.color }} />
+                    <div class="fd" style={{ width: ((s.doneMinutes / mx) * 100) + "%", background: decoFill(s.color, f.deco), color: s.color }} />
+                  </div>
+                  <div class="vl">{hm(s.minutes) + "  ·  " + s.done + "/" + s.count + "  ·  " + pct(s.done, s.count) + "%"}</div>
                 </div>
               );
             })}
           </div>
-        </div>
-      </Panel>
+        </Panel>
 
-      <Panel title={medieval ? "The Days" : "Daily load"} span="s7" color={pal[1]}
-      >
-        <DayColumns data={d} accent={pal[1]} />
-      </Panel>
+        <Panel mark={mark} title={T[4]}>
+          <Heat data={d} />
+        </Panel>
+      </div>
 
-      <Panel title={medieval ? "Where the Hours Went" : "Sections"} span="s12" color={pal[2]}
-      >
-        <div class="tk-bars">
-          {d.sections.map(function (s) {
-            const mx = d.sections[0].minutes || 1;
-            return (
-              <div class="tk-bar" key={s.name}>
-                <div class="lb" title={s.name}>{s.name}</div>
-                <div class="tk-track2">
-                  <div class="fl" style={{ width: ((s.minutes / mx) * 100) + "%", background: s.color }} />
-                  <div class="fd" style={{ width: ((s.doneMinutes / mx) * 100) + "%", background: s.color, color: s.color }} />
-                </div>
-                <div class="vl">{hm(s.minutes) + "  ·  " + s.done + "/" + s.count + "  ·  " + pct(s.done, s.count) + "%"}</div>
-              </div>
-            );
-          })}
-        </div>
-      </Panel>
+      <div class="tk-full">
+        <Panel mark={mark} title={T[5]} note="dashed rule = note created · faded = not completed">
+          <Timeline data={d} deco={f.deco} />
+        </Panel>
+      </div>
 
-      <Panel title={medieval ? "The Book of Hours" : "Day rhythm"} span="s12" color={pal[3]}
-      >
-        <Timeline data={d} />
-      </Panel>
+      <div class="tk-full">
+        <Panel mark={mark} title={T[6]} tools={
+          [2, 3, 4, 5].map(function (n) {
+            return <button key={n} class={"tk-btn" + (habitMin === n ? " on" : "")}
+              title={"Show tasks appearing on at least " + n + " days. Habit and Chore sections are always included."}
+              onClick={function () { setHabitMin(n); }}>{n}</button>;
+          }).concat([<span key="l" class="tk-lbl">occurrences</span>])
+        }>
+          <Habits data={d} min={habitMin} deco={f.deco} />
+        </Panel>
+      </div>
 
-      <Panel title={medieval ? "The Roll of Deeds" : "Recurring tasks & streaks"} span="s12" color={pal[4]}
-      >
-        <Habits data={d} />
-      </Panel>
-
-      <Panel title={medieval ? "Tallies & Measures" : "Reading & stats"} span="s7" color={pal[5]}
-      >
-        <Metrics data={d} />
-      </Panel>
-
-      <Panel title={medieval ? "The Tapestry" : "Section × day"} span="s5" color={pal[6]}
-      >
-        <Heat data={d} />
-      </Panel>
-
-      <Panel title={medieval ? "The Full Ledger" : ""} span="s12" color={pal[7]}
-      >
-        <Ledger data={d} medieval={medieval} />
-      </Panel>
+      <div class="tk-full">
+        <Panel mark={mark} title={T[7]}>
+          <Ledger data={d} mark={f.ornate || f.deco ? mark : null} />
+        </Panel>
+      </div>
     </div>
   ) : (!st.loading
     ? <div class="tk-panel"><div class="tk-empty">{"Nothing in " + ctx.folder}</div></div>
@@ -574,16 +797,14 @@ function WeeklyReport(props) {
     <div class={scope}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div class="tk">
-        <div class="tk-shell">
-          {medieval ? <div class="tk-frame" /> : null}
-          {medieval ? <Corner v="top" hz="left" /> : null}
-          {medieval ? <Corner v="top" hz="right" /> : null}
-          {medieval ? <Corner v="bottom" hz="left" /> : null}
-          {medieval ? <Corner v="bottom" hz="right" /> : null}
-          <div class="tk-inner">
-            {header}
-            {medieval ? <div class="tk-rule"><span>❦</span></div> : null}
-            {body}
+        <div class="tk-page">
+          <div class="tk-shell">
+            <Ornaments flags={f} />
+            <div class="tk-inner">
+              {header}
+              {f.ornate ? <div class="tk-rule"><span>❦</span></div> : null}
+              {body}
+            </div>
           </div>
         </div>
       </div>
@@ -594,8 +815,11 @@ function WeeklyReport(props) {
 return {
   WeeklyReport: WeeklyReport,
   SkinPicker: SkinPicker, Panel: Panel, Tile: Tile, Donut: Donut,
-  Timeline: Timeline, Habits: Habits, Metrics: Metrics, Heat: Heat, Ledger: Ledger,
-  DayColumns: DayColumns, Corner: Corner,
-  readSkin: readSkin, writeSkin: writeSkin, openTarget: openTarget,
+  Timeline: Timeline, Habits: Habits, Performance: Performance, Heat: Heat, Ledger: Ledger,
+  DayColumns: DayColumns, Corner: Corner, Reg: Reg, Ornaments: Ornaments,
+  PERFORMANCE: PERFORMANCE, PANEL_TITLES: PANEL_TITLES, perfCards: perfCards,
+  readSkin: readSkin, writeSkin: writeSkin,
+  readDensity: readDensity, writeDensity: writeDensity,
+  openTarget: openTarget,
   core: core, themes: themes
 };
