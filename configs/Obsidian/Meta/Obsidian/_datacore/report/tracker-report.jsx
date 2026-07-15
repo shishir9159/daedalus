@@ -172,13 +172,29 @@ function useFullWidth(enabled) {
    chrome) but it only bites on a container we tagged ourselves, and only in
    the preview pane: live preview and source mode stay fully editable. */
 const SOLO_CSS_ID = "tk-solo-css";
+const HAS_HAS = (function () {
+  try { return !!(window.CSS && CSS.supports && CSS.supports("selector(:has(*))")); }
+  catch (e) { return false; }
+})();
+
+/* Two layers, and the direction matters.  Obsidian's reading view tears down
+   and rebuilds sizer children as they scroll far out of view, so anything
+   that marks *our* block as a keeper goes stale the moment the block is
+   re-created — that is what made the whole report vanish a page and a half
+   down.  Both rules below instead hide only children that demonstrably do
+   NOT contain our anchor, so a freshly rebuilt block is visible by default:
+   :has() re-evaluates live (no flash), and the swept .tk-hide class is the
+   fallback for a build without :has(). */
 const SOLO_CSS = [
   ".markdown-preview-view.tk-solo .inline-title,",
   ".markdown-preview-view.tk-solo .metadata-container,",
   ".markdown-preview-view.tk-solo .frontmatter,",
   ".markdown-preview-view.tk-solo .frontmatter-container{ display:none !important; }",
-  ".markdown-preview-view.tk-solo .markdown-preview-sizer > *{ display:none !important; }",
-  ".markdown-preview-view.tk-solo .markdown-preview-sizer > .tk-keep{ display:block !important; }"
+  ".markdown-preview-view.tk-solo .markdown-preview-sizer > .tk-hide{ display:none !important; }",
+  HAS_HAS
+    ? ".markdown-preview-view.tk-solo .markdown-preview-sizer > *:not(:has(.tk-anchor))" +
+      "{ display:none !important; }"
+    : ""
 ].join("\n");
 
 function ensureSoloCss() {
@@ -191,6 +207,16 @@ function ensureSoloCss() {
   } catch (e) { /* ignore */ }
 }
 
+function soloSweep(sizer) {
+  const kids = sizer.children;
+  for (let i = 0; i < kids.length; i++) {
+    const k = kids[i];
+    const mine = k.classList.contains("tk-anchor") || !!k.querySelector(".tk-anchor");
+    if (mine) k.classList.remove("tk-hide");
+    else k.classList.add("tk-hide");
+  }
+}
+
 function useSolo(ref, enabled) {
   dc.useEffect(function () {
     const el = ref.current;
@@ -198,15 +224,33 @@ function useSolo(ref, enabled) {
     const view = el.closest(".markdown-preview-view");
     const sizer = el.closest(".markdown-preview-sizer");
     if (!view || !sizer) return;                 // not reading mode — leave it be
-    let block = el;
-    while (block && block.parentElement !== sizer) block = block.parentElement;
-    if (!block) return;
     ensureSoloCss();
-    block.classList.add("tk-keep");
     view.classList.add("tk-solo");
+
+    /* With :has() the stylesheet re-evaluates itself on every rebuild, so the
+       sweep — and the observer that drives it — is only wired up on a build
+       that lacks it. */
+    let raf = 0, mo = null;
+    if (!HAS_HAS) {
+      const run = function () {
+        raf = 0;
+        if (mo) mo.disconnect();                 // our own class writes must not re-arm us
+        soloSweep(sizer);
+        if (mo) mo.observe(sizer, { childList: true, subtree: true });
+      };
+      const queue = function () { if (!raf) raf = requestAnimationFrame(run); };
+      try {
+        mo = new MutationObserver(queue);
+      } catch (e) { mo = null; }
+      run();
+    }
+
     return function () {
-      block.classList.remove("tk-keep");
+      if (raf) cancelAnimationFrame(raf);
+      if (mo) mo.disconnect();
       view.classList.remove("tk-solo");
+      const kids = sizer.children;
+      for (let i = 0; i < kids.length; i++) kids[i].classList.remove("tk-hide");
     };
   }, [enabled]);
 }
@@ -938,6 +982,8 @@ function WeeklyReport(props) {
 
   return (
     <div class={scope} ref={wideRef} style={wideStyle || undefined}>
+      {/* marks this subtree as ours for the reading-mode solo sweep */}
+      <span class="tk-anchor" style={{ display: "none" }} aria-hidden="true" />
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div class="tk">
         <div class="tk-page">
