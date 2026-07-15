@@ -57,21 +57,25 @@ const PANEL_TITLES = {
 
 /* ------------------------------------------------------------------- utils */
 
-function readSkin(fallback) {
+/* An explicit prop is an instruction and wins; otherwise fall back to the last
+   swatch / toggle the reader picked, and only then to the detected default. */
+function readSkin(explicit) {
+  if (explicit && themes.normalise(explicit) === explicit) return explicit;
   try {
     const v = window.localStorage.getItem(SKIN_KEY);
     if (v && themes.normalise(v) === v) return v;
   } catch (e) { /* ignore */ }
-  return fallback ? themes.normalise(fallback) : themes.detectSkin("industry");
+  return themes.detectSkin("industry");
 }
 function writeSkin(v) { try { window.localStorage.setItem(SKIN_KEY, v); } catch (e) { } }
 
-function readDensity(fallback) {
+function readDensity(explicit) {
+  if (explicit === "compact" || explicit === "comfortable") return explicit;
   try {
     const v = window.localStorage.getItem(DENSITY_KEY);
     if (v === "compact" || v === "comfortable") return v;
   } catch (e) { /* ignore */ }
-  return fallback === "compact" ? "compact" : "comfortable";
+  return "comfortable";
 }
 function writeDensity(v) { try { window.localStorage.setItem(DENSITY_KEY, v); } catch (e) { } }
 
@@ -90,6 +94,72 @@ function decoFill(color, on) {
   return "linear-gradient(150deg," + color + " 0%,color-mix(in lab," + color + ",white 3%) 26%," +
     "color-mix(in lab," + color + ",white 20%) 45%,color-mix(in lab," + color + ",white 40%) 51%," +
     "color-mix(in lab," + color + ",white 7%) 80%)";
+}
+
+/* Relative luminance of a palette colour, so text laid over a strong fill can
+   pick black or white instead of trusting the skin's --tk-onacc to suit every
+   swatch (riso pink and glass indigo need opposite answers). */
+function lum(c) {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(c).trim());
+  if (!m) return null;
+  let s = m[1];
+  if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+  const v = [0, 2, 4].map(function (i) { return parseInt(s.slice(i, i + 2), 16) / 255; })
+    .map(function (x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+function onColor(c) {
+  const l = lum(c);
+  return l == null ? "var(--tk-onacc)" : (l > 0.42 ? "#15171d" : "#ffffff");
+}
+
+/* Datacore blocks sit inside the note's content column, which Obsidian caps at
+   --file-line-width.  A CSS width can never beat that, so measure the pane and
+   pull the report out over the margins.  When readable line length is already
+   off the two widths match and nothing is applied. */
+function useFullWidth(enabled) {
+  const ref = dc.useRef(null);
+  const [style, setStyle] = dc.useState(null);
+  const last = dc.useRef("");
+
+  dc.useEffect(function () {
+    const el = ref.current;
+    if (!el) return;
+    if (!enabled) { last.current = ""; setStyle(null); return; }
+    const host = el.closest(".markdown-preview-view, .markdown-source-view, .view-content");
+    const box = el.parentElement;
+    if (!host || !box) return;
+
+    let raf = 0;
+    const measure = function () {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        const gut = 26;
+        const avail = Math.max(0, host.clientWidth - gut * 2);
+        const own = box.clientWidth;
+        const next = (avail > own + 8)
+          ? { width: avail + "px", marginLeft: Math.round((own - avail) / 2) + "px",
+              marginRight: Math.round((own - avail) / 2) + "px" }
+          : null;
+        const key = next ? next.width + "|" + next.marginLeft : "";
+        if (key === last.current) return;      // guard against a resize loop
+        last.current = key;
+        setStyle(next);
+      });
+    };
+    measure();
+
+    let ro = null;
+    try { ro = new ResizeObserver(measure); ro.observe(host); ro.observe(box); } catch (e) { }
+    window.addEventListener("resize", measure);
+    return function () {
+      cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [enabled]);
+
+  return [ref, style];
 }
 
 const ROMAN = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
@@ -409,7 +479,7 @@ function Habits(props) {
                     return (
                       <td key={i} style={{ textAlign: "center" }}>
                         <span class={"tk-cell " + c.state}
-                          style={c.state === "done" ? { background: hb.color, color: "var(--tk-onacc)" } : null}
+                          style={c.state === "done" ? { background: hb.color, color: onColor(hb.color) } : null}
                           title={c.day.weekday + " — " + (c.state === "absent" ? "not listed" : c.state)}>{g}</span>
                       </td>
                     );
@@ -481,12 +551,13 @@ function Heat(props) {
               const a = c.minutes ? 0.22 + 0.78 * (c.minutes / d.heatMax) : 0;
               return (
                 <div class="hc" key={r.name + i}
-                  style={{
-                    background: c.minutes ? r.color : "var(--tk-trk)", opacity: c.minutes ? a : 1,
-                    color: a > 0.55 ? "var(--tk-onacc)" : "var(--tk-mut)"
-                  }}
                   title={r.name + " · " + c.day.weekday + " — " + c.done + "/" + c.count + " tasks, " + hm(c.minutes)}>
-                  {c.count ? (c.done + "/" + c.count) : ""}
+                  {c.minutes
+                    ? <span class="fill" style={{ background: r.color, opacity: a }} />
+                    : null}
+                  <span class="txt" style={{ color: a > 0.5 ? onColor(r.color) : "var(--tk-tx)" }}>
+                    {c.count ? (c.done + "/" + c.count) : ""}
+                  </span>
                 </div>
               );
             }));
@@ -553,7 +624,8 @@ function Ledger(props) {
           <details class="tk-sec" key={g.key} open>
             <summary>
               {props.mark
-                ? <span class="swatch mark" style={{ color: g.color }}>{props.mark}</span>
+                ? <span class="swatch mark"
+                    style={{ color: g.color, fontSize: props.ornate ? "16px" : "13px" }}>{props.mark}</span>
                 : <span class="swatch" style={{ background: g.color }} />}
               <h4>{g.title}</h4>
               <span class="meta">{g.meta}</span>
@@ -626,9 +698,15 @@ function useWeekData(explicitFolder) {
 
 function WeeklyReport(props) {
   props = props || {};
+  /* fullWidth is on unless it is explicitly switched off; `compact` is a
+     shorthand for density="compact". */
+  const wide = props.fullWidth !== false;
   const [skin, setSkin] = dc.useState(function () { return readSkin(props.theme); });
-  const [density, setDensity] = dc.useState(function () { return readDensity(props.density); });
+  const [density, setDensity] = dc.useState(function () {
+    return readDensity(props.compact ? "compact" : props.density);
+  });
   const [habitMin, setHabitMin] = dc.useState(2);
+  const [wideRef, wideStyle] = useFullWidth(wide);
   const ctx = useWeekData(props.folder);
   const st = ctx.st;
 
@@ -636,8 +714,8 @@ function WeeklyReport(props) {
   const f = themes.flags(skin);
   const scope = dc.useMemo(function () { return "tkid-" + Math.random().toString(36).slice(2, 8); }, []);
   const css = dc.useMemo(function () {
-    return themes.skinCss(skin, "." + scope, { density: density, fullWidth: props.fullWidth !== false });
-  }, [skin, scope, density, props.fullWidth]);
+    return themes.skinCss(skin, "." + scope, { density: density, fullWidth: wide });
+  }, [skin, scope, density, wide]);
   const d = dc.useMemo(function () { return core.aggregate(st.days, pal); }, [st.days, skin]);
 
   const setTheme = function (v) { setSkin(v); writeSkin(v); };
@@ -666,7 +744,6 @@ function WeeklyReport(props) {
     { label: "Time completed", value: hm(d.doneMin), sub: "of " + hm(d.totalMin) + " scheduled", m: pct(d.doneMin, d.totalMin) },
     { label: "Recurring", value: String(d.habits.length), sub: goodHabits + " at ≥ 80%", m: pct(goodHabits, d.habits.length) },
     { label: "Left open", value: String(d.openTop), sub: d.cancelledTop ? (d.cancelledTop + " cancelled") : "none cancelled", m: pct(d.openTop, d.totalTop) },
-    { label: "Pages read", value: String(d.totalPages), sub: d.subs.length + " sub-tasks", m: 70 },
     { label: "Note created", value: d.avgWake != null ? clock(d.avgWake) : "—", sub: "average of " + d.wake.length + " days", m: d.avgWake != null ? Math.round(d.avgWake / 1440 * 100) : 0 }
   ];
 
@@ -786,7 +863,7 @@ function WeeklyReport(props) {
 
       <div class="tk-full">
         <Panel mark={mark} title={T[7]}>
-          <Ledger data={d} mark={f.ornate || f.deco ? mark : null} />
+          <Ledger data={d} mark={(f.ornate || f.deco) ? mark : null} ornate={f.ornate} />
         </Panel>
       </div>
     </div>
@@ -795,7 +872,7 @@ function WeeklyReport(props) {
     : null);
 
   return (
-    <div class={scope}>
+    <div class={scope} ref={wideRef} style={wideStyle || undefined}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div class="tk">
         <div class="tk-page">
@@ -803,7 +880,7 @@ function WeeklyReport(props) {
             <Ornaments flags={f} />
             <div class="tk-inner">
               {header}
-              {f.ornate ? <div class="tk-rule"><span>❦</span></div> : null}
+              {f.ornate ? <div class="tk-rule"><span>{f.med ? "❦" : "◆"}</span></div> : null}
               {body}
             </div>
           </div>

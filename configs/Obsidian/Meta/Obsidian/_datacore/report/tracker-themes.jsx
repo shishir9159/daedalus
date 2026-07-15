@@ -81,6 +81,7 @@ const SKINS = {
       "--tk-acc": "var(--interactive-accent)", "--tk-onacc": "var(--text-on-accent,#fff)",
       "--tk-link": "var(--link-color,var(--interactive-accent))",
       "--tk-trk": "var(--background-primary)", "--tk-hover": "var(--background-primary)",
+      "--tk-zebra": "rgba(128,128,128,.055)",
       "--tk-ok": "var(--color-green,#10b981)", "--tk-warn": "var(--color-red,#ef4444)",
       "--tk-card": "var(--background-primary)",
       "--tk-rad": "14px", "--tk-rad2": "9px"
@@ -102,6 +103,7 @@ const SKINS = {
       "--tk-tx": "#e8eaf2", "--tk-tx-strong": "#fff", "--tk-mut": "#a7adc4", "--tk-fnt": "#767d96",
       "--tk-acc": "#7c8cff", "--tk-onacc": "#0d0f18", "--tk-link": "#9fb0ff",
       "--tk-trk": "rgba(255,255,255,.07)", "--tk-hover": "rgba(255,255,255,.05)",
+      "--tk-zebra": "rgba(255,255,255,.04)",
       "--tk-ok": "#34d399", "--tk-warn": "#fb7185",
       "--tk-rad": "18px", "--tk-rad2": "12px",
       "--tk-sh": "0 8px 32px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08)",
@@ -126,6 +128,7 @@ const SKINS = {
       "--tk-tx": "#232a3d", "--tk-tx-strong": "#141a2b", "--tk-mut": "#5c657f", "--tk-fnt": "#8b93a9",
       "--tk-acc": "#4f46e5", "--tk-onacc": "#fff", "--tk-link": "#4338ca",
       "--tk-trk": "rgba(90,100,140,.13)", "--tk-hover": "rgba(255,255,255,.55)",
+      "--tk-zebra": "rgba(90,100,140,.05)",
       "--tk-ok": "#059669", "--tk-warn": "#dc2626",
       "--tk-rad": "18px", "--tk-rad2": "12px",
       "--tk-sh": "0 10px 30px -20px rgba(40,50,90,.55),inset 0 1px 0 rgba(255,255,255,.9)",
@@ -149,6 +152,7 @@ const SKINS = {
       "--tk-tx": "#d8dce2", "--tk-tx-strong": "#f2f5f9", "--tk-mut": "#9aa1ab", "--tk-fnt": "#727a85",
       "--tk-acc": "#6d83f2", "--tk-onacc": "#fff", "--tk-link": "#8fa2ff",
       "--tk-trk": "#1e2126", "--tk-hover": "rgba(255,255,255,.04)",
+      "--tk-zebra": "rgba(255,255,255,.032)",
       "--tk-ok": "#3fbf87", "--tk-warn": "#d9534f",
       "--tk-rad": "11px", "--tk-rad2": "8px", "--tk-bar-rad": "5px",
       "--tk-col-rad": "5px 5px 0 0", "--tk-cell-rad": "5px",
@@ -177,6 +181,7 @@ const SKINS = {
       "--tk-tx": "#2b3140", "--tk-tx-strong": "#161b26", "--tk-mut": "#5f6879", "--tk-fnt": "#8a92a1",
       "--tk-acc": "#4c5fd7", "--tk-onacc": "#fff", "--tk-link": "#3a4ec0",
       "--tk-trk": "#dfe3ea", "--tk-hover": "rgba(76,95,215,.06)",
+      "--tk-zebra": "rgba(76,95,215,.045)",
       "--tk-ok": "#2b9c68", "--tk-warn": "#c0392b",
       "--tk-rad": "11px", "--tk-rad2": "8px", "--tk-bar-rad": "5px",
       "--tk-col-rad": "5px 5px 0 0", "--tk-cell-rad": "5px",
@@ -653,14 +658,18 @@ table.tk-t tr:hover td{ background:var(--tk-hover); }
 .tk-spark{ display:flex; align-items:flex-end; gap:3px; height:30px; margin-top:10px; }
 .tk-spark i{ flex:1; border-radius:2px 2px 1px 1px; min-height:2px; display:block; }
 
-/* heat matrix */
+/* heat matrix — the wash is a separate layer so fading it never fades the
+   label sitting on top of it */
 .tk-heat{ display:grid; gap:4px; }
 .tk-heat .hd{ font-family:var(--tk-fonth); font-size:9px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--tk-fnt); text-align:center; font-weight:700; }
 .tk-heat .rl{ font-size:12px; color:var(--tk-mut); padding-right:8px; overflow:hidden;
   text-overflow:ellipsis; white-space:nowrap; text-align:right; align-self:center; }
-.tk-heat .hc{ height:26px; border-radius:var(--tk-cell-rad,6px); display:flex; align-items:center;
-  justify-content:center; font-size:10.5px; font-variant-numeric:tabular-nums; }
+.tk-heat .hc{ position:relative; overflow:hidden; height:26px; border-radius:var(--tk-cell-rad,6px);
+  display:flex; align-items:center; justify-content:center; font-size:10.5px;
+  font-variant-numeric:tabular-nums; background:var(--tk-trk); }
+.tk-heat .hc .fill{ position:absolute; inset:0; border-radius:inherit; }
+.tk-heat .hc .txt{ position:relative; z-index:1; font-weight:600; }
 
 /* controls */
 .tk-ctrl{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
@@ -728,6 +737,28 @@ table.tk-t tr:hover td{ background:var(--tk-hover); }
 .tk-err{ font-size:12.5px; color:var(--tk-warn); }
 .tk-foot{ display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-top:16px; padding-top:13px;
   border-top:1px solid var(--tk-bd2); }
+
+/* ==========================================================================
+   HOST RESET
+   The report renders inside a note, so Obsidian's own table / details / form
+   styling reaches it and wins on specificity — that is where the stray zebra
+   rows and washed-out cell text came from.  These rules are deliberately
+   heavier than the ones above and carry !important on the properties the skin
+   must own; they are still scoped, so nothing leaks back into your notes.
+   ========================================================================== */
+.tk table.tk-t{ background:transparent !important; margin:0; box-shadow:none; }
+.tk table.tk-t thead,.tk table.tk-t tbody,.tk table.tk-t tr{ background:transparent !important; }
+.tk table.tk-t th,.tk table.tk-t td{ background:transparent !important;
+  border-left:0; border-right:0; border-top:0; }
+/* re-assert the intended colours at the same weight, or the reset above would
+   hand them back to the host theme */
+.tk table.tk-t th{ color:var(--tk-fnt); border-bottom:1px solid var(--tk-bd); }
+.tk table.tk-t td{ color:var(--tk-tx); border-bottom:1px solid var(--tk-bd2); }
+.tk table.tk-t tbody tr:hover > td{ background:var(--tk-hover) !important; }
+.tk details.tk-sec{ background:transparent; margin-block:0; }
+.tk details.tk-sec > summary{ background:var(--tk-tile); color:var(--tk-tx); }
+.tk details.tk-sec > summary::marker,
+.tk details.tk-sec > summary::-webkit-details-marker{ content:""; display:none; }
 
 /* ornaments */
 .tk-frame{ position:absolute; inset:11px; border:1px solid var(--tk-orn); opacity:.55; pointer-events:none; }
