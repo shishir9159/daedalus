@@ -15,7 +15,11 @@
      theme      skin id.  Omitted -> picked from the active Obsidian theme,
                 unless a swatch was clicked before (that choice is remembered).
      density    "comfortable" | "compact"
+     compact    shorthand for density="compact"
      fullWidth  true (default) | false — false caps the report at 900px
+     solo       true (default) — in reading mode, hide everything else in the
+                note (inline title, properties, payload).  false leaves the
+                note's own content visible.
      folder     read the daily notes of another folder instead of this one
    ========================================================================== */
 
@@ -160,6 +164,51 @@ function useFullWidth(enabled) {
   }, [enabled]);
 
   return [ref, style];
+}
+
+/* Reading mode shows the dashboard and nothing else — no inline title, no
+   properties block, no payload comment, no stray prose.  This is a global
+   stylesheet (it has to reach outside our scope to touch Obsidian's own
+   chrome) but it only bites on a container we tagged ourselves, and only in
+   the preview pane: live preview and source mode stay fully editable. */
+const SOLO_CSS_ID = "tk-solo-css";
+const SOLO_CSS = [
+  ".markdown-preview-view.tk-solo .inline-title,",
+  ".markdown-preview-view.tk-solo .metadata-container,",
+  ".markdown-preview-view.tk-solo .frontmatter,",
+  ".markdown-preview-view.tk-solo .frontmatter-container{ display:none !important; }",
+  ".markdown-preview-view.tk-solo .markdown-preview-sizer > *{ display:none !important; }",
+  ".markdown-preview-view.tk-solo .markdown-preview-sizer > .tk-keep{ display:block !important; }"
+].join("\n");
+
+function ensureSoloCss() {
+  if (typeof document === "undefined" || document.getElementById(SOLO_CSS_ID)) return;
+  try {
+    const s = document.createElement("style");
+    s.id = SOLO_CSS_ID;
+    s.textContent = SOLO_CSS;
+    document.head.appendChild(s);
+  } catch (e) { /* ignore */ }
+}
+
+function useSolo(ref, enabled) {
+  dc.useEffect(function () {
+    const el = ref.current;
+    if (!el || !enabled) return;
+    const view = el.closest(".markdown-preview-view");
+    const sizer = el.closest(".markdown-preview-sizer");
+    if (!view || !sizer) return;                 // not reading mode — leave it be
+    let block = el;
+    while (block && block.parentElement !== sizer) block = block.parentElement;
+    if (!block) return;
+    ensureSoloCss();
+    block.classList.add("tk-keep");
+    view.classList.add("tk-solo");
+    return function () {
+      block.classList.remove("tk-keep");
+      view.classList.remove("tk-solo");
+    };
+  }, [enabled]);
 }
 
 const ROMAN = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
@@ -439,21 +488,36 @@ function habitRows(d, min) {
   return d.habits.filter(function (x) { return x.marked || x.habitSection || x.dayCount >= min; });
 }
 
+/* Column widths for the streak grid.  Auto table layout lets the nowrap task
+   titles claim the whole width and shoves every other column out past the
+   scroll container, so the layout is fixed and the task column simply takes
+   whatever is left.  Font sizes are untouched — only the geometry. */
+const HB_DAY = 32, HB_DONE = 56, HB_RATE = 84, HB_STREAK = 60, HB_TIME = 64, HB_TASK = 168;
+
 function Habits(props) {
   const d = props.data;
   const rows = habitRows(d, props.min);
   const [all, setAll] = dc.useState(false);
   const shown = all ? rows : rows.slice(0, 20);
+  const minW = HB_TASK + d.days.length * HB_DAY + HB_DONE + HB_RATE + HB_STREAK + HB_TIME;
   return (
     <div>
       <div class="tk-wrap">
-        <table class="tk-t">
+        <table class="tk-t fixed" style={{ minWidth: minW + "px" }}>
+          <colgroup>
+            <col />
+            {d.days.map(function (x) { return <col key={x.name} style={{ width: HB_DAY + "px" }} />; })}
+            <col style={{ width: HB_DONE + "px" }} />
+            <col style={{ width: HB_RATE + "px" }} />
+            <col style={{ width: HB_STREAK + "px" }} />
+            <col style={{ width: HB_TIME + "px" }} />
+          </colgroup>
           <thead>
             <tr>
-              <th style={{ minWidth: "190px" }}>Task</th>
-              {d.days.map(function (x) { return <th key={x.name} style={{ textAlign: "center" }}>{x.weekdayShort}</th>; })}
+              <th>Task</th>
+              {d.days.map(function (x) { return <th key={x.name} class="day">{x.weekdayShort}</th>; })}
               <th style={{ textAlign: "right" }}>Done</th>
-              <th style={{ minWidth: "84px" }}>Rate</th>
+              <th>Rate</th>
               <th style={{ textAlign: "center" }}>Streak</th>
               <th style={{ textAlign: "right" }}>Time</th>
             </tr>
@@ -477,7 +541,7 @@ function Habits(props) {
                   {hb.cells.map(function (c, i) {
                     const g = c.state === "done" ? "✓" : c.state === "missed" ? "" : c.state === "cancelled" ? "✕" : "·";
                     return (
-                      <td key={i} style={{ textAlign: "center" }}>
+                      <td key={i} class="day">
                         <span class={"tk-cell " + c.state}
                           style={c.state === "done" ? { background: hb.color, color: onColor(hb.color) } : null}
                           title={c.day.weekday + " — " + (c.state === "absent" ? "not listed" : c.state)}>{g}</span>
@@ -707,6 +771,7 @@ function WeeklyReport(props) {
   });
   const [habitMin, setHabitMin] = dc.useState(2);
   const [wideRef, wideStyle] = useFullWidth(wide);
+  useSolo(wideRef, props.solo !== false);
   const ctx = useWeekData(props.folder);
   const st = ctx.st;
 

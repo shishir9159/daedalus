@@ -629,6 +629,10 @@ const STRUCTURE = `
 /* tables */
 .tk-wrap{ overflow-x:auto; }
 table.tk-t{ width:100%; border-collapse:collapse; font-size:12.5px; }
+/* fixed layout keeps every column on screen; the first one absorbs the slack */
+table.tk-t.fixed{ table-layout:fixed; }
+table.tk-t.fixed th,table.tk-t.fixed td{ overflow:hidden; }
+table.tk-t th.day,table.tk-t td.day{ padding-left:4px; padding-right:4px; text-align:center; }
 table.tk-t th{ font-family:var(--tk-fonth); font-size:9px; letter-spacing:.13em; text-transform:uppercase;
   color:var(--tk-fnt); font-weight:700; text-align:left; padding:0 8px 9px;
   border-bottom:1px solid var(--tk-bd); white-space:nowrap; }
