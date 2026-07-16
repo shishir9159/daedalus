@@ -117,14 +117,24 @@ function onColor(c) {
   return l == null ? "var(--tk-onacc)" : (l > 0.42 ? "#15171d" : "#ffffff");
 }
 
-/* Datacore blocks sit inside the note's content column, which Obsidian caps at
-   --file-line-width.  A CSS width can never beat that, so measure the pane and
-   pull the report out over the margins.  When readable line length is already
-   off the two widths match and nothing is applied. */
+/* ==========================================================================
+   HOST INTEGRATION · FULL WIDTH
+   --------------------------------------------------------------------------
+   Datacore blocks sit inside the note’s content column, which Obsidian caps
+   at --file-line-width.  A CSS width can never beat that, so measure the pane
+   and pull the report out over the margins.  When readable line length is
+   already off the two widths match and nothing is applied.
+
+   The last measurement is kept module-side and used to seed the next mount:
+   a recycled section then starts at the right width instead of painting one
+   narrow (and therefore taller) frame that shoves the scroll position. */
+let LAST_WIDE = null;
+
 function useFullWidth(enabled) {
+  const seed = enabled ? LAST_WIDE : null;
   const ref = dc.useRef(null);
-  const [style, setStyle] = dc.useState(null);
-  const last = dc.useRef("");
+  const [style, setStyle] = dc.useState(seed);
+  const last = dc.useRef(seed ? seed.width + "|" + seed.marginLeft : "");
 
   dc.useEffect(function () {
     const el = ref.current;
@@ -148,6 +158,7 @@ function useFullWidth(enabled) {
         const key = next ? next.width + "|" + next.marginLeft : "";
         if (key === last.current) return;      // guard against a resize loop
         last.current = key;
+        LAST_WIDE = next;
         setStyle(next);
       });
     };
@@ -166,25 +177,31 @@ function useFullWidth(enabled) {
   return [ref, style];
 }
 
-/* Reading mode shows the dashboard and nothing else — no inline title, no
-   properties block, no payload comment, no stray prose.  This is a global
-   stylesheet (it has to reach outside our scope to touch Obsidian's own
-   chrome) but it only bites on a container we tagged ourselves, and only in
-   the preview pane: live preview and source mode stay fully editable. */
+/* ==========================================================================
+   HOST INTEGRATION · READING-MODE SOLO
+   --------------------------------------------------------------------------
+   Reading mode shows the dashboard and nothing else — no inline title, no
+   properties block, no payload comment, no stray prose.
+
+   Three rules keep this from misfiring, all learned the hard way:
+     · hide by absence, never by presence.  Obsidian rebuilds the children of
+       .markdown-preview-sizer as they scroll out of view, so any "keep this
+       one" class we stamp at mount goes stale and the blanket rule eats the
+       whole note.  Every rule below hides only children that demonstrably do
+       NOT contain our anchor, so a rebuilt block is visible by default.
+     · the sizer must itself contain an anchor for anything to be hidden.  A
+       stale .tk-solo left on a recycled leaf then blanks nothing.
+     · the class is reference counted, so the unmount/remount Obsidian does
+       while recycling a section never flashes the note's own chrome.
+   Live preview and source mode are untouched: we bail unless we are inside
+   .markdown-preview-view. */
 const SOLO_CSS_ID = "tk-solo-css";
+const SOLO_ANCHOR = "tk-anchor";
 const HAS_HAS = (function () {
   try { return !!(window.CSS && CSS.supports && CSS.supports("selector(:has(*))")); }
   catch (e) { return false; }
 })();
 
-/* Two layers, and the direction matters.  Obsidian's reading view tears down
-   and rebuilds sizer children as they scroll far out of view, so anything
-   that marks *our* block as a keeper goes stale the moment the block is
-   re-created — that is what made the whole report vanish a page and a half
-   down.  Both rules below instead hide only children that demonstrably do
-   NOT contain our anchor, so a freshly rebuilt block is visible by default:
-   :has() re-evaluates live (no flash), and the swept .tk-hide class is the
-   fallback for a build without :has(). */
 const SOLO_CSS = [
   ".markdown-preview-view.tk-solo .inline-title,",
   ".markdown-preview-view.tk-solo .metadata-container,",
@@ -192,8 +209,8 @@ const SOLO_CSS = [
   ".markdown-preview-view.tk-solo .frontmatter-container{ display:none !important; }",
   ".markdown-preview-view.tk-solo .markdown-preview-sizer > .tk-hide{ display:none !important; }",
   HAS_HAS
-    ? ".markdown-preview-view.tk-solo .markdown-preview-sizer > *:not(:has(.tk-anchor))" +
-      "{ display:none !important; }"
+    ? ".markdown-preview-view.tk-solo .markdown-preview-sizer:has(." + SOLO_ANCHOR + ")" +
+      " > *:not(:has(." + SOLO_ANCHOR + ")){ display:none !important; }"
     : ""
 ].join("\n");
 
@@ -207,14 +224,35 @@ function ensureSoloCss() {
   } catch (e) { /* ignore */ }
 }
 
+/* Fallback for a build without :has() — same logic, done in JS. */
 function soloSweep(sizer) {
   const kids = sizer.children;
+  const mine = !!sizer.querySelector("." + SOLO_ANCHOR);
   for (let i = 0; i < kids.length; i++) {
     const k = kids[i];
-    const mine = k.classList.contains("tk-anchor") || !!k.querySelector(".tk-anchor");
-    if (mine) k.classList.remove("tk-hide");
-    else k.classList.add("tk-hide");
+    const keep = !mine || k.classList.contains(SOLO_ANCHOR) ||
+      !!k.querySelector("." + SOLO_ANCHOR);
+    k.classList.toggle("tk-hide", !keep);
   }
+}
+
+const SOLO_REFS = new WeakMap();
+
+function soloAcquire(view) {
+  SOLO_REFS.set(view, (SOLO_REFS.get(view) || 0) + 1);
+  view.classList.add("tk-solo");
+}
+
+/* Deferred so an unmount immediately followed by a remount — which is what a
+   recycled section looks like — never drops the class in between. */
+function soloRelease(view, sizer) {
+  SOLO_REFS.set(view, Math.max(0, (SOLO_REFS.get(view) || 0) - 1));
+  setTimeout(function () {
+    if (SOLO_REFS.get(view)) return;
+    view.classList.remove("tk-solo");
+    const kids = sizer.children;
+    for (let i = 0; i < kids.length; i++) kids[i].classList.remove("tk-hide");
+  }, 0);
 }
 
 function useSolo(ref, enabled) {
@@ -225,11 +263,10 @@ function useSolo(ref, enabled) {
     const sizer = el.closest(".markdown-preview-sizer");
     if (!view || !sizer) return;                 // not reading mode — leave it be
     ensureSoloCss();
-    view.classList.add("tk-solo");
+    soloAcquire(view);
 
     /* With :has() the stylesheet re-evaluates itself on every rebuild, so the
-       sweep — and the observer that drives it — is only wired up on a build
-       that lacks it. */
+       sweep — and the observer driving it — is only wired up without it. */
     let raf = 0, mo = null;
     if (!HAS_HAS) {
       const run = function () {
@@ -238,19 +275,15 @@ function useSolo(ref, enabled) {
         soloSweep(sizer);
         if (mo) mo.observe(sizer, { childList: true, subtree: true });
       };
-      const queue = function () { if (!raf) raf = requestAnimationFrame(run); };
-      try {
-        mo = new MutationObserver(queue);
-      } catch (e) { mo = null; }
+      try { mo = new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(run); }); }
+      catch (e) { mo = null; }
       run();
     }
 
     return function () {
       if (raf) cancelAnimationFrame(raf);
       if (mo) mo.disconnect();
-      view.classList.remove("tk-solo");
-      const kids = sizer.children;
-      for (let i = 0; i < kids.length; i++) kids[i].classList.remove("tk-hide");
+      soloRelease(view, sizer);
     };
   }, [enabled]);
 }
@@ -772,15 +805,54 @@ function Ledger(props) {
   );
 }
 
-/* ------------------------------------------------------------------- shell */
+/* ==========================================================================
+   DATA
+   --------------------------------------------------------------------------
+   One week, read either from the compact payload in this note or from the
+   daily notes beside it.
+
+   The cache is not a micro-optimisation, it is what keeps the scroll steady.
+   Obsidian recycles reading-view sections while you scroll, which unmounts
+   and remounts this component; a cold remount starts at loading -> the body
+   renders empty for one paint -> the note collapses to the height of the
+   hero -> the browser clamps scrollTop and you are back at the top.  Seeding
+   the first paint from the last good read keeps the height identical across
+   a recycle, so there is nothing to jump to.
+
+   The signature guard is the other half: Datacore's index ticks for any file
+   in the vault, and re-reading is cheap but re-rendering the whole dashboard
+   is not.  Identical data means no setState at all.
+   ========================================================================== */
+const WEEK_CACHE = new Map();
+const WEEK_CACHE_MAX = 8;
+
+function cacheGet(key) { return key ? WEEK_CACHE.get(key) : null; }
+
+function cachePut(key, value) {
+  if (!key) return;
+  WEEK_CACHE.delete(key);
+  WEEK_CACHE.set(key, value);
+  while (WEEK_CACHE.size > WEEK_CACHE_MAX) {
+    WEEK_CACHE.delete(WEEK_CACHE.keys().next().value);
+  }
+}
 
 function useWeekData(explicitFolder) {
   const path = dc.useCurrentPath();
-  const rev = (typeof dc.useIndexUpdates === "function") ? dc.useIndexUpdates() : 0;
-  const [st, setSt] = dc.useState({ loading: true, days: [], payload: null, source: "", error: null });
+  const rev = (typeof dc.useIndexUpdates === "function")
+    ? dc.useIndexUpdates({ debounce: 1200 }) : 0;
 
   const folder = explicitFolder ||
     ((path && path.indexOf("/") >= 0) ? path.slice(0, path.lastIndexOf("/")) : "");
+  const key = explicitFolder ? ("folder:" + folder) : ("note:" + path);
+
+  const [st, setSt] = dc.useState(function () {
+    const c = cacheGet(key);
+    return c
+      ? { loading: false, days: c.days, payload: c.payload, source: c.source, error: null }
+      : { loading: true, days: [], payload: null, source: "", error: null };
+  });
+  const sig = dc.useRef((cacheGet(key) || {}).sig || "");
 
   dc.useEffect(function () {
     let dead = false;
@@ -793,16 +865,30 @@ function useWeekData(explicitFolder) {
         }
         if (payload) { days = core.decodeWeek(payload); source = "compact"; }
         else { days = await core.loadWeekFolder(app, folder); source = "live"; }
-        if (!dead) setSt({ loading: false, days: days, payload: payload, source: source, error: null });
+        if (dead) return;
+
+        const next = JSON.stringify(days);
+        if (next === sig.current && WEEK_CACHE.has(key)) return;   // nothing moved
+        sig.current = next;
+        cachePut(key, { days: days, payload: payload, source: source, sig: next });
+        setSt({ loading: false, days: days, payload: payload, source: source, error: null });
       } catch (e) {
-        if (!dead) setSt({ loading: false, days: [], payload: null, source: "", error: String((e && e.message) || e) });
+        if (dead) return;
+        sig.current = "";
+        setSt({ loading: false, days: [], payload: null, source: "",
+                error: String((e && e.message) || e) });
       }
     })();
     return function () { dead = true; };
-  }, [path, folder, rev]);
+  }, [path, folder, key, rev]);
 
   return { st: st, folder: folder, path: path };
 }
+
+/* ==========================================================================
+   REPORT
+   ========================================================================== */
+let SCOPE_N = 0;
 
 function WeeklyReport(props) {
   props = props || {};
@@ -821,7 +907,7 @@ function WeeklyReport(props) {
 
   const pal = themes.palette(skin);
   const f = themes.flags(skin);
-  const scope = dc.useMemo(function () { return "tkid-" + Math.random().toString(36).slice(2, 8); }, []);
+  const scope = dc.useMemo(function () { return "tkid-" + (++SCOPE_N).toString(36); }, []);
   const css = dc.useMemo(function () {
     return themes.skinCss(skin, "." + scope, { density: density, fullWidth: wide });
   }, [skin, scope, density, wide]);
@@ -847,6 +933,7 @@ function WeeklyReport(props) {
   });
   const cards = dc.useMemo(function () { return perfCards(d, pal); }, [d, skin]);
 
+  const secMax = (d.sections[0] && d.sections[0].minutes) || 1;
   const goodHabits = d.habits.filter(function (x) { return x.rate >= 0.8; }).length;
   const tiles = [
     { label: "Completion", value: d.rate + "%", sub: d.doneTop + " of " + d.totalTop + " tasks", m: d.rate },
@@ -932,13 +1019,12 @@ function WeeklyReport(props) {
         <Panel mark={mark} title={T[3]}>
           <div class="tk-bars">
             {d.sections.map(function (s) {
-              const mx = (d.sections[0] && d.sections[0].minutes) || 1;
               return (
                 <div class="tk-bar" key={s.name}>
                   <div class="lb" title={s.name}>{s.name}</div>
                   <div class="tk-track2">
-                    <div class="fl" style={{ width: ((s.minutes / mx) * 100) + "%", background: s.color }} />
-                    <div class="fd" style={{ width: ((s.doneMinutes / mx) * 100) + "%", background: decoFill(s.color, f.deco), color: s.color }} />
+                    <div class="fl" style={{ width: ((s.minutes / secMax) * 100) + "%", background: s.color }} />
+                    <div class="fd" style={{ width: ((s.doneMinutes / secMax) * 100) + "%", background: decoFill(s.color, f.deco), color: s.color }} />
                   </div>
                   <div class="vl">{hm(s.minutes) + "  ·  " + s.done + "/" + s.count + "  ·  " + pct(s.done, s.count) + "%"}</div>
                 </div>
