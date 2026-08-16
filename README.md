@@ -10,3 +10,11 @@ grep -E "caps:swapescape" /usr/share/X11/xkb/rules/base.lst
 # for temporary change for the session
 setxkbmap -option caps:swapescape
 ```
+
+for just file
+```zsh
+just --completions zsh > /tmp/_just
+fpath += /tmp
+compinit
+source <(just --completions bash)
+```
