@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="page">
+<link rel="stylesheet" href="_ds/classical-4bfc0049-0d7d-498d-b88d-10829d1e23ff/styles.css">
+<script src="_ds/classical-4bfc0049-0d7d-498d-b88d-10829d1e23ff/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+  body { margin: 0; background: #14161c; }
+  * { box-sizing: border-box; }
+  a { color: var(--color-accent-700, #8a6226); }
+  a:hover { color: var(--color-accent, #b68235); }
+  ::-webkit-scrollbar { height: 9px; width: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,128,128,.35); border-radius: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+
+  <div style="position:sticky;top:0;z-index:20;display:flex;align-items:stretch;height:38px;background:var(--tk-app-bg2);border-bottom:1px solid var(--tk-app-bd);font-family:var(--tk-font);flex:0 0 auto">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--tk-app-bg);border-right:1px solid var(--tk-app-bd);min-width:0">
+      <span style="width:6px;height:6px;border-radius:9px;background:var(--tk-acc);flex:0 0 auto"></span>
+      <span style="font-size:12.5px;color:var(--tk-app-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ noteFile }}</span>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--tk-app-mut);font-size:11px;letter-spacing:.06em">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid var(--tk-acc);border-radius:var(--tk-rad2);color:var(--tk-acc);letter-spacing:.12em;text-transform:uppercase;font-size:9.5px;font-weight:600">Readable line length off</span>
+      <span>{{ notePath }}</span>
+    </div>
+  </div>
+
+  <div style="flex:1;background:var(--tk-app-bg)">
+  <div style="width:100%;max-width:var(--tk-max);margin:0 auto;padding:var(--tk-page-pad)">
+    <div id="tk-report" style="position:relative;padding:var(--tk-shell-pad);border-radius:var(--tk-rad);background:var(--tk-page);border:var(--tk-shell-bd);box-shadow:var(--tk-shell-sh);color:var(--tk-tx);font-family:var(--tk-font);font-size:var(--tk-fs);line-height:1.5">
+
+      <sc-if value="{{ isMedieval }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:11px;border:1px solid var(--tk-orn);opacity:.55;pointer-events:none"></div>
+        <div style="position:absolute;inset:16px;border:1px solid var(--tk-orn);opacity:.4;pointer-events:none"></div>
+        <sc-for list="{{ corners }}" as="c" hint-placeholder-count="4">
+          <svg viewBox="0 0 44 44" fill="none" style="{{ c.style }}">
+            <g transform="{{ c.flip }}">
+              <path d="M3 3 H18 M3 3 V18" stroke="currentColor" stroke-width="1.3"></path>
+              <path d="M8 8 C8 17 17 8 26 8" stroke="currentColor" stroke-width="1" opacity=".85"></path>
+              <path d="M8 8 C17 8 8 17 8 26" stroke="currentColor" stroke-width="1" opacity=".85"></path>
+              <circle cx="8" cy="8" r="1.9" fill="currentColor"></circle>
+              <path d="M26 8 q5 0 5 5 q0 -5 5 -5 q-5 0 -5 -5 q0 5 -5 5 z" fill="currentColor" opacity=".7"></path>
+            </g>
+          </svg>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{ isDeco }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ corners }}" as="c" hint-placeholder-count="4">
+          <svg viewBox="0 0 60 60" fill="none" style="{{ c.style }}">
+            <g transform="{{ c.flip }}">
+              <path d="M6 54 V6 H54" stroke="currentColor" stroke-width="1.5"></path>
+              <path d="M12 44 V12 H44" stroke="currentColor" stroke-width="1" opacity=".72"></path>
+              <path d="M18 31 V18 H31" stroke="currentColor" stroke-width="1" opacity=".48"></path>
+              <path d="M6 24 A18 18 0 0 1 24 6" stroke="currentColor" stroke-width="1" opacity=".55"></path>
+              <path d="M6 6 H11 V11 H6 Z" fill="currentColor" opacity=".85"></path>
+            </g>
+          </svg>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{ isIndustry }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ regs }}" as="g" hint-placeholder-count="4">
+          <svg viewBox="0 0 14 14" fill="none" style="{{ g.style }}">
+            <path d="M7 0 V14 M0 7 H14" stroke="currentColor" stroke-width="1"></path>
+          </svg>
+        </sc-for>
+      </sc-if>
+
+      <div style="position:relative;z-index:1">
+
+        <div style="position:relative;overflow:visible;margin-bottom:var(--tk-hero-mb)">
+          <div style="position:absolute;inset:-30% -6% auto -6%;height:190%;pointer-events:none;background:var(--tk-hero-fx);opacity:.9;border-radius:var(--tk-rad)"></div>
+          <div style="position:relative;z-index:1;padding:var(--tk-hero-pad);background:var(--tk-hero);border:var(--tk-hero-bd);border-radius:var(--tk-rad);box-shadow:var(--tk-hero-sh);backdrop-filter:var(--tk-blur)">
+
+            <sc-if value="{{ isIndustry }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ regs }}" as="g" hint-placeholder-count="4">
+                <svg viewBox="0 0 14 14" fill="none" style="{{ g.style }}">
+                  <path d="M7 0 V14 M0 7 H14" stroke="currentColor" stroke-width="1"></path>
+                </svg>
+              </sc-for>
+            </sc-if>
+
+            <div style="display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap;text-align:var(--tk-hero-al)">
+              <div style="flex:1;min-width:260px">
+                <div style="font-family:var(--tk-fonth);font-size:10px;letter-spacing:var(--tk-kick-ls);text-transform:uppercase;color:var(--tk-mut);font-weight:600">{{ kicker }}</div>
+                <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;justify-content:var(--tk-hero-jc);margin:8px 0 5px">
+                  <div style="font-family:var(--tk-fontd);font-size:clamp(30px,3.4vw,46px);font-weight:var(--tk-title-w);letter-spacing:var(--tk-title-ls);line-height:1.02;color:var(--tk-tx-strong)">{{ title }}</div>
+                  <div style="font-family:var(--tk-fonth);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--tk-acc);border:1px solid var(--tk-bd);border-radius:var(--tk-rad2);padding:4px 10px;font-variant-numeric:tabular-nums">{{ weekMark }}</div>
+                </div>
+                <div style="color:var(--tk-mut);font-size:13.5px;font-style:var(--tk-sub-i)">{{ subtitle }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+                <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:230px">
+                  <sc-for list="{{ skins }}" as="s" hint-placeholder-count="10">
+                    <button title="{{ s.label }}" onClick="{{ s.pick }}" style="{{ s.style }}" style-hover="opacity:1"></button>
+                  </sc-for>
+                </div>
+                <div style="display:inline-flex;border:1px solid var(--tk-bd2);border-radius:var(--tk-rad2);overflow:hidden">
+                  <sc-for list="{{ densities }}" as="dn" hint-placeholder-count="2">
+                    <button onClick="{{ dn.pick }}" style="{{ dn.style }}">{{ dn.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-top:22px;text-align:left">
+              <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="6">
+                <div style="position:relative;padding:13px 14px 12px;border-radius:var(--tk-rad2);background:var(--tk-tile);border:1px solid var(--tk-bd2);box-shadow:var(--tk-tile-sh);overflow:hidden">
+                  <div style="{{ t.cap }}"></div>
+                  <div style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700">{{ t.label }}</div>
+                  <div style="font-family:var(--tk-fonth);font-size:26px;font-weight:var(--tk-num-w);letter-spacing:-.015em;line-height:1.15;margin-top:6px;color:var(--tk-tx-strong);font-variant-numeric:tabular-nums">{{ t.value }}</div>
+                  <div style="font-size:11.5px;color:var(--tk-mut);margin-top:3px;font-style:var(--tk-sub-i)">{{ t.sub }}</div>
+                  <div style="position:relative;height:3px;border-radius:2px;background:var(--tk-trk);margin-top:11px;overflow:hidden">
+                    <div style="{{ t.meter }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ showRule }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;margin:0 0 20px;color:var(--tk-orn)">
+            <span style="flex:1;height:1px;background:linear-gradient(90deg,transparent,currentColor)"></span>
+            <span style="font-size:15px;letter-spacing:.3em;font-family:var(--tk-fonth)">{{ ruleMark }}</span>
+            <span style="flex:1;height:1px;background:linear-gradient(90deg,currentColor,transparent)"></span>
+          </div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:var(--tk-gap);margin-bottom:var(--tk-gap)">
+
+          <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+              <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t1 }}</h3>
+              <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            </div>
+            <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+              <div style="position:relative;width:170px;height:170px;flex:0 0 auto">
+                <svg width="170" height="170" viewBox="0 0 170 170">
+                  <circle cx="85" cy="85" r="72" fill="none" stroke="var(--tk-trk)" stroke-width="20"></circle>
+                  <sc-for list="{{ arcs }}" as="a" hint-placeholder-count="7">
+                    <circle cx="85" cy="85" r="72" fill="none" transform="rotate(-90 85 85)" style="{{ a.style }}"><title>{{ a.tip }}</title></circle>
+                  </sc-for>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                  <div style="font-family:var(--tk-fonth);font-size:31px;font-weight:var(--tk-num-w);line-height:1;color:var(--tk-tx-strong);font-variant-numeric:tabular-nums">{{ ratePct }}</div>
+                  <div style="font-size:11px;color:var(--tk-mut);margin-top:5px;font-style:var(--tk-sub-i)">{{ totalTime }}</div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:150px;display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ legend }}" as="l" hint-placeholder-count="7">
+                  <div style="display:flex;align-items:center;gap:9px;font-size:12.5px">
+                    <span style="{{ l.sw }}"></span>
+                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ l.name }}</span>
+                    <span style="color:var(--tk-mut);font-variant-numeric:tabular-nums;font-size:12px">{{ l.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+              <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t2 }}</h3>
+              <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            </div>
+            <div style="display:flex;gap:9px;align-items:flex-end">
+              <sc-for list="{{ dayCols }}" as="p" hint-placeholder-count="7">
+                <div title="{{ p.tip }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0">
+                  <div style="font-size:11px;color:var(--tk-fnt);font-variant-numeric:tabular-nums">{{ p.ratio }}</div>
+                  <div style="width:100%;height:132px;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:var(--tk-axis)">
+                    <div style="{{ p.bar }}"><i style="{{ p.fill }}"></i></div>
+                  </div>
+                  <div style="font-family:var(--tk-fonth);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tk-mut);font-weight:600">{{ p.day }}</div>
+                  <div style="font-size:11px;color:var(--tk-fnt);font-variant-numeric:tabular-nums">{{ p.time }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+              <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t3 }}</h3>
+              <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px">
+              <sc-for list="{{ metricCards }}" as="m" hint-placeholder-count="4">
+                <div style="padding:12px 13px 11px;border-radius:var(--tk-rad2);background:var(--tk-tile);border:1px solid var(--tk-bd2);box-shadow:var(--tk-tile-sh)">
+                  <div style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700">{{ m.label }}</div>
+                  <div style="{{ m.big }}">{{ m.total }}</div>
+                  <div style="font-size:11px;color:var(--tk-mut);font-style:var(--tk-sub-i)">{{ m.sub }}</div>
+                  <div style="display:flex;align-items:flex-end;gap:3px;height:30px;margin-top:10px">
+                    <sc-for list="{{ m.bars }}" as="b" hint-placeholder-count="7">
+                      <i title="{{ b.tip }}" style="{{ b.style }}"></i>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:var(--tk-gap);margin-bottom:var(--tk-gap)">
+
+          <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+              <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t4 }}</h3>
+              <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(96px,1.15fr) minmax(120px,3fr) max-content;column-gap:14px;row-gap:10px;align-items:center;font-size:12.5px">
+              <sc-for list="{{ sectionBars }}" as="s" hint-placeholder-count="8">
+                <div style="display:contents">
+                  <div title="{{ s.name }}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ s.name }}</div>
+                  <div style="position:relative;height:16px;border-radius:var(--tk-bar-rad);background:var(--tk-trk);box-shadow:var(--tk-inset);overflow:hidden;min-width:0">
+                    <div style="{{ s.plan }}"></div>
+                    <div style="{{ s.done }}"></div>
+                  </div>
+                  <div style="font-variant-numeric:tabular-nums;color:var(--tk-mut);font-size:11.5px;white-space:nowrap;text-align:right">{{ s.meta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+              <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t5 }}</h3>
+              <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            </div>
+            <div style="overflow-x:auto">
+              <div style="{{ heatGrid }}">
+                <div></div>
+                <sc-for list="{{ dayHeads }}" as="h" hint-placeholder-count="7">
+                  <div style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--tk-fnt);text-align:center;font-weight:700">{{ h }}</div>
+                </sc-for>
+                <sc-for list="{{ heatCells }}" as="c" hint-placeholder-count="64">
+                  <div title="{{ c.tip }}" style="{{ c.style }}">{{ c.text }}</div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur);margin-bottom:var(--tk-gap)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+            <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t6 }}</h3>
+            <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            <span style="font-size:11px;color:var(--tk-fnt);white-space:nowrap">{{ rhythmNote }}</span>
+          </div>
+          <div style="position:relative;height:15px;margin-left:46px;margin-right:60px;margin-bottom:5px">
+            <sc-for list="{{ hourTicks }}" as="h" hint-placeholder-count="9">
+              <span style="{{ h.style }}">{{ h.label }}</span>
+            </sc-for>
+          </div>
+          <sc-for list="{{ rhythm }}" as="r" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+              <div style="width:38px;flex:0 0 38px;font-family:var(--tk-fonth);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tk-mut);text-align:right;font-weight:600">{{ r.day }}</div>
+              <div style="position:relative;flex:1;height:24px;border-radius:var(--tk-bar-rad);background:var(--tk-trk);border:1px solid var(--tk-bd2);box-shadow:var(--tk-inset);overflow:hidden">
+                <sc-for list="{{ r.ticks }}" as="tk" hint-placeholder-count="7">
+                  <div style="{{ tk }}"></div>
+                </sc-for>
+                <sc-for list="{{ r.blocks }}" as="b" hint-placeholder-count="6">
+                  <div title="{{ b.tip }}" style="{{ b.style }}"></div>
+                </sc-for>
+                <sc-if value="{{ r.wake }}" hint-placeholder-val="{{ false }}">
+                  <div title="{{ r.wakeTip }}" style="{{ r.wakeStyle }}"></div>
+                </sc-if>
+              </div>
+              <div style="width:52px;flex:0 0 52px;font-size:11px;color:var(--tk-fnt);font-variant-numeric:tabular-nums">{{ r.total }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur);margin-bottom:var(--tk-gap)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+            <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t7 }}</h3>
+            <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+            <sc-for list="{{ habitMins }}" as="n" hint-placeholder-count="4">
+              <button onClick="{{ n.pick }}" style="{{ n.style }}">{{ n.label }}</button>
+            </sc-for>
+            <span style="font-size:11px;color:var(--tk-fnt);white-space:nowrap">occurrences</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <thead>
+                <tr>
+                  <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:left;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd);min-width:190px">Task</th>
+                  <sc-for list="{{ dayHeads }}" as="h" hint-placeholder-count="7">
+                    <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:center;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd)">{{ h }}</th>
+                  </sc-for>
+                  <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:right;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd)">Done</th>
+                  <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:left;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd);min-width:84px">Rate</th>
+                  <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:center;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd)">Streak</th>
+                  <th style="font-family:var(--tk-fonth);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--tk-fnt);font-weight:700;text-align:right;padding:0 8px 9px;border-bottom:1px solid var(--tk-bd)">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ habitRows }}" as="hb" hint-placeholder-count="8">
+                  <tr>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2);vertical-align:middle">
+                      <div style="display:flex;align-items:center;gap:9px">
+                        <span style="{{ hb.sw }}"></span>
+                        <div style="min-width:0">
+                          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ hb.title }}</div>
+                          <div style="font-size:10.5px;color:var(--tk-fnt)">{{ hb.section }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <sc-for list="{{ hb.cells }}" as="c" hint-placeholder-count="7">
+                      <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2);text-align:center;vertical-align:middle">
+                        <span title="{{ c.tip }}" style="{{ c.style }}">{{ c.glyph }}</span>
+                      </td>
+                    </sc-for>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2);text-align:right;font-variant-numeric:tabular-nums">{{ hb.done }}</td>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2)">
+                      <div title="{{ hb.ratePct }}" style="position:relative;height:6px;border-radius:99px;background:var(--tk-trk);min-width:62px;box-shadow:var(--tk-inset);overflow:hidden">
+                        <i style="{{ hb.rateFill }}"></i>
+                      </div>
+                    </td>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2);text-align:center">
+                      <span title="{{ hb.streakTip }}" style="display:inline-block;padding:1px 9px;border-radius:99px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--tk-tile);border:1px solid var(--tk-bd2);color:var(--tk-mut)">{{ hb.best }}</span>
+                    </td>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--tk-bd2);text-align:right;font-variant-numeric:tabular-nums;color:var(--tk-mut)">{{ hb.time }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="padding:var(--tk-pnl-pad);border-radius:var(--tk-rad);background:var(--tk-pnl);border:1px solid var(--tk-bd);box-shadow:var(--tk-sh);backdrop-filter:var(--tk-blur)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <span style="font-family:var(--tk-fonth);font-size:10px;color:var(--tk-fnt);font-variant-numeric:tabular-nums;letter-spacing:.1em;font-size:11.5px;color:var(--tk-orn);line-height:1">{{ pMark }}</span>
+            <h3 style="margin:0;font-family:var(--tk-fonth);font-size:12px;font-weight:700;letter-spacing:var(--tk-hd-ls);text-transform:var(--tk-hd-tf);color:var(--tk-hd-c)">{{ t8 }}</h3>
+            <span style="flex:1;height:1px;background:var(--tk-hd-rule)"></span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">
+            <input type="text" placeholder="Search tasks…" value="{{ query }}" onInput="{{ onQuery }}" style="flex:1;min-width:170px;padding:7px 11px;font-size:12.5px;color:var(--tk-tx);background:var(--tk-tile);border:1px solid var(--tk-bd2);border-radius:var(--tk-rad2);box-shadow:var(--tk-inset);font-family:inherit;outline:none">
+            <sc-for list="{{ modeBtns }}" as="b" hint-placeholder-count="2">
+              <button onClick="{{ b.pick }}" style="{{ b.style }}">{{ b.label }}</button>
+            </sc-for>
+            <span style="width:6px"></span>
+            <sc-for list="{{ filterBtns }}" as="b" hint-placeholder-count="4">
+              <button onClick="{{ b.pick }}" style="{{ b.style }}">{{ b.label }}</button>
+            </sc-for>
+          </div>
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="6">
+            <details open="{{ true }}" style="margin-bottom:11px;border-radius:var(--tk-rad2);overflow:hidden;border:1px solid var(--tk-bd2)">
+              <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--tk-tile)">
+                <span style="{{ g.sw }}">{{ g.initial }}</span>
+                <h4 style="margin:0;font-family:var(--tk-fonth);font-size:13px;font-weight:700;flex:1;color:var(--tk-tx-strong)">{{ g.title }}</h4>
+                <span style="font-size:11px;color:var(--tk-fnt);font-variant-numeric:tabular-nums">{{ g.meta }}</span>
+              </summary>
+              <div style="display:grid;grid-template-columns:42px 92px 54px minmax(160px,1fr) max-content;column-gap:10px;align-items:baseline">
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="8">
+                  <div style="display:contents">
+                    <div title="{{ r.dayName }}" style="{{ r.cellA }}">{{ r.wd }}</div>
+                    <div style="{{ r.cellB }}">{{ r.time }}</div>
+                    <div style="{{ r.cellC }}">{{ r.dur }}</div>
+                    <div style="{{ r.cellD }}">
+                      <span style="{{ r.markStyle }}">{{ r.mark }}</span>
+                      <span style="{{ r.titleStyle }}">{{ r.title }}</span>
+                      <sc-if value="{{ r.priority }}" hint-placeholder-val="{{ false }}">
+                        <span title="{{ r.priorityName }}" style="margin-left:6px">{{ r.priority }}</span>
+                      </sc-if>
+                      <sc-if value="{{ r.chip }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-block;margin-left:7px;padding:0 7px;border-radius:99px;font-size:10.5px;background:var(--tk-trk);color:var(--tk-mut);border:1px solid var(--tk-bd2);white-space:nowrap">{{ r.chip }}</span>
+                      </sc-if>
+                    </div>
+                    <div style="{{ r.cellE }}">{{ r.date }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </details>
+          </sc-for>
+          <sc-if value="{{ noMatches }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:34px 20px;color:var(--tk-mut);font-size:13px">No matches.</div>
+          </sc-if>
+        </div>
+
+        
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;skin&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;aware&quot;,&quot;glass-dark&quot;,&quot;glass-light&quot;,&quot;skeuo-dark&quot;,&quot;skeuo-light&quot;,&quot;fancy&quot;,&quot;medieval&quot;,&quot;medieval-night&quot;,&quot;art-deco&quot;,&quot;art-deco-night&quot;,&quot;riso&quot;,&quot;industry&quot;],&quot;default&quot;:&quot;medieval-night&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;fullWidth&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const WD = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const WDL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function mn(s){ if(!s) return null; const p = String(s).split(":"); return (+p[0])*60 + (+p[1]); }
+function hm(m){ m = Math.round(m||0); const h = Math.floor(m/60), x = m%60; if(h&&x) return h+"h "+x+"m"; if(h) return h+"h"; return x+"m"; }
+function clock(m){ if(m==null) return ""; const h = Math.floor(m/60)%24, x = Math.round(m%60); return String(h).padStart(2,"0")+":"+String(x).padStart(2,"0"); }
+function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
+
+/* ------------------------------------------------------------ sample week */
+/* Shape mirrors the compact payload tracker-core encodes:
+   [section, box, start, end, title, opts]                                   */
+const RAW = [
+ { name:"Mon 03-08-2026", date:"2026-08-03", open:398, m:[["Pages read","pages",28],["Deep work","duration",12600],["Pomodoros","times",7]], t:[
+   ["Habit","x","06:20","07:00","Morning walk",{rec:1}],
+   ["Urgent","x","09:00","09:40","Submit semester registration form",{p:"\u{1F53A}"}],
+   ["BRAC MSc","x","10:30","12:30","Lecture 4 — Distributed Systems"],
+   ["BRAC MSc"," ","12:30","13:00","Copy lecture notes into vault",{sub:1}],
+   ["Study"," ","14:00","16:00","Numerical Methods problem set"],
+   ["Research Papers","x","16:30","17:45","Read: Chain-of-thought prompting"],
+   ["Ongoing Project","/","18:00","19:30","Tracker crunch script — payload encoder"],
+   ["Android","x","20:15","22:00","Sync module refactor"],
+   ["Books","x","22:30","23:15","Sapiens : 120 - 148 Pages"],
+   ["Habit","x","23:20","23:45","Journal",{rec:1}] ]},
+
+ { name:"Tue 04-08-2026", date:"2026-08-04", open:441, m:[["Pages read","pages",22],["Deep work","duration",9000],["Pomodoros","times",5]], t:[
+   ["Habit","x","06:35","07:10","Morning walk",{rec:1}],
+   ["Overdue","x","09:20","10:00","Reply to supervisor email",{p:"\u{23EB}"}],
+   ["BRAC MSc","x","10:30","12:30","Lab 2 — consensus protocols"],
+   ["Study","x","14:15","15:45","Numerical Methods problem set"],
+   ["Research Papers"," ","16:00","17:00","Read: Scaling laws for transfer"],
+   ["Ongoing Project","x","17:30","19:00","Tracker crunch script — payload encoder"],
+   ["Android","-","20:00","21:30","Play Store listing copy"],
+   ["Books","x","22:15","23:00","Sapiens : 148 - 170 Pages"],
+   ["Habit","x","23:10","23:35","Journal",{rec:1}] ]},
+
+ { name:"Wed 05-08-2026", date:"2026-08-05", open:512, m:[["Pages read","pages",0],["Deep work","duration",7200],["Pomodoros","times",4]], t:[
+   ["Habit"," ","06:30","07:05","Morning walk",{rec:1}],
+   ["Urgent","x","09:40","10:10","Pay lab fee",{p:"\u{1F53A}"}],
+   ["BRAC MSc","x","10:30","12:30","Lecture 5 — Fault tolerance"],
+   ["Study","x","14:00","15:30","Read chapter 6 — interpolation"],
+   ["Research Papers","x","16:00","17:15","Read: Retrieval-augmented generation"],
+   ["Ongoing Project"," ","17:45","19:15","Datacore hub — week picker"],
+   ["Android","x","20:30","22:00","Crash on cold start — trace"],
+   ["Books"," ","22:30","23:10","Sapiens"],
+   ["Habit","x","23:15","23:40","Journal",{rec:1}] ]},
+
+ { name:"Thu 06-08-2026", date:"2026-08-06", open:405, m:[["Pages read","pages",41],["Deep work","duration",14400],["Pomodoros","times",8]], t:[
+   ["Habit","x","06:15","06:55","Morning walk",{rec:1}],
+   ["Overdue","x","09:10","09:50","Course-work draft outline",{p:"\u{1F53C}"}],
+   ["BRAC MSc","x","10:30","12:30","Lab 3 — replication"],
+   ["BRAC MSc","x","12:30","13:10","Push lab notebook to repo",{sub:1}],
+   ["Study","x","14:00","16:30","Numerical Methods — past papers"],
+   ["Research Papers","x","16:45","18:15","Read: Sparse attention survey"],
+   ["Ongoing Project","x","18:30","20:00","Datacore hub — week picker"],
+   ["Android","x","20:30","22:15","Sync module refactor"],
+   ["Books","x","22:40","23:30","Sapiens : 170 - 211 Pages"],
+   ["Habit","x","23:35","23:59","Journal",{rec:1}] ]},
+
+ { name:"Fri 07-08-2026", date:"2026-08-07", open:462, m:[["Pages read","pages",26],["Deep work","duration",10800],["Pomodoros","times",6]], t:[
+   ["Habit","x","06:40","07:15","Morning walk",{rec:1}],
+   ["Urgent","x","09:30","10:05","Book viva slot",{p:"\u{23EB}"}],
+   ["BRAC MSc","x","10:30","12:00","Group meeting — project scope"],
+   ["Study"," ","14:00","15:30","Numerical Methods — past papers"],
+   ["Research Papers","x","15:45","17:00","Read: Mixture-of-experts routing"],
+   ["Ongoing Project","x","17:30","19:30","Weekly report skin work"],
+   ["Android","/","20:00","21:45","Play Store listing copy"],
+   ["Books","x","22:20","23:05","Sapiens : 211 - 237 Pages"],
+   ["Habit"," ","23:10","23:35","Journal",{rec:1}] ]},
+
+ { name:"Sat 08-08-2026", date:"2026-08-08", open:575, m:[["Pages read","pages",52],["Deep work","duration",16200],["Pomodoros","times",9]], t:[
+   ["Habit","x","07:10","07:50","Morning walk",{rec:1}],
+   ["Study","x","09:35","12:00","Numerical Methods — mock exam"],
+   ["Research Papers","x","13:00","15:00","Read: Long-context evaluation"],
+   ["Research Papers","x","15:00","15:40","Write summary card",{sub:1}],
+   ["Ongoing Project","x","15:45","18:30","Weekly report skin work"],
+   ["Android","x","19:00","21:00","Release candidate build"],
+   ["Books","x","21:30","23:00","Sapiens : 237 - 289 Pages"],
+   ["Habit","x","23:05","23:30","Journal",{rec:1}] ]},
+
+ { name:"Sun 09-08-2026", date:"2026-08-09", open:601, m:[["Pages read","pages",19],["Deep work","duration",5400],["Pomodoros","times",3]], t:[
+   ["Habit","x","07:30","08:10","Morning walk",{rec:1}],
+   ["Overdue"," ","10:05","10:45","Course-work draft outline",{p:"\u{1F53C}"}],
+   ["Study","x","11:00","12:30","Review week's problem sets"],
+   ["Ongoing Project","x","14:00","16:00","Crunch week 31 + archive"],
+   ["Books","x","16:30","17:30","Sapiens : 289 - 308 Pages"],
+   ["Android"," ","20:00","21:00","Backlog grooming"],
+   ["Habit","x","22:40","23:05","Journal",{rec:1}] ]}
+];
+
+const META = { title:"31st Week", week:31, roman:"XXXI", path:"Meta/Tracker/2026/August/31st", file:"31st Week.md" };
+
+/* ------------------------------------------------------------------ skins */
+
+function decoGradient(c){
+  return "linear-gradient(150deg," + c + " 0%,color-mix(in lab," + c + ",white 3%) 26%," +
+    "color-mix(in lab," + c + ",white 20%) 45%,color-mix(in lab," + c + ",white 40%) 51%," +
+    "color-mix(in lab," + c + ",white 7%) 80%)";
+}
+
+/* per-skin webfonts, injected on switch (nothing preloaded in the head) */
+const FONT_SETS = {
+  inter:"family=Inter:wght@400;500;600;700;800",
+  classic:"family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1",
+  gothic:"family=UnifrakturMaguntia&family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1",
+  deco:"family=Limelight&family=Federo&family=Noto+Serif:ital,wght@0,400;0,600;1,400",
+  riso:"family=Space+Grotesk:wght@400;500;600;700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400",
+  industry:"family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400"
+};
+const SKIN_FONT = { "aware":"inter", "glass-dark":"inter", "glass-light":"inter", "skeuo-dark":"inter",
+  "skeuo-light":"inter", "fancy":"classic", "medieval":"gothic", "medieval-night":"gothic",
+  "art-deco":"deco", "art-deco-night":"deco", "riso":"riso", "industry":"industry" };
+
+function ensureFont(id){
+  const k = SKIN_FONT[id]; if(!k || typeof document === "undefined") return;
+  const eid = "tkf-" + k;
+  if(document.getElementById(eid)) return;
+  const l = document.createElement("link");
+  l.id = eid; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?" + FONT_SETS[k] + "&display=swap";
+  document.head.appendChild(l);
+}
+
+const BASE = {
+  "--tk-fs":"13.5px", "--tk-rad":"14px", "--tk-rad2":"9px", "--tk-bar-rad":"99px",
+  "--tk-cell-rad":"6px", "--tk-col-rad":"7px 7px 3px 3px",
+  "--tk-sh":"none", "--tk-tile-sh":"none", "--tk-inset":"none", "--tk-bar-sh":"none",
+  "--tk-blur":"none", "--tk-axis":"none", "--tk-shell-pad":"0px", "--tk-shell-bd":"0",
+  "--tk-shell-sh":"none", "--tk-hero-bd":"1px solid var(--tk-bd)", "--tk-hero-sh":"none",
+  "--tk-hero-pad":"24px 26px 22px", "--tk-hero-mb":"18px", "--tk-hero-al":"left", "--tk-hero-jc":"flex-start",
+  "--tk-hd-tf":"none", "--tk-hd-ls":".04em", "--tk-kick-ls":".22em", "--tk-title-ls":"-.02em",
+  "--tk-title-w":"700", "--tk-num-w":"700", "--tk-sub-i":"normal",
+  "--tk-hd-rule":"var(--tk-bd2)", "--tk-zebra":"transparent",
+  "--tk-hd-c":"var(--tk-tx)", "--tk-page-pad":"20px",
+  "--tk-font":"'Inter',system-ui,sans-serif", "--tk-fonth":"'Inter',system-ui,sans-serif",
+  "--tk-fontd":"'Inter',system-ui,sans-serif", "--tk-orn":"var(--tk-acc)"
+};
+
+const SKINS = {
+  "aware": { label:"Adaptive", swatch:"linear-gradient(135deg,#8b8f9c 0 50%,#6366f1 50%)",
+    pal:["#6366f1","#06b6d4","#10b981","#f59e0b","#ef4444","#ec4899","#8b5cf6","#14b8a6","#f97316","#3b82f6"],
+    v:{ "--tk-app-bg":"#1e1f26","--tk-app-bg2":"#17181e","--tk-app-bd":"#2a2c35","--tk-app-tx":"#c9ccd6","--tk-app-mut":"#787c8a",
+      "--tk-page":"transparent","--tk-page-pad":"20px","--tk-pnl":"#25262e","--tk-tile":"#1e1f26","--tk-btn":"#1e1f26",
+      "--tk-hero":"#25262e",
+      "--tk-hero-fx":"radial-gradient(ellipse at 12% 22%,rgba(99,102,241,.30),transparent 55%),radial-gradient(ellipse at 78% 6%,rgba(236,72,153,.22),transparent 52%),radial-gradient(ellipse at 52% 96%,rgba(6,182,212,.22),transparent 55%)",
+      "--tk-bd":"#33353f","--tk-bd2":"#2b2d36","--tk-tx":"#d5d8e0","--tk-tx-strong":"#f2f4f8","--tk-mut":"#9ba0ae","--tk-fnt":"#717684",
+      "--tk-acc":"#7c8cff","--tk-onacc":"#12131a","--tk-link":"#9fb0ff","--tk-trk":"#1b1c23","--tk-hover":"#2a2c35",
+      "--tk-ok":"#34d399","--tk-warn":"#fb7185" } },
+
+  "glass-dark": { label:"Glass dark", swatch:"linear-gradient(135deg,#1b1e2c 0 50%,#7c8cff 50%)",
+    pal:["#7c8cff","#22d3ee","#34d399","#fbbf24","#fb7185","#f472b6","#a78bfa","#2dd4bf","#fb923c","#60a5fa"],
+    v:{ "--tk-app-bg":"#0f1017","--tk-app-bg2":"#0a0b10","--tk-app-bd":"#1d1f2b","--tk-app-tx":"#c9ccd6","--tk-app-mut":"#6e7385",
+      "--tk-page":"linear-gradient(150deg,#12131a 0%,#171a2b 45%,#1b1430 100%)","--tk-page-pad":"20px",
+      "--tk-shell-pad":"26px","--tk-shell-bd":"1px solid rgba(255,255,255,.07)","--tk-shell-sh":"0 30px 70px -40px #000",
+      "--tk-pnl":"rgba(255,255,255,.055)","--tk-tile":"rgba(255,255,255,.05)","--tk-btn":"rgba(255,255,255,.07)",
+      "--tk-hero":"rgba(255,255,255,.06)",
+      "--tk-hero-fx":"radial-gradient(ellipse at 10% 20%,rgba(124,140,255,.42),transparent 58%),radial-gradient(ellipse at 82% 4%,rgba(244,114,182,.32),transparent 55%),radial-gradient(ellipse at 55% 100%,rgba(34,211,238,.3),transparent 58%)",
+      "--tk-blur":"blur(22px) saturate(140%)","--tk-bd":"rgba(255,255,255,.13)","--tk-bd2":"rgba(255,255,255,.08)",
+      "--tk-tx":"#e8eaf2","--tk-tx-strong":"#fff","--tk-mut":"#a7adc4","--tk-fnt":"#767d96",
+      "--tk-acc":"#7c8cff","--tk-onacc":"#0d0f18","--tk-link":"#9fb0ff","--tk-trk":"rgba(255,255,255,.07)","--tk-hover":"rgba(255,255,255,.05)",
+      "--tk-ok":"#34d399","--tk-warn":"#fb7185","--tk-rad":"18px","--tk-rad2":"12px",
+      "--tk-sh":"0 8px 32px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08)",
+      "--tk-tile-sh":"inset 0 1px 0 rgba(255,255,255,.06)","--tk-bar-sh":"0 0 14px -3px currentColor" } },
+
+  "glass-light": { label:"Glass light", swatch:"linear-gradient(135deg,#eef1f9 0 50%,#4f46e5 50%)",
+    pal:["#4f46e5","#0891b2","#059669","#d97706","#dc2626","#db2777","#7c3aed","#0d9488","#ea580c","#2563eb"],
+    v:{ "--tk-app-bg":"#e6e9f2","--tk-app-bg2":"#dde1ee","--tk-app-bd":"#cdd3e4","--tk-app-tx":"#2b3245","--tk-app-mut":"#6c7489",
+      "--tk-page":"linear-gradient(150deg,#eef1f7 0%,#e8ecf7 45%,#f2ecf8 100%)","--tk-page-pad":"20px",
+      "--tk-shell-pad":"26px","--tk-shell-bd":"1px solid rgba(255,255,255,.7)","--tk-shell-sh":"0 30px 70px -45px rgba(40,50,90,.5)",
+      "--tk-pnl":"rgba(255,255,255,.55)","--tk-tile":"rgba(255,255,255,.62)","--tk-btn":"rgba(255,255,255,.7)",
+      "--tk-hero":"rgba(255,255,255,.55)",
+      "--tk-hero-fx":"radial-gradient(ellipse at 10% 20%,rgba(79,70,229,.26),transparent 58%),radial-gradient(ellipse at 82% 4%,rgba(219,39,119,.2),transparent 55%),radial-gradient(ellipse at 55% 100%,rgba(8,145,178,.2),transparent 58%)",
+      "--tk-blur":"blur(20px) saturate(150%)","--tk-bd":"rgba(120,130,170,.35)","--tk-bd2":"rgba(90,100,140,.16)",
+      "--tk-tx":"#232a3d","--tk-tx-strong":"#141a2b","--tk-mut":"#5c657f","--tk-fnt":"#8b93a9",
+      "--tk-acc":"#4f46e5","--tk-onacc":"#fff","--tk-link":"#4338ca","--tk-trk":"rgba(90,100,140,.13)","--tk-hover":"rgba(255,255,255,.55)",
+      "--tk-ok":"#059669","--tk-warn":"#dc2626","--tk-rad":"18px","--tk-rad2":"12px",
+      "--tk-sh":"0 10px 30px -20px rgba(40,50,90,.55),inset 0 1px 0 rgba(255,255,255,.9)",
+      "--tk-tile-sh":"inset 0 1px 0 rgba(255,255,255,.8)" } },
+
+  "skeuo-dark": { label:"Skeuo dark", swatch:"linear-gradient(135deg,#2e3238 0 50%,#6d83f2 50%)",
+    pal:["#6d83f2","#2fb8d4","#3fbf87","#dda032","#d9534f","#c96196","#8f7ae0","#2fa89b","#dd8342","#4a86d8"],
+    v:{ "--tk-app-bg":"#1a1c1f","--tk-app-bg2":"#141619","--tk-app-bd":"#101215","--tk-app-tx":"#c8ccd2","--tk-app-mut":"#727a85",
+      "--tk-page":"linear-gradient(180deg,#232529 0%,#1c1e22 100%)","--tk-page-pad":"20px",
+      "--tk-shell-pad":"24px","--tk-shell-bd":"1px solid #101215",
+      "--tk-shell-sh":"inset 0 1px 0 rgba(255,255,255,.05),0 22px 50px -30px #000",
+      "--tk-pnl":"linear-gradient(180deg,#2e3238 0%,#25282d 100%)","--tk-tile":"linear-gradient(180deg,#333840 0%,#2a2e34 100%)",
+      "--tk-btn":"linear-gradient(180deg,#3a3f47 0%,#2d3138 100%)","--tk-hero":"linear-gradient(180deg,#343a42 0%,#272b31 100%)",
+      "--tk-hero-fx":"radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.09),transparent 60%)",
+      "--tk-bd":"#15171a","--tk-bd2":"#1d2024","--tk-tx":"#d8dce2","--tk-tx-strong":"#f2f5f9","--tk-mut":"#9aa1ab","--tk-fnt":"#727a85",
+      "--tk-acc":"#6d83f2","--tk-onacc":"#fff","--tk-link":"#8fa2ff","--tk-trk":"#1e2126","--tk-hover":"rgba(255,255,255,.04)",
+      "--tk-ok":"#3fbf87","--tk-warn":"#d9534f","--tk-rad":"11px","--tk-rad2":"8px","--tk-bar-rad":"5px",
+      "--tk-col-rad":"5px 5px 0 0","--tk-cell-rad":"5px",
+      "--tk-sh":"inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(0,0,0,.4),0 4px 10px -4px rgba(0,0,0,.7)",
+      "--tk-tile-sh":"inset 0 1px 0 rgba(255,255,255,.06),0 2px 4px -2px rgba(0,0,0,.6)",
+      "--tk-inset":"inset 0 2px 4px rgba(0,0,0,.55),inset 0 -1px 0 rgba(255,255,255,.04)",
+      "--tk-bar-sh":"inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 4px rgba(0,0,0,.3)",
+      "--tk-axis":"1px solid #15171a","--tk-hd-tf":"uppercase","--tk-hd-ls":".14em" } },
+
+  "skeuo-light": { label:"Skeuo light", swatch:"linear-gradient(135deg,#f1f3f7 0 50%,#4c5fd7 50%)",
+    pal:["#4c5fd7","#1189a8","#2b9c68","#c07d14","#c0392b","#ad3f7a","#7057c4","#1d8a80","#c26a25","#2f6fc0"],
+    v:{ "--tk-app-bg":"#e2e5ea","--tk-app-bg2":"#d7dbe2","--tk-app-bd":"#c3c9d1","--tk-app-tx":"#2b3140","--tk-app-mut":"#6c7482",
+      "--tk-page":"linear-gradient(180deg,#eceef1 0%,#dfe3e8 100%)","--tk-page-pad":"20px",
+      "--tk-shell-pad":"24px","--tk-shell-bd":"1px solid #c3c9d1",
+      "--tk-shell-sh":"inset 0 1px 0 #fff,0 20px 44px -32px rgba(40,50,70,.6)",
+      "--tk-pnl":"linear-gradient(180deg,#fdfdfe 0%,#eef0f4 100%)","--tk-tile":"linear-gradient(180deg,#fff 0%,#f1f3f7 100%)",
+      "--tk-btn":"linear-gradient(180deg,#fff 0%,#e8ebf0 100%)","--tk-hero":"linear-gradient(180deg,#fff 0%,#e9edf3 100%)",
+      "--tk-hero-fx":"radial-gradient(ellipse at 20% 0%,rgba(76,95,215,.14),transparent 62%)",
+      "--tk-bd":"#c6ccd5","--tk-bd2":"#dde1e8","--tk-tx":"#2b3140","--tk-tx-strong":"#161b26","--tk-mut":"#5f6879","--tk-fnt":"#8a92a1",
+      "--tk-acc":"#4c5fd7","--tk-onacc":"#fff","--tk-link":"#3a4ec0","--tk-trk":"#dfe3ea","--tk-hover":"rgba(76,95,215,.06)",
+      "--tk-ok":"#2b9c68","--tk-warn":"#c0392b","--tk-rad":"11px","--tk-rad2":"8px","--tk-bar-rad":"5px",
+      "--tk-col-rad":"5px 5px 0 0","--tk-cell-rad":"5px",
+      "--tk-sh":"inset 0 1px 0 #fff,0 3px 8px -4px rgba(40,50,70,.35)",
+      "--tk-tile-sh":"inset 0 1px 0 #fff,0 2px 4px -3px rgba(40,50,70,.45)",
+      "--tk-inset":"inset 0 2px 4px rgba(60,70,90,.22),inset 0 -1px 0 #fff",
+      "--tk-bar-sh":"inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 4px rgba(0,0,0,.14)",
+      "--tk-axis":"1px solid #c6ccd5","--tk-hd-tf":"uppercase","--tk-hd-ls":".14em" } },
+
+  "fancy": { label:"Fancy a Story", swatch:"linear-gradient(135deg,#f0e0bd 0 50%,#a8842c 50%)", ornate:1,
+    pal:["#a8842c","#8b2f26","#4e6644","#35507a","#a05a2b","#6a3a5a","#2f6560","#7d6a3a","#5a6b8c","#8c5a3c"],
+    v:{ "--tk-app-bg":"#e9dcc0","--tk-app-bg2":"#ded0b0","--tk-app-bd":"#c4ae83","--tk-app-tx":"#4a3a22","--tk-app-mut":"#8a7550",
+      "--tk-page":"radial-gradient(ellipse at 10% 6%,rgba(176,142,86,.13),transparent 55%),radial-gradient(ellipse at 92% 96%,rgba(140,110,60,.15),transparent 55%),repeating-linear-gradient(94deg,rgba(160,130,80,.04) 0 2px,transparent 2px 5px),linear-gradient(158deg,#f8efdb 0%,#f1e3c6 52%,#e6d3ab 100%)",
+      "--tk-page-pad":"22px","--tk-shell-pad":"32px","--tk-shell-bd":"2px solid #b59a68",
+      "--tk-shell-sh":"inset 0 0 60px rgba(150,115,60,.18),inset 0 1px 0 rgba(255,255,255,.45),0 18px 40px -22px rgba(0,0,0,.45)",
+      "--tk-pnl":"linear-gradient(180deg,rgba(255,255,255,.30),rgba(0,0,0,.025))",
+      "--tk-tile":"linear-gradient(180deg,rgba(255,255,255,.42),rgba(0,0,0,.02))",
+      "--tk-btn":"linear-gradient(180deg,rgba(255,255,255,.5),rgba(0,0,0,.03))",
+      "--tk-hero":"transparent","--tk-hero-fx":"none","--tk-hero-bd":"0","--tk-hero-pad":"4px 0 0",
+      "--tk-hero-al":"center","--tk-hero-jc":"center","--tk-hero-mb":"6px",
+      "--tk-bd":"rgba(168,132,44,.45)","--tk-bd2":"rgba(168,132,44,.26)",
+      "--tk-tx":"#3a2d1c","--tk-tx-strong":"#2f2413","--tk-mut":"#6a5840","--tk-fnt":"#9a875f",
+      "--tk-acc":"#a8842c","--tk-onacc":"#fffaf0","--tk-link":"#7a3f22",
+      "--tk-trk":"rgba(120,95,50,.16)","--tk-hover":"rgba(216,190,135,.3)","--tk-zebra":"rgba(150,115,60,.07)",
+      "--tk-ok":"#4e6644","--tk-warn":"#8b2f26",
+      "--tk-rad":"3px","--tk-rad2":"3px","--tk-bar-rad":"2px","--tk-col-rad":"2px 2px 0 0","--tk-cell-rad":"3px",
+      "--tk-sh":"inset 0 1px 0 rgba(255,255,255,.4)",
+      "--tk-tile-sh":"inset 0 0 0 1px rgba(255,255,255,.35),0 2px 6px -4px rgba(80,60,20,.45)",
+      "--tk-inset":"inset 0 1px 2px rgba(90,70,30,.2)",
+      "--tk-bar-sh":"inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(0,0,0,.12)",
+      "--tk-axis":"1px solid #a8842c","--tk-hd-rule":"linear-gradient(90deg,#a8842c,transparent)",
+      "--tk-hd-c":"#a8842c","--tk-hd-tf":"uppercase","--tk-hd-ls":".2em","--tk-sub-i":"italic",
+      "--tk-kick-ls":".42em","--tk-title-ls":".06em","--tk-title-w":"700","--tk-num-w":"700","--tk-fs":"14.5px",
+      "--tk-font":"'EB Garamond','IM Fell English',Georgia,serif",
+      "--tk-fonth":"'Cinzel','IM Fell English SC',Georgia,serif",
+      "--tk-fontd":"'Cinzel','IM Fell English',Georgia,serif","--tk-orn":"#a8842c" } },
+
+  /* ---- new: Fancy-a-Story “Medieval” skin ------------------------------- */
+  "medieval": { label:"Medieval", swatch:"linear-gradient(135deg,#e7d8b4 0 50%,#9c2b1c 50%)", ornate:1, med:1,
+    pal:["#9c2b1c","#a8842c","#4a6b45","#6d1a10","#7a5c18","#2f4a2c","#c2503a","#c9a655","#7a9a6b","#8a3a28"],
+    v:{ "--tk-app-bg":"#d9c9a5","--tk-app-bg2":"#cbb98f","--tk-app-bd":"#a98f60","--tk-app-tx":"#3d2f1e","--tk-app-mut":"#7b6540",
+      "--tk-page":"radial-gradient(120% 80% at 8% 4%,rgba(120,90,45,.10),transparent 60%),radial-gradient(100% 70% at 96% 100%,rgba(90,65,30,.16),transparent 62%),repeating-linear-gradient(0deg,rgba(120,95,55,.035) 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,rgba(120,95,55,.028) 0 1px,transparent 1px 6px),linear-gradient(165deg,#efe3c4 0%,#e7d8b4 46%,#dbc89f 100%)",
+      "--tk-page-pad":"24px","--tk-shell-pad":"40px","--tk-shell-bd":"3px double #8a6a34",
+      "--tk-shell-sh":"inset 0 0 90px rgba(120,85,35,.22),0 20px 46px -26px rgba(40,25,0,.5)",
+      "--tk-pnl":"linear-gradient(180deg,rgba(255,251,238,.46),rgba(120,90,40,.03))",
+      "--tk-tile":"linear-gradient(180deg,rgba(255,252,242,.6),rgba(120,90,40,.03))",
+      "--tk-btn":"linear-gradient(180deg,rgba(255,252,242,.66),rgba(120,90,40,.04))",
+      "--tk-hero":"transparent","--tk-hero-fx":"none","--tk-hero-bd":"0","--tk-hero-pad":"6px 0 0",
+      "--tk-hero-al":"center","--tk-hero-jc":"center","--tk-hero-mb":"4px",
+      "--tk-bd":"rgba(120,88,40,.44)","--tk-bd2":"rgba(120,88,40,.22)",
+      "--tk-tx":"#33261a","--tk-tx-strong":"#241a10","--tk-mut":"#6b5638","--tk-fnt":"#947c52",
+      "--tk-acc":"#9c2b1c","--tk-onacc":"#fdf6e4","--tk-link":"#7a3f22",
+      "--tk-trk":"rgba(120,95,50,.15)","--tk-hover":"rgba(200,170,110,.24)","--tk-zebra":"rgba(150,115,60,.055)",
+      "--tk-ok":"#4a6b45","--tk-warn":"#9c2b1c",
+      "--tk-rad":"2px","--tk-rad2":"2px","--tk-bar-rad":"1px","--tk-col-rad":"1px","--tk-cell-rad":"2px",
+      "--tk-sh":"inset 0 1px 0 rgba(255,255,255,.45)",
+      "--tk-tile-sh":"inset 0 0 0 1px rgba(255,255,255,.3),0 2px 6px -4px rgba(80,60,20,.4)",
+      "--tk-inset":"inset 0 1px 2px rgba(90,70,30,.18)",
+      "--tk-bar-sh":"inset 0 1px 0 rgba(255,255,255,.28)",
+      "--tk-axis":"1px solid #a8842c","--tk-hd-rule":"linear-gradient(90deg,#a8842c,transparent)",
+      "--tk-hd-c":"#9c2b1c","--tk-hd-tf":"uppercase","--tk-hd-ls":".22em","--tk-sub-i":"italic",
+      "--tk-kick-ls":".46em","--tk-title-ls":".01em","--tk-title-w":"400","--tk-num-w":"600","--tk-fs":"14.5px",
+      "--tk-font":"'EB Garamond','IM Fell English',Georgia,serif",
+      "--tk-fonth":"'Cinzel','IM Fell English SC',Georgia,serif",
+      "--tk-fontd":"'UnifrakturMaguntia','Cinzel Decorative',Georgia,serif","--tk-orn":"#a8842c" } },
+
+  "medieval-night": { label:"Medieval night", swatch:"linear-gradient(135deg,#241b12 0 50%,#c79a45 50%)", ornate:1, med:1,
+    pal:["#c9553c","#c79a45","#7fa86f","#9e3a26","#a67c30","#5e8450","#e08a72","#e0c079","#a8c79a","#b8452e"],
+    v:{ "--tk-app-bg":"#13100b","--tk-app-bg2":"#0d0b07","--tk-app-bd":"#2a2118","--tk-app-tx":"#d9c9a5","--tk-app-mut":"#8e7a55",
+      "--tk-page":"radial-gradient(120% 80% at 10% 2%,rgba(199,154,69,.14),transparent 58%),radial-gradient(90% 70% at 94% 100%,rgba(160,110,40,.12),transparent 60%),repeating-linear-gradient(0deg,rgba(220,190,130,.022) 0 1px,transparent 1px 4px),linear-gradient(165deg,#241b12 0%,#1c150e 50%,#150f09 100%)",
+      "--tk-page-pad":"24px","--tk-shell-pad":"40px","--tk-shell-bd":"3px double #6d5426",
+      "--tk-shell-sh":"inset 0 0 100px rgba(0,0,0,.55),0 22px 50px -28px #000",
+      "--tk-pnl":"linear-gradient(180deg,rgba(220,190,130,.055),rgba(0,0,0,.12))",
+      "--tk-tile":"linear-gradient(180deg,rgba(220,190,130,.07),rgba(0,0,0,.1))",
+      "--tk-btn":"linear-gradient(180deg,rgba(220,190,130,.09),rgba(0,0,0,.1))",
+      "--tk-hero":"transparent","--tk-hero-fx":"none","--tk-hero-bd":"0","--tk-hero-pad":"6px 0 0",
+      "--tk-hero-al":"center","--tk-hero-jc":"center","--tk-hero-mb":"4px",
+      "--tk-bd":"rgba(199,154,69,.34)","--tk-bd2":"rgba(199,154,69,.18)",
+      "--tk-tx":"#e2d3b4","--tk-tx-strong":"#f6ecd6","--tk-mut":"#ab9670","--tk-fnt":"#7d6c4c",
+      "--tk-acc":"#c9553c","--tk-onacc":"#1a1209","--tk-link":"#d8a563",
+      "--tk-trk":"rgba(220,190,130,.08)","--tk-hover":"rgba(220,190,130,.06)","--tk-zebra":"rgba(220,190,130,.035)",
+      "--tk-ok":"#6f9563","--tk-warn":"#c9553c",
+      "--tk-rad":"2px","--tk-rad2":"2px","--tk-bar-rad":"1px","--tk-col-rad":"1px","--tk-cell-rad":"2px",
+      "--tk-sh":"inset 0 1px 0 rgba(220,190,130,.09)",
+      "--tk-tile-sh":"inset 0 0 0 1px rgba(220,190,130,.06)",
+      "--tk-inset":"inset 0 1px 3px rgba(0,0,0,.5)","--tk-bar-sh":"inset 0 1px 0 rgba(255,235,190,.15)",
+      "--tk-axis":"1px solid #6d5426","--tk-hd-rule":"linear-gradient(90deg,#c79a45,transparent)",
+      "--tk-hd-c":"#c79a45","--tk-hd-tf":"uppercase","--tk-hd-ls":".22em","--tk-sub-i":"italic",
+      "--tk-kick-ls":".46em","--tk-title-ls":".01em","--tk-title-w":"400","--tk-num-w":"600","--tk-fs":"14.5px",
+      "--tk-font":"'EB Garamond','IM Fell English',Georgia,serif",
+      "--tk-fonth":"'Cinzel','IM Fell English SC',Georgia,serif",
+      "--tk-fontd":"'UnifrakturMaguntia','Cinzel Decorative',Georgia,serif","--tk-orn":"#c79a45" } },
+
+  /* ---- new: Fancy-a-Story “Art Deco” skin ------------------------------- */
+  "art-deco": { label:"Art Deco", swatch:"linear-gradient(135deg,#f2eee2 0 50%,#161547 50%)", deco:1,
+    pal:["#161547","#a8862f","#2f5c58","#9c4a4a","#3a3a6b","#c2a35f","#4a7a72","#7a3a3a","#22224f","#8a7440"],
+    v:{ "--tk-app-bg":"#e9e4d5","--tk-app-bg2":"#ded8c6","--tk-app-bd":"#c6bfa9","--tk-app-tx":"#232047","--tk-app-mut":"#6d6a83",
+      "--tk-page":"linear-gradient(180deg,#f6f3ea 0%,#efeadd 100%)","--tk-page-pad":"22px",
+      "--tk-shell-pad":"38px","--tk-shell-bd":"1px solid #161547",
+      "--tk-shell-sh":"0 0 0 5px #f6f3ea inset,0 0 0 6px rgba(22,21,71,.35) inset",
+      "--tk-pnl":"#faf8f1","--tk-tile":"#f3efe3","--tk-btn":"#f3efe3","--tk-hero":"transparent",
+      "--tk-hero-fx":"none","--tk-hero-bd":"0","--tk-hero-pad":"2px 0 0","--tk-hero-al":"center",
+      "--tk-hero-jc":"center","--tk-hero-mb":"8px",
+      "--tk-bd":"rgba(22,21,71,.30)","--tk-bd2":"rgba(22,21,71,.16)",
+      "--tk-tx":"#231f38","--tk-tx-strong":"#161547","--tk-mut":"#5a5673","--tk-fnt":"#8b87a0",
+      "--tk-acc":"#161547","--tk-onacc":"#f6f3ea","--tk-link":"#2c2a72",
+      "--tk-trk":"rgba(22,21,71,.10)","--tk-hover":"rgba(22,21,71,.05)","--tk-zebra":"rgba(22,21,71,.035)",
+      "--tk-ok":"#1f5c58","--tk-warn":"#7a1f3d",
+      "--tk-rad":"0px","--tk-rad2":"0px","--tk-bar-rad":"0px","--tk-col-rad":"0","--tk-cell-rad":"0px",
+      "--tk-sh":"none","--tk-tile-sh":"none","--tk-inset":"none",
+      "--tk-axis":"1px solid #161547","--tk-hd-rule":"repeating-linear-gradient(90deg,#161547 0 100%)",
+      "--tk-hd-c":"#161547","--tk-hd-tf":"uppercase","--tk-hd-ls":".26em","--tk-sub-i":"normal",
+      "--tk-kick-ls":".5em","--tk-title-ls":".08em","--tk-title-w":"400","--tk-num-w":"400","--tk-fs":"14px",
+      "--tk-font":"'Noto Serif',Georgia,serif","--tk-fonth":"'Federo',system-ui,sans-serif",
+      "--tk-fontd":"'Limelight','Federo',Impact,sans-serif","--tk-orn":"#161547" } },
+
+  "art-deco-night": { label:"Art Deco night", swatch:"linear-gradient(135deg,#12121a 0 50%,#e3c24a 50%)", deco:1,
+    pal:["#e3c24a","#7fb0a4","#d9907a","#a9a3e0","#c9a350","#5f9e8f","#c0705f","#8f89c9","#e0d5a8","#9a8f6a"],
+    v:{ "--tk-app-bg":"#0b0b10","--tk-app-bg2":"#08080c","--tk-app-bd":"#1c1c26","--tk-app-tx":"#e6e2d3","--tk-app-mut":"#7e7a6a",
+      "--tk-page":"linear-gradient(180deg,#14141c 0%,#0e0e14 100%)","--tk-page-pad":"22px",
+      "--tk-shell-pad":"38px","--tk-shell-bd":"1px solid #e3c24a",
+      "--tk-shell-sh":"0 0 0 5px #14141c inset,0 0 0 6px rgba(227,194,74,.32) inset",
+      "--tk-pnl":"#16161f","--tk-tile":"#1b1b25","--tk-btn":"#1b1b25","--tk-hero":"transparent",
+      "--tk-hero-fx":"none","--tk-hero-bd":"0","--tk-hero-pad":"2px 0 0","--tk-hero-al":"center",
+      "--tk-hero-jc":"center","--tk-hero-mb":"8px",
+      "--tk-bd":"rgba(227,194,74,.34)","--tk-bd2":"rgba(227,194,74,.17)",
+      "--tk-tx":"#e0dcce","--tk-tx-strong":"#f6f1de","--tk-mut":"#a49e88","--tk-fnt":"#78735f",
+      "--tk-acc":"#e3c24a","--tk-onacc":"#12121a","--tk-link":"#ecd274",
+      "--tk-trk":"rgba(227,194,74,.10)","--tk-hover":"rgba(227,194,74,.06)","--tk-zebra":"rgba(227,194,74,.035)",
+      "--tk-ok":"#6fbfae","--tk-warn":"#d98f7a",
+      "--tk-rad":"0px","--tk-rad2":"0px","--tk-bar-rad":"0px","--tk-col-rad":"0","--tk-cell-rad":"0px",
+      "--tk-sh":"none","--tk-tile-sh":"none","--tk-inset":"none",
+      "--tk-axis":"1px solid #e3c24a","--tk-hd-rule":"repeating-linear-gradient(90deg,#e3c24a 0 100%)",
+      "--tk-hd-c":"#e3c24a","--tk-hd-tf":"uppercase","--tk-hd-ls":".26em","--tk-sub-i":"normal",
+      "--tk-kick-ls":".5em","--tk-title-ls":".08em","--tk-title-w":"400","--tk-num-w":"400","--tk-fs":"14px",
+      "--tk-font":"'Noto Serif',Georgia,serif","--tk-fonth":"'Federo',system-ui,sans-serif",
+      "--tk-fontd":"'Limelight','Federo',Impact,sans-serif","--tk-orn":"#e3c24a" } },
+
+  /* ---- Industry: steel wireframe, Barlow Condensed --------------------- */
+  "industry": { label:"Industry", swatch:"linear-gradient(135deg,#f2f2f3 0 50%,#5980a6 50%)", ind:1,
+    /* every value below is a literal step of the system's OKLCH ramps */
+    pal:["#597ea3","#2b2b2d","#416180","#7a7a7d","#1d2d3d","#5d5d60","#2c455d","#424244","#597ea3","#7a7a7d"],
+    v:{ "--tk-app-bg":"#e7e7ea","--tk-app-bg2":"#d4d4d7","--tk-app-bd":"#b7b7ba","--tk-app-tx":"#1d1f20","--tk-app-mut":"#7a7a7d",
+      "--tk-page":"#f2f2f3","--tk-page-pad":"20px","--tk-shell-pad":"30px","--tk-shell-bd":"1px solid #1d1f20",
+      "--tk-shell-sh":"none",
+      "--tk-pnl":"transparent","--tk-tile":"transparent","--tk-btn":"transparent","--tk-hero":"transparent",
+      "--tk-hero-fx":"none","--tk-hero-bd":"1px solid #b7b7ba","--tk-hero-sh":"none",
+      "--tk-hero-pad":"22px 24px 20px","--tk-hero-mb":"18px",
+      "--tk-bd":"#b7b7ba","--tk-bd2":"color-mix(in srgb,#1d1f20 16%,transparent)",
+      "--tk-tx":"#2b2b2d","--tk-tx-strong":"#1d1f20","--tk-mut":"#5d5d60","--tk-fnt":"#7a7a7d",
+      "--tk-acc":"#5980a6","--tk-onacc":"#f2f2f3","--tk-link":"#416180",
+      "--tk-trk":"#e7e7ea","--tk-hover":"#eef6ff","--tk-zebra":"#eef6ff",
+      "--tk-ok":"#416180","--tk-warn":"#1d1f20",
+      "--tk-rad":"0px","--tk-rad2":"0px","--tk-bar-rad":"0px","--tk-col-rad":"0","--tk-cell-rad":"0px",
+      "--tk-sh":"none","--tk-tile-sh":"none","--tk-inset":"none","--tk-bar-sh":"none","--tk-blur":"none",
+      "--tk-axis":"1px solid #b7b7ba","--tk-hd-rule":"color-mix(in srgb,#1d1f20 16%,transparent)",
+      "--tk-hd-c":"#1d1f20","--tk-hd-tf":"uppercase","--tk-hd-ls":".14em","--tk-sub-i":"normal",
+      "--tk-kick-ls":".3em","--tk-title-ls":".005em","--tk-title-w":"600","--tk-num-w":"600","--tk-fs":"14px",
+      "--tk-font":"'Barlow',system-ui,sans-serif","--tk-fonth":"'Barlow Condensed',system-ui,sans-serif",
+      "--tk-fontd":"'Barlow Condensed',system-ui,sans-serif","--tk-orn":"#5980a6" } },
+
+  "riso": { label:"Riso print", swatch:"linear-gradient(135deg,#f4f1e8 0 50%,#ff48b0 50%)",
+    pal:["#ff48b0","#0078bf","#00a95c","#ff6c2f","#765ba7","#d9a300","#00868b","#e4003a","#3f3f46","#5c8a00"],
+    v:{ "--tk-app-bg":"#e7e3d4","--tk-app-bg2":"#dcd7c5","--tk-app-bd":"#17161a","--tk-app-tx":"#17161a","--tk-app-mut":"#6b675d",
+      "--tk-page":"radial-gradient(rgba(23,22,26,.07) 1px,transparent 1.3px) 0 0/7px 7px,linear-gradient(180deg,#f7f4eb 0%,#f1ede0 100%)",
+      "--tk-page-pad":"22px","--tk-shell-pad":"26px","--tk-shell-bd":"1.5px solid #17161a",
+      "--tk-shell-sh":"9px 9px 0 rgba(255,72,176,.5)",
+      "--tk-pnl":"#fbf8f0","--tk-tile":"#f1ecdd","--tk-btn":"#f1ecdd","--tk-hero":"#fbf8f0",
+      "--tk-hero-fx":"none","--tk-hero-bd":"1.5px solid #17161a","--tk-hero-sh":"6px 6px 0 rgba(0,120,191,.45)",
+      "--tk-hero-pad":"22px 24px 20px","--tk-hero-mb":"22px",
+      "--tk-bd":"#17161a","--tk-bd2":"rgba(23,22,26,.28)",
+      "--tk-tx":"#17161a","--tk-tx-strong":"#0e0d10","--tk-mut":"#575349","--tk-fnt":"#8b867a",
+      "--tk-acc":"#ff48b0","--tk-onacc":"#fffdf7","--tk-link":"#0078bf",
+      "--tk-trk":"rgba(23,22,26,.11)","--tk-hover":"rgba(255,72,176,.08)","--tk-zebra":"rgba(23,22,26,.045)",
+      "--tk-ok":"#00a95c","--tk-warn":"#e4003a",
+      "--tk-rad":"0px","--tk-rad2":"0px","--tk-bar-rad":"0px","--tk-col-rad":"0","--tk-cell-rad":"0px",
+      "--tk-sh":"3px 3px 0 rgba(23,22,26,.14)","--tk-tile-sh":"none","--tk-inset":"none","--tk-bar-sh":"none",
+      "--tk-axis":"1.5px solid #17161a","--tk-hd-rule":"repeating-linear-gradient(90deg,#17161a 0 3px,transparent 3px 6px)",
+      "--tk-hd-c":"#17161a","--tk-hd-tf":"uppercase","--tk-hd-ls":".16em","--tk-sub-i":"normal",
+      "--tk-kick-ls":".34em","--tk-title-ls":"-.01em","--tk-title-w":"600","--tk-num-w":"600","--tk-fs":"13.5px",
+      "--tk-font":"'Space Grotesk',system-ui,sans-serif","--tk-fonth":"'Space Grotesk',system-ui,sans-serif",
+      "--tk-fontd":"'Bodoni Moda','Space Grotesk',Georgia,serif","--tk-orn":"#ff48b0" } }
+};
+
+const ORDER = ["aware","glass-dark","glass-light","skeuo-dark","skeuo-light","fancy","medieval","medieval-night","art-deco","art-deco-night","riso","industry"];
+
+const TITLES = {
+  plain: ["Time allocation","Daily load","Reading & stats","Sections","Section × day","Day rhythm","Recurring tasks & streaks","Full ledger"],
+  med:   ["The Measure of the Week","The Days","Tallies & Measures","Where the Hours Went","The Tapestry","The Book of Hours","The Roll of Deeds","The Full Ledger"],
+  deco:  ["Allocation","Daily load","Tallies","Sections","Section × day","Day rhythm","Recurring & streaks","Ledger"]
+};
+
+/* --------------------------------------------------------------- pipeline */
+
+function buildDays(){
+  return RAW.map(function(r){
+    const p = r.date.split("-");
+    const dt = new Date(+p[0], (+p[1])-1, +p[2]);
+    const day = { name:r.name, date:dt, weekday:WDL[dt.getDay()], weekdayShort:WD[dt.getDay()],
+      label:dt.getDate()+" "+MS[dt.getMonth()], openedAt:r.open, tasks:[], metrics:[] };
+    r.t.forEach(function(row,i){
+      const o = row[5] || {};
+      const start = mn(row[2]), end = mn(row[3]);
+      const box = row[1];
+      /* trailing page tally, exactly as tracker-core reads it:
+         ": 120 - 148 Pages" -> 28 pages, ": 12 Pages" -> 12 pages */
+      let title = row[4], pages = o.pages == null ? null : o.pages;
+      let pg = title.match(/[:\uFF1A]\s*(\d+)\s*[-\u2013\u2014]\s*(\d+)\s*pages?\s*$/i);
+      if(pg){ pages = Math.max(0,(+pg[2])-(+pg[1])); title = title.slice(0,pg.index).trim(); }
+      else { pg = title.match(/[:\uFF1A]\s*(\d+)\s*pages?\s*$/i);
+        if(pg){ pages = +pg[1]; title = title.slice(0,pg.index).trim(); } }
+      const state = box === "x" ? "done" : box === "-" ? "cancelled" : box === "/" ? "doing" : "todo";
+      day.tasks.push({
+        title:title, key:title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim(),
+        section:row[0], habitSection:/^(habit|habits|chore|chores|routine)s?$/i.test(row[0]),
+        indent:o.sub?1:0, order:i, box:box, state:state,
+        done:state==="done", cancelled:state==="cancelled",
+        start:start, end:end, duration:(start!=null&&end!=null)?((end-start+1440)%1440):0,
+        priority:o.p||null, priorityName:o.p?"Priority":null, recurring:!!o.rec,
+        pages:pages, dayName:r.name, date:dt,
+        weekdayShort:WD[dt.getDay()], sortKey:dt.getTime()
+      });
+    });
+    (r.m||[]).forEach(function(m){ day.metrics.push({ label:m[0], key:m[0].toLowerCase(), kind:m[1], value:m[2] }); });
+    return day;
+  });
+}
+
+function fmtMetric(kind,v){
+  v = v||0;
+  if(kind === "duration"){
+    const h = Math.floor(v/3600), m = Math.floor((v%3600)/60);
+    return h ? (h+"h "+m+"m") : (m+"m");
+  }
+  return String(Math.round(v*100)/100);
+}
+
+function aggregate(days, PAL){
+  const all = days.reduce(function(a,d){ return a.concat(d.tasks); },[]);
+  const top = all.filter(function(t){ return t.indent===0; });
+  const subs = all.filter(function(t){ return t.indent>0; });
+  const doneTasks = top.filter(function(t){ return t.done; });
+  const totalMin = top.reduce(function(s,t){ return s+t.duration; },0);
+  const doneMin = doneTasks.reduce(function(s,t){ return s+t.duration; },0);
+
+  const secMap = new Map();
+  top.forEach(function(t){
+    if(!secMap.has(t.section)) secMap.set(t.section,{name:t.section,count:0,done:0,cancelled:0,minutes:0,doneMinutes:0,pages:0});
+    const s = secMap.get(t.section);
+    s.count++; s.minutes += t.duration;
+    if(t.pages) s.pages += t.pages;
+    if(t.done){ s.done++; s.doneMinutes += t.duration; }
+    if(t.cancelled) s.cancelled++;
+  });
+  const sections = Array.from(secMap.values()).sort(function(a,b){ return (b.minutes-a.minutes)||(b.count-a.count); });
+  sections.forEach(function(s,i){ s.color = PAL[i%PAL.length]; });
+  const sectionColor = new Map(sections.map(function(s){ return [s.name,s.color]; }));
+
+  const perDay = days.map(function(d){
+    const t = d.tasks.filter(function(x){ return x.indent===0; });
+    const dn = t.filter(function(x){ return x.done; });
+    return { day:d, total:t.length, done:dn.length,
+      minutes:t.reduce(function(s,x){ return s+x.duration; },0),
+      doneMinutes:dn.reduce(function(s,x){ return s+x.duration; },0),
+      blocks:t.filter(function(x){ return x.start!=null && x.duration>0; })
+        .map(function(x){ return Object.assign({},x,{color:sectionColor.get(x.section)}); }) };
+  });
+
+  const byKey = new Map();
+  top.forEach(function(t){
+    if(!byKey.has(t.key)) byKey.set(t.key,{key:t.key,title:t.title,section:t.section,items:[],marked:false,habitSection:false});
+    const g = byKey.get(t.key);
+    g.items.push(t);
+    if(t.recurring) g.marked = true;
+    if(t.habitSection) g.habitSection = true;
+  });
+  const habits = Array.from(byKey.values()).filter(function(g){
+    const dset = new Set(g.items.map(function(i){ return i.dayName; }));
+    g.dayCount = dset.size;
+    return g.marked || g.habitSection || dset.size >= 2;
+  }).map(function(g){
+    const cells = days.map(function(d){
+      const it = g.items.filter(function(i){ return i.dayName===d.name; });
+      if(!it.length) return {state:"absent",day:d};
+      if(it.some(function(i){ return i.done; })) return {state:"done",day:d};
+      if(it.some(function(i){ return i.cancelled; })) return {state:"cancelled",day:d};
+      return {state:"missed",day:d};
+    });
+    const planned = cells.filter(function(c){ return c.state!=="absent"; }).length;
+    const hit = cells.filter(function(c){ return c.state==="done"; }).length;
+    let best = 0, run = 0, cur = 0;
+    cells.forEach(function(c){ if(c.state==="done"){ run++; if(run>best) best = run; } else if(c.state!=="absent") run = 0; });
+    for(let i=cells.length-1;i>=0;i--){ if(cells[i].state==="done") cur++; else if(cells[i].state!=="absent") break; }
+    return Object.assign({},g,{ cells:cells, planned:planned, hit:hit, rate:planned?hit/planned:0,
+      best:best, cur:cur, minutes:g.items.reduce(function(s,i){ return s+i.duration; },0),
+      color:sectionColor.get(g.section) });
+  }).sort(function(a,b){ return (b.rate-a.rate)||(b.hit-a.hit)||(b.planned-a.planned); });
+
+  const mMap = new Map();
+  days.forEach(function(d){
+    d.metrics.forEach(function(m){
+      if(!mMap.has(m.key)) mMap.set(m.key,{key:m.key,label:m.label,kind:m.kind,total:0,perDay:new Map()});
+      const g = mMap.get(m.key);
+      g.total += m.value;
+      g.perDay.set(d.name,(g.perDay.get(d.name)||0)+m.value);
+    });
+  });
+  const metrics = Array.from(mMap.values()).map(function(g,i){
+    return Object.assign({},g,{ color:PAL[i%PAL.length],
+      active:days.filter(function(d){ return (g.perDay.get(d.name)||0)>0; }).length,
+      avg:days.length?g.total/days.length:0,
+      series:days.map(function(d){ return {day:d,value:g.perDay.get(d.name)||0}; }) });
+  });
+
+  const heat = sections.map(function(s){
+    return { name:s.name, color:s.color, cells:days.map(function(d){
+      const t = d.tasks.filter(function(x){ return x.indent===0 && x.section===s.name; });
+      return { day:d, count:t.length, done:t.filter(function(x){ return x.done; }).length,
+        minutes:t.reduce(function(a,x){ return a+x.duration; },0) };
+    })};
+  });
+  let heatMax = 1;
+  heat.forEach(function(r){ r.cells.forEach(function(c){ if(c.minutes>heatMax) heatMax = c.minutes; }); });
+
+  const wake = days.filter(function(d){ return d.openedAt!=null; });
+  const first = days[0].date, last = days[days.length-1].date;
+
+  return { days:days, allTasks:all, top:top, subs:subs,
+    totalTop:top.length, doneTop:doneTasks.length,
+    cancelledTop:top.filter(function(t){ return t.cancelled; }).length,
+    openTop:top.filter(function(t){ return !t.done && !t.cancelled; }).length,
+    rate:pct(doneTasks.length,top.length), totalMin:totalMin, doneMin:doneMin,
+    totalPages:top.reduce(function(s,t){ return s+(t.pages||0); },0),
+    sections:sections, sectionColor:sectionColor, perDay:perDay, habits:habits,
+    metrics:metrics, heat:heat, heatMax:heatMax,
+    avgWake:wake.length?Math.round(wake.reduce(function(s,w){ return s+w.openedAt; },0)/wake.length):null,
+    wakeCount:wake.length,
+    range:first.getDate()+" "+MS[first.getMonth()]+" – "+last.getDate()+" "+MS[last.getMonth()]+" "+last.getFullYear() };
+}
+
+/* ------------------------------------------------------------------ class */
+
+class Component extends DCLogic {
+  ui = { skin:null, density:null, q:"", mode:"section", filt:"all", habitMin:2 };
+  set(patch){ Object.assign(this.ui, patch); this.forceUpdate(); }
+
+  renderVals(){
+    const picked = this.ui.skin || this.props.skin || "medieval-night";
+    const skinId = SKINS[picked] ? picked : "medieval";
+    const sk = SKINS[skinId];
+    const dense = (this.ui.density || this.props.density || "comfortable") === "compact";
+    const med = !!sk.med, deco = !!sk.deco, ornate = !!sk.ornate, ind = !!sk.ind;
+    const pMark = ornate ? "❦" : deco ? "◆" : ind ? "+" : skinId === "riso" ? "◆" : "§";
+    ensureFont(skinId);
+    const PAL = sk.pal;
+    const d = aggregate(buildDays(), PAL);
+    const set = function(k,v){ const o = {}; o[k] = v; return o; };
+
+    const rootStyle = Object.assign({}, BASE, sk.v, {
+      "--tk-gap": dense ? "10px" : "16px",
+      "--tk-pnl-pad": dense ? "13px 14px 12px" : "18px 19px 17px",
+      "--tk-max": (this.props.fullWidth === false) ? "820px" : "none",
+      display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--tk-app-bg)"
+    });
+
+    const T = med ? TITLES.med : deco ? TITLES.deco : TITLES.plain;
+
+    /* skin picker */
+    const self = this;
+    const skins = ORDER.map(function(id){
+      const on = id === skinId;
+      return { label:SKINS[id].label,
+        pick: function(){ self.set({skin:id}); },
+        style:{ width:"18px", height:"18px", padding:0, borderRadius:"var(--tk-rad2)", cursor:"pointer",
+          background:SKINS[id].swatch, border:"1px solid var(--tk-bd)",
+          opacity: on ? 1 : .55, boxShadow: on ? "0 0 0 2px var(--tk-acc)" : "none", transition:"opacity .12s" } };
+    });
+
+    const btn = function(on){
+      return { fontFamily:"var(--tk-fonth)", fontSize:"10.5px", fontWeight:600, cursor:"pointer",
+        padding:"5px 10px", borderRadius:"var(--tk-rad2)", border:"1px solid var(--tk-bd2)",
+        color: on ? "var(--tk-onacc)" : "var(--tk-mut)", background: on ? "var(--tk-acc)" : "var(--tk-btn)",
+        letterSpacing:".08em", textTransform:"uppercase", whiteSpace:"nowrap" };
+    };
+    const segBtn = function(on){
+      return { fontFamily:"var(--tk-fonth)", fontSize:"10px", fontWeight:600, cursor:"pointer",
+        padding:"5px 11px", border:"none", color: on ? "var(--tk-onacc)" : "var(--tk-mut)",
+        background: on ? "var(--tk-acc)" : "transparent", letterSpacing:".1em", textTransform:"uppercase" };
+    };
+
+    const densities = [["comfortable","Roomy"],["compact","Compact"]].map(function(x){
+      return { label:x[1], pick:function(){ self.set({density:x[0]}); }, style:segBtn(dense === (x[0]==="compact")) };
+    });
+
+    /* ornament corners */
+    const corners = [["top","left","translate(0,0)"],["top","right","translate(60,0) scale(-1,1)"],
+      ["bottom","left","translate(0,60) scale(1,-1)"],["bottom","right","translate(60,60) scale(-1,-1)"]]
+      .map(function(c){
+        const s = { position:"absolute", width: deco ? "58px" : "44px", height: deco ? "58px" : "44px",
+          color:"var(--tk-orn)", opacity: deco ? .9 : .8, pointerEvents:"none", zIndex:1 };
+        s[c[0]] = deco ? "9px" : "9px"; s[c[1]] = deco ? "9px" : "9px";
+        const f = med ? c[2].replace(/60/g,"44") : c[2];
+        return { style:s, flip:f };
+      });
+
+    /* industry registration marks */
+    const regs = [["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(function(c){
+      const s = { position:"absolute", width:"13px", height:"13px", color:"var(--tk-acc)",
+        pointerEvents:"none", zIndex:2 };
+      s[c[0]] = "-7px"; s[c[1]] = "-7px";
+      return { style:s };
+    });
+
+    /* tiles */
+    const tileDefs = [
+      { label:"Completion", value:d.rate+"%", sub:d.doneTop+" of "+d.totalTop+" tasks", c:PAL[0], m:d.rate },
+      { label:"Time completed", value:hm(d.doneMin), sub:"of "+hm(d.totalMin)+" scheduled", c:PAL[1], m:pct(d.doneMin,d.totalMin) },
+      { label:"Recurring", value:String(d.habits.length), sub:d.habits.filter(function(x){ return x.rate>=.8; }).length+" at ≥ 80%", c:PAL[2], m:pct(d.habits.filter(function(x){ return x.rate>=.8; }).length,d.habits.length) },
+      { label:"Left open", value:String(d.openTop), sub:d.cancelledTop?(d.cancelledTop+" cancelled"):"none cancelled", c:PAL[3], m:pct(d.openTop,d.totalTop) },
+      { label:"Pages read", value:String(d.totalPages), sub:d.subs.length+" sub-tasks", c:PAL[4], m:70 },
+      { label:"Note created", value:d.avgWake!=null?clock(d.avgWake):"—", sub:"average of "+d.wakeCount+" days", c:PAL[5], m:Math.round((d.avgWake/1440)*100) }
+    ];
+    const tiles = tileDefs.map(function(t){
+      return { label:t.label, value:t.value, sub:t.sub,
+        cap:{ position:"absolute", left:0, top:0, width:"100%", height:"2px", background:t.c, opacity:.85 },
+        meter:{ position:"absolute", left:0, top:0, bottom:0, width:Math.max(2,Math.min(100,t.m))+"%", background:t.c, borderRadius:"2px" } };
+    });
+
+    /* donut */
+    const segs = d.sections.slice(0,10).map(function(s){
+      return { name:s.name, value:s.minutes||s.count, color:s.color, label:hm(s.minutes)+" · "+s.done+"/"+s.count };
+    });
+    const C = 2*Math.PI*72;
+    const totalSeg = segs.reduce(function(a,s){ return a+s.value; },0) || 1;
+    let acc = 0;
+    const arcs = segs.map(function(s){
+      const len = (s.value/totalSeg)*C;
+      const a = { tip:s.name+" — "+s.label,
+        style:{ stroke:s.color, strokeWidth:"20px",
+          strokeDasharray:Math.max(0,len-1.5)+" "+(C-Math.max(0,len-1.5)), strokeDashoffset:-acc } };
+      acc += len;
+      return a;
+    });
+    const legend = segs.map(function(s){
+      return { name:s.name, value:hm(s.value),
+        sw:{ width:"10px", height:"10px", borderRadius:"var(--tk-cell-rad)", background:s.color, flex:"0 0 auto" } };
+    });
+
+    /* day columns */
+    const maxMin = Math.max.apply(null, d.perDay.map(function(p){ return p.minutes; }).concat([1]));
+    const dayCols = d.perDay.map(function(p){
+      const bh = Math.max(5, Math.round((p.minutes/maxMin)*128));
+      const dh = p.minutes ? Math.round((p.doneMinutes/p.minutes)*100) : 0;
+      return { day:p.day.weekdayShort, ratio:p.done+"/"+p.total, time:hm(p.minutes),
+        tip:p.day.weekday+" · "+p.done+"/"+p.total+" tasks · "+hm(p.doneMinutes)+" of "+hm(p.minutes),
+        bar:{ position:"relative", width:"100%", height:bh+"px", borderRadius:"var(--tk-col-rad)",
+          overflow:"hidden", background:"var(--tk-trk)", border:"1px solid var(--tk-bd2)" },
+        fill:{ position:"absolute", left:0, right:0, bottom:0, height:dh+"%",
+          background: deco ? decoGradient(PAL[1]) : PAL[1], boxShadow:"var(--tk-bar-sh)", display:"block" } };
+    });
+
+    /* metric cards */
+    const metricCards = d.metrics.map(function(m){
+      const mx = Math.max.apply(null, m.series.map(function(s){ return s.value; }).concat([1]));
+      return { label:m.label, total:fmtMetric(m.kind,m.total),
+        sub: m.kind === "pages" ? "" : (fmtMetric(m.kind,m.avg)+" / day · "+m.active+"/"+d.days.length+" days"),
+        big:{ display:"block", fontFamily:"var(--tk-fonth)", fontSize:"23px", fontWeight:"var(--tk-num-w)",
+          letterSpacing:"-.015em", margin:"6px 0 2px", color:m.color, fontVariantNumeric:"tabular-nums" },
+        bars:m.series.map(function(s){
+          return { tip:s.day.weekdayShort+": "+fmtMetric(m.kind,s.value),
+            style:{ flex:1, borderRadius:"2px 2px 1px 1px", minHeight:"2px",
+              height:Math.max(2,(s.value/mx)*30)+"px", background:s.value?m.color:"var(--tk-trk)", display:"block" } };
+        }) };
+    });
+
+    /* section bars */
+    const mxSec = d.sections[0] ? (d.sections[0].minutes||1) : 1;
+    const sectionBars = d.sections.map(function(s){
+      return { name:s.name, meta:hm(s.minutes)+"  ·  "+s.done+"/"+s.count+"  ·  "+pct(s.done,s.count)+"%",
+        plan:{ position:"absolute", top:0, bottom:0, left:0, width:((s.minutes/mxSec)*100)+"%",
+          background:s.color, opacity:.24, borderRadius:"var(--tk-bar-rad)" },
+        done:{ position:"absolute", top:0, bottom:0, left:0, width:((s.doneMinutes/mxSec)*100)+"%",
+          background: deco ? decoGradient(s.color) : s.color, borderRadius:"var(--tk-bar-rad)",
+          boxShadow:"var(--tk-bar-sh)", color:s.color } };
+    });
+
+    /* heat */
+    const dayHeads = d.days.map(function(x){ return x.weekdayShort; });
+    const heatGrid = { display:"grid", gap:"4px",
+      gridTemplateColumns:"minmax(92px,1.3fr) repeat("+d.days.length+",1fr)",
+      minWidth:(120+d.days.length*52)+"px" };
+    const heatCells = [];
+    d.heat.forEach(function(r){
+      heatCells.push({ text:r.name, tip:r.name,
+        style:{ fontSize:"12px", color:"var(--tk-mut)", paddingRight:"8px", overflow:"hidden",
+          textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"right", alignSelf:"center" } });
+      r.cells.forEach(function(c){
+        const a = c.minutes ? 0.22+0.78*(c.minutes/d.heatMax) : 0;
+        heatCells.push({ text:c.count?(c.done+"/"+c.count):"",
+          tip:r.name+" · "+c.day.weekday+" — "+c.done+"/"+c.count+" tasks, "+hm(c.minutes),
+          style:{ height:"26px", borderRadius:"var(--tk-cell-rad)", display:"flex", alignItems:"center",
+            justifyContent:"center", fontSize:"10.5px", fontVariantNumeric:"tabular-nums",
+            background: c.minutes ? r.color : "var(--tk-trk)", opacity: c.minutes ? a : 1,
+            color: a>0.55 ? "var(--tk-onacc)" : "var(--tk-mut)" } });
+      });
+    });
+
+    /* rhythm — the axis spans the week's earliest activity to its latest */
+    let winA = 1440, winB = 0;
+    d.perDay.forEach(function(p){
+      if(p.day.openedAt != null){ winA = Math.min(winA, p.day.openedAt); }
+      p.blocks.forEach(function(b){
+        winA = Math.min(winA, b.start);
+        winB = Math.max(winB, b.start + b.duration);
+      });
+    });
+    if(winB <= winA){ winA = 0; winB = 1440; }
+    winA = Math.max(0, Math.floor(winA/60)*60);
+    winB = Math.min(1440, Math.ceil(winB/60)*60);
+    const winSpan = Math.max(60, winB - winA);
+    const at = function(m){ return ((m - winA)/winSpan)*100; };
+    const hA = winA/60, hB = winB/60;
+    const tickHours = [];
+    for(let h = hA; h <= hB; h++){ if(h===hA || h===hB || h%3===0) tickHours.push(h); }
+    const hourTicks = tickHours.map(function(h){
+      return { label:String(h).padStart(2,"0"),
+        style:{ position:"absolute", left:at(h*60)+"%", fontSize:"10px",
+          transform: h===hA ? "translateX(0)" : h===hB ? "translateX(-100%)" : "translateX(-50%)",
+          color:"var(--tk-fnt)", fontVariantNumeric:"tabular-nums" } };
+    });
+    const rhythm = d.perDay.map(function(p){
+      return { day:p.day.weekdayShort, total:hm(p.minutes),
+        ticks:tickHours.filter(function(h){ return h>hA && h<hB; }).map(function(h){
+          return { position:"absolute", top:0, bottom:0, width:"1px", left:at(h*60)+"%",
+            background:"var(--tk-bd)", opacity: h%6===0 ? .85 : .5 };
+        }),
+        blocks:p.blocks.map(function(b){
+          return { tip:clock(b.start)+"–"+clock(b.start+b.duration)+"  "+b.title+"  ·  "+b.section+(b.done?"  ✓":""),
+            style:{ position:"absolute", top:"3px", bottom:"3px", borderRadius:"var(--tk-cell-rad)",
+              minWidth:"2px", left:at(b.start)+"%", width:(Math.max(b.duration,6)/winSpan*100)+"%",
+              background: deco ? decoGradient(b.color) : b.color, opacity: b.done ? 1 : .32,
+              boxShadow:"var(--tk-bar-sh)", color:b.color } };
+        }),
+        wake: p.day.openedAt != null,
+        wakeTip:"Note created "+clock(p.day.openedAt),
+        wakeStyle:{ position:"absolute", top:0, bottom:0, width:0, left:at(p.day.openedAt)+"%",
+          borderLeft:"2px dashed var(--tk-warn)" } };
+    });
+
+    /* habits */
+    const hmin = this.ui.habitMin;
+    const habitMins = [2,3,4,5].map(function(n){
+      return { label:String(n), pick:function(){ self.set({habitMin:n}); }, style:btn(hmin===n) };
+    });
+    const habitRows = d.habits.filter(function(x){ return x.marked || x.habitSection || x.dayCount >= hmin; })
+      .map(function(hb){
+        return { title:hb.title, section:hb.section, done:hb.hit+"/"+hb.planned, best:hb.best,
+          ratePct:Math.round(hb.rate*100)+"%", streakTip:"Best run "+hb.best+" · current "+hb.cur,
+          time:hm(hb.minutes),
+          sw:{ width:"9px", height:"9px", borderRadius:"var(--tk-cell-rad)", background:hb.color, flex:"0 0 auto" },
+          rateFill:{ position:"absolute", left:0, top:0, bottom:0, width:(hb.rate*100)+"%",
+            background: deco ? decoGradient(hb.color) : hb.color, borderRadius:"99px", display:"block" },
+          cells:hb.cells.map(function(c){
+            const g = c.state==="done" ? "✓" : c.state==="missed" ? "" : c.state==="cancelled" ? "✕" : "·";
+            const base = { display:"inline-flex", alignItems:"center", justifyContent:"center", width:"22px",
+              height:"22px", borderRadius:"var(--tk-cell-rad)", fontSize:"11px", lineHeight:1 };
+            if(c.state==="done") Object.assign(base,{ background:hb.color, color:"var(--tk-onacc)", boxShadow:"var(--tk-bar-sh)" });
+            else if(c.state==="missed") Object.assign(base,{ border:"1px dashed var(--tk-bd)", color:"var(--tk-fnt)" });
+            else if(c.state==="cancelled") Object.assign(base,{ border:"1px solid var(--tk-bd)", color:"var(--tk-fnt)" });
+            else Object.assign(base,{ color:"var(--tk-fnt)", opacity:.35 });
+            return { glyph:g, tip:c.day.weekday+" — "+(c.state==="absent"?"not listed":c.state), style:base };
+          }) };
+      });
+
+    /* ledger */
+    const q = this.ui.q.trim().toLowerCase(), mode = this.ui.mode, filt = this.ui.filt;
+    const match = function(t){
+      if(filt==="done" && !t.done) return false;
+      if(filt==="open" && (t.done||t.cancelled)) return false;
+      if(filt==="cancelled" && !t.cancelled) return false;
+      if(!q) return true;
+      return (t.title+" "+t.section+" "+t.dayName).toLowerCase().indexOf(q) >= 0;
+    };
+    const cellBase = function(i, extra){
+      const o = { padding:"6px 0", background: i%2 ? "var(--tk-zebra)" : "transparent" };
+      return Object.assign(o, extra||{});
+    };
+    const groups = [];
+    if(mode === "section"){
+      d.sections.forEach(function(s){
+        const rows = d.allTasks.filter(function(t){ return t.section===s.name && match(t); })
+          .sort(function(a,b){ return (a.sortKey-b.sortKey)||(a.order-b.order); });
+        if(rows.length) groups.push({ title:s.name, color:s.color, rows:rows,
+          meta:s.done+"/"+s.count+" done · "+hm(s.minutes) });
+      });
+    } else {
+      d.days.forEach(function(x){
+        const rows = x.tasks.filter(match);
+        const p = d.perDay.filter(function(z){ return z.day.name===x.name; })[0];
+        if(rows.length) groups.push({ title:x.weekday+" · "+x.label, color:"var(--tk-acc)", rows:rows,
+          meta:(p?p.done+"/"+p.total+" done · "+hm(p.minutes):"")+(x.openedAt!=null?" · from "+clock(x.openedAt):"") });
+      });
+    }
+    const groupVals = groups.map(function(g){
+      return { title:g.title, meta:g.meta,
+        initial: pMark,
+        sw: { width:"auto", minWidth:"13px", textAlign:"center", fontFamily:"var(--tk-fonth)",
+          fontSize: ornate ? "16px" : "13px", fontWeight:600, color:g.color, lineHeight:1, flex:"0 0 auto" },
+        rows:g.rows.map(function(t,i){
+          const mark = t.done ? "✓" : t.cancelled ? "✕" : t.state==="doing" ? "◐" : "○";
+          const sub = t.indent > 0;
+          return { wd:(mode==="section" && !sub) ? t.weekdayShort : "",
+            dayName:t.dayName,
+            time:t.start!=null ? (clock(t.start)+(t.end!=null?"–"+clock(t.end):"")) : "",
+            dur:t.duration ? hm(t.duration) : "",
+            date:(mode==="section" && !sub) ? (t.date.getDate()+" "+MS[t.date.getMonth()]) : "",
+            title:t.title, mark:mark, priority:t.priority, priorityName:t.priorityName,
+            chip: t.pages!=null ? (t.pages+" pages") : (mode==="day" ? t.section : ""),
+            cellA:cellBase(i,{ paddingLeft:"13px", borderRadius:"var(--tk-rad2) 0 0 var(--tk-rad2)", fontSize:"10px",
+              letterSpacing:".08em", textTransform:"uppercase", color:"var(--tk-fnt)", fontWeight:600 }),
+            cellB:cellBase(i,{ fontVariantNumeric:"tabular-nums", fontSize:"11.5px", color:"var(--tk-mut)" }),
+            cellC:cellBase(i,{ fontSize:"11px", color:"var(--tk-fnt)", fontVariantNumeric:"tabular-nums" }),
+            cellD:cellBase(i,{ minWidth:0, overflowWrap:"anywhere", paddingLeft: sub ? "22px" : 0 }),
+            cellE:cellBase(i,{ paddingRight:"13px", borderRadius:"0 var(--tk-rad2) var(--tk-rad2) 0",
+              fontSize:"11px", color:"var(--tk-fnt)", fontVariantNumeric:"tabular-nums", textAlign:"right" }),
+            markStyle:{ marginRight:"7px", color: t.done ? "var(--tk-ok)" : "var(--tk-fnt)" },
+            titleStyle:{ color: t.cancelled ? "var(--tk-fnt)" : t.done ? "var(--tk-mut)" : "var(--tk-tx)",
+              textDecoration: t.cancelled ? "line-through" : "none" } };
+        }) };
+    });
+
+    const modeBtns = [["section","By section"],["day","By day"]].map(function(x){
+      return { label:x[1], pick:function(){ self.set({mode:x[0]}); }, style:btn(mode===x[0]) };
+    });
+    const filterBtns = [["all","All"],["done","Done"],["open","Open"],["cancelled","Cancelled"]].map(function(x){
+      return { label:x[1], pick:function(){ self.set({filt:x[0]}); }, style:btn(filt===x[0]) };
+    });
+
+    return {
+      rootStyle:rootStyle,
+      noteFile:META.file, notePath:META.path,
+      isMedieval:med, isDeco:deco, isIndustry:ind, showRule:ornate, corners:corners, regs:regs, pMark:pMark,
+      ruleMark: med ? "❦" : "◆",
+      kicker: med ? "Chronicle of the Week" : deco ? "Weekly Report" : "Weekly report",
+      title: META.title,
+      weekMark: med ? ("Week "+META.roman) : ("W"+META.week),
+      subtitle: d.range+" · "+d.days.length+" days · "+d.totalTop+" tasks logged",
+      skins:skins, densities:densities, tiles:tiles,
+      t1:T[0], t2:T[1], t3:T[2], t4:T[3], t5:T[4], t6:T[5], t7:T[6], t8:T[7],
+      arcs:arcs, legend:legend, ratePct:d.rate+"%", totalTime:hm(d.totalMin)+" total",
+      dayCols:dayCols, metricCards:metricCards, sectionBars:sectionBars,
+      dayHeads:dayHeads, heatGrid:heatGrid, heatCells:heatCells,
+      hourTicks:hourTicks, rhythm:rhythm,
+      rhythmNote:"dashed rule = note created · faded = not completed",
+      habitMins:habitMins, habitRows:habitRows,
+      query:this.ui.q, onQuery:function(e){ self.set({q:e.target.value}); },
+      modeBtns:modeBtns, filterBtns:filterBtns, groups:groupVals, noMatches:!groupVals.length
+    };
+  }
+}
+</script>
+</body>
+</html>

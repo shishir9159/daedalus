@@ -313,7 +313,7 @@ function parseDaily(file, content) {
       continue;
     }
     if (inFence || !t) continue;
-    if (t.startsWith("%%") || t.startsWith("<!--") || t === "-->") continue;
+    if (t.startsWith("%%") || t.startsWith("<!--")) continue;
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) continue;
 
     if (/^\u{1F6EB}/u.test(t)) {                       // 🛫 first entry of the day
@@ -380,7 +380,7 @@ function encodeWeek(days, meta) {
   });
   const metricRows = Array.from(mMap.values()).map(function (g) { return [g.label, g.kind, g.values]; });
 
-  return Object.assign({}, meta || {}, {
+  return Object.assign({ v: 1 }, meta || {}, {
     dcols: D_COLS, days: dayRows,
     sections: sections,
     tcols: T_COLS, tasks: taskRows,
@@ -468,18 +468,6 @@ function aggregate(days, palette, opts) {
   });
   sections.forEach(function (s, i) { s.color = PAL[i % PAL.length]; s.dayCount = s.days.size; });
   const sectionColor = new Map(sections.map(function (s) { return [s.name, s.color]; }));
-
-  /* Sections in the order they are written in the daily notes (first appearance
-     wins), so the ledger can present them the way the notes read rather than
-     by time spent.  Sections that never carried a top-level task are dropped. */
-  const seen = [];
-  days.forEach(function (d) {
-    (d.sectionOrder || []).forEach(function (n) {
-      if (secMap.has(n) && seen.indexOf(n) < 0) seen.push(n);
-    });
-  });
-  top.forEach(function (t) { if (seen.indexOf(t.section) < 0) seen.push(t.section); });
-  const sectionsInOrder = seen.map(function (n) { return secMap.get(n); });
 
   const perDay = days.map(function (d) {
     const t = d.tasks.filter(function (x) { return x.indent === 0; });
@@ -599,8 +587,7 @@ function aggregate(days, palette, opts) {
     rate: pct(doneTasks.length, top.length),
     totalMin: totalMin, doneMin: doneMin,
     totalPages: top.reduce(function (s, t) { return s + (t.pages || 0); }, 0),
-    sections: sections, sectionsInOrder: sectionsInOrder,
-    sectionColor: sectionColor, perDay: perDay,
+    sections: sections, sectionColor: sectionColor, perDay: perDay,
     habits: habits, metrics: metrics, priorities: priorities,
     heat: heat, heatMax: heatMax, wake: wake,
     avgWake: wake.length ? Math.round(wake.reduce(function (s, w) { return s + w.at; }, 0) / wake.length) : null,
@@ -647,17 +634,14 @@ function extractPayload(content) {
 
 /* --------------------------------------------------------- report note text */
 
-/* opts:  { theme, density, fullWidth }.  A bare string is still accepted as the
-   theme, so older callers keep working. */
-function buildReportNote(payload, data, libPath, opts) {
-  if (typeof opts === "string") opts = { theme: opts };
-  opts = opts || {};
+function buildReportNote(payload, data, libPath, theme) {
   const L = [];
   L.push("---");
   L.push("type: weekly-report");
   L.push("week: " + payload.week);
   L.push("year: " + payload.year);
   L.push("month: " + payload.month);
+  L.push("month_name: " + payload.monthName);
   L.push("from: " + payload.from);
   L.push("to: " + payload.to);
   L.push("days_logged: " + data.days.length);
@@ -671,29 +655,17 @@ function buildReportNote(payload, data, libPath, opts) {
   L.push("sections: " + data.sections.length);
   L.push("recurring: " + data.habits.length);
   L.push("crunched: " + new Date().toISOString());
+  L.push("tags: [weekly-report]");
   L.push("---");
   L.push("");
-
-  const args = [];
-  if (opts.theme) args.push('theme="' + opts.theme + '"');
-  if (opts.density) args.push('density="' + opts.density + '"');
-  if (opts.fullWidth === false) args.push("fullWidth={false}");
   L.push("```datacorejsx");
   L.push('const { WeeklyReport } = await dc.require("' + libPath + '/tracker-report.jsx");');
-  L.push("return function View() { return <WeeklyReport" +
-    (args.length ? " " + args.join(" ") : "") + " />; };");
+  L.push('return function View() { return <WeeklyReport theme="' + (theme || "aware") + '" />; };');
   L.push("```");
   L.push("");
-
-  /* The payload rides inside an HTML comment: CommonMark treats everything up
-     to the closing --> as a raw HTML block, so reading mode shows the report
-     and nothing else, while extractPayload still finds the fence in the raw
-     text.  JSON can never contain "-->", so the comment cannot close early. */
-  L.push("<!--");
   L.push("```json");
   L.push(JSON.stringify(payload));
   L.push("```");
-  L.push("-->");
   return L.join("\n");
 }
 

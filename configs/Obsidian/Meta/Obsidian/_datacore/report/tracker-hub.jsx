@@ -116,16 +116,14 @@ async function crunchWeek(w) {
   const payload = core.encodeWeek(days, {
     title: w.name + " Week",
     week: w.weekNum, year: w.year,
-    month: w.monthIdx >= 0 ? w.monthIdx + 1 : null,
+    month: w.monthIdx >= 0 ? w.monthIdx + 1 : null, monthName: w.monthName,
     path: w.path,
     from: rg ? core.iso(rg.from) : null,
     to: rg ? core.iso(rg.to) : null,
     generated: new Date().toISOString()
   });
 
-  /* No theme is written into the note: the report picks its own skin from the
-     active Obsidian theme, and remembers a manual override in localStorage. */
-  const text = core.buildReportNote(payload, data, LIB, {});
+  const text = core.buildReportNote(payload, data, LIB, report.readSkin("aware"));
   const target = w.path + "/" + w.name + " Week Report.md";
   const existing = app.vault.getAbstractFileByPath(target);
   if (existing) await app.vault.modify(existing, text);
@@ -290,7 +288,7 @@ function Tile2(props) {
   return (
     <div class="tk-tile">
       <div class="cap" style={{ background: props.color }} />
-      <i>{props.label}</i><b>{props.value}</b>
+      <b>{props.value}</b><i>{props.label}</i>
       {props.sub ? <em>{props.sub}</em> : null}
     </div>
   );
@@ -299,18 +297,17 @@ function Tile2(props) {
 function Hub(props) {
   props = props || {};
   const root = props.root || "Meta/Tracker";
-  const [skin, setSkin] = dc.useState(function () { return report.readSkin(props.theme); });
+  const [skin, setSkin] = dc.useState(function () { return report.readSkin(props.theme || "aware"); });
   const [rev, setRev] = dc.useState(0);
   const [sel, setSel] = dc.useState(null);
   const idx = (typeof dc.useIndexUpdates === "function") ? dc.useIndexUpdates() : 0;
 
   const pal = themes.palette(skin);
-  const flags = themes.flags(skin);
+  const medieval = themes.isFancy(skin);
   const scope = dc.useMemo(function () { return "tkid-" + Math.random().toString(36).slice(2, 8); }, []);
   const css = dc.useMemo(function () {
-    return themes.skinCss(skin, "." + scope, { density: props.density, fullWidth: props.fullWidth !== false })
-      + themes.scopeCss(HUB_CSS, "." + scope);
-  }, [skin, scope, props.density, props.fullWidth]);
+    return themes.skinCss(skin, "." + scope) + themes.scopeCss(HUB_CSS, "." + scope);
+  }, [skin, scope]);
 
   const weeks = dc.useMemo(function () { return scanTree(root); }, [root, rev, idx]);
 
@@ -348,9 +345,12 @@ function Hub(props) {
     <div class={scope}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div class="tk">
-        <div class="tk-page">
         <div class="tk-shell">
-          <report.Ornaments flags={flags} />
+          {medieval ? <div class="tk-frame" /> : null}
+          {medieval ? <report.Corner v="top" hz="left" /> : null}
+          {medieval ? <report.Corner v="top" hz="right" /> : null}
+          {medieval ? <report.Corner v="bottom" hz="left" /> : null}
+          {medieval ? <report.Corner v="bottom" hz="right" /> : null}
           <div class="tk-inner">
 
             <div class="tk-top">
@@ -397,7 +397,6 @@ function Hub(props) {
               </Panel2>
               : null}
           </div>
-        </div>
         </div>
       </div>
     </div>
