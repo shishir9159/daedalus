@@ -1,0 +1,5 @@
+# Almost everything here runs on Linux. Force LF so a checkout on Windows (where
+# this is developed) can never turn a script into "$'\r': command not found".
+# PowerShell (windows/) reads LF files fine.
+* text=auto eol=lf
+*.png binary

@@ -1,5 +1,18 @@
 # daedalus for dotfiles
 
+| Path | What | Goes to |
+|---|---|---|
+| `linux/zsh.rc` | zsh config | `~/.zshrc` |
+| `linux/manjaro-bootstrap.sh` | packages and toolchains for a fresh Manjaro | run by hand, step by step |
+| `configs/okular/` | Okular settings | `~/.config/` |
+| `configs/vesktop/pichu.css` | Vesktop theme (Emberkeep) | `~/.config/vesktop/themes/` |
+| `configs/Obsidian/Vault/` | CSS snippets and Datacore views | same paths inside the vault |
+| `windows/` | PowerShell profile, oh-my-posh theme | see `windows/readme.md` |
+
+`.gitignore` is a whitelist: a new file stays untracked until it gets a line there.
+
+## Notes
+
 Todo: take Inspiration again for new configuration:
 
 https://github.com/prasanthrangan/hyprdots 5766d02

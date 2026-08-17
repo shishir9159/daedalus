@@ -1,0 +1,31 @@
+# Whitelist: everything is ignored unless re-included below, so a new file
+# stays out of the repo until it gets a line here.
+*
+!*/
+
+!/.gitignore
+!/.gitattributes
+!/LICENSE
+!/roadmap
+
+# Markdown: only these files, never *.md (vault notes, scratch files).
+!/README.md
+!/CONTRIBUTING.md
+!/COMMIT_MESSAGE_GUIDELINES.md
+!/windows/readme.md
+!/configs/Obsidian/Vault/Meta/Obsidian/_datacore/report/Weekly Report (drop-in) -- reorgnaize.md
+
+# linux
+!/linux/manjaro-bootstrap.sh
+!/linux/zsh.rc
+
+# windows
+!/windows/profile.ps1
+!/windows/*.omp.toml
+
+# app configs; Obsidian: snippets and Datacore views only, not the vault
+!/configs/okular/okularrc
+!/configs/okular/okularpartrc
+!/configs/vesktop/*.css
+!/configs/Obsidian/Vault/.obsidian/snippets/*.css
+!/configs/Obsidian/Vault/Meta/Obsidian/_datacore/**/*.jsx
