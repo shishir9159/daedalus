@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# rice-session <profile> ["Display Name" | --remove] -- add/remove the greeter entry.
+# Writes /usr/share/wayland-sessions (sudo): the greeter can't read your home.
+set -euo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+SESSIONS_DIR="${RICE_SESSIONS_DIR:-/usr/share/wayland-sessions}"
+SUDO="${RICE_SUDO-sudo}"
+PROFILE="${1:-}"
+[ -n "$PROFILE" ] || { echo "usage: rice-session <profile> [\"Display Name\" | --remove]" >&2; exit 2; }
+rice_valid_name "$PROFILE" || rice_die "invalid profile name '$PROFILE'"
+DESKTOP="$SESSIONS_DIR/rice-$PROFILE.desktop"
+
+if [ "${2:-}" = --remove ]; then
+    if [ -e "$DESKTOP" ]; then $SUDO rm -f "$DESKTOP"; echo "removed $DESKTOP"; else echo "not registered"; fi
+    exit 0
+fi
+
+PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
+NAME="${2:-$(sed -n 's/^DISPLAY_NAME=//p' "$PDIR/profile.env" 2>/dev/null | tr -d '"' | head -1)}"
+NAME="${NAME:-Hyprland ($PROFILE)}"
+case "$NAME" in *$'\n'*) rice_die "display name must be one line" ;; esac
+
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+# TryExec: greeters hide the entry if the launcher is gone, instead of bouncing.
+cat > "$TMP" <<DESK
+[Desktop Entry]
+Name=$NAME
+Comment=Hyprland, rice profile '$PROFILE'
+TryExec=/usr/local/bin/hypr-profile
+Exec=/usr/local/bin/hypr-profile $PROFILE
+Type=Application
+DesktopNames=Hyprland
+DESK
+$SUDO install -Dm644 "$TMP" "$DESKTOP"
+echo "installed $DESKTOP ($NAME)"

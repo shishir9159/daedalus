@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# /usr/local/bin/hypr-profile -- greeter-side stub; hands off to the user's own
+# launcher (editable without root). If that's gone, start plain Hyprland
+# instead of bouncing back to the greeter.
+: "${HOME:=$(getent passwd "$(id -un)" | cut -d: -f6)}"
+export HOME
+launcher="${RICE_ROOT:-$HOME/.rices}/bin/hypr-profile"
+[ ! -x "$launcher" ] || exec "$launcher" "$@"
+echo "hypr-profile: $launcher not found - starting plain Hyprland" >&2
+if command -v start-hyprland >/dev/null; then exec start-hyprland; fi
+exec Hyprland

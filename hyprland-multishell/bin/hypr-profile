@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# hypr-profile <profile> -- start a Hyprland session in an isolated rice profile.
+# Called by the /usr/local/bin/hypr-profile stub from the greeter's entry.
+# No `set -e`: a failing optional step is logged, never a lockout.
+set -uo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+PROFILE="${1:-}"
+[ -n "$PROFILE" ] || { echo "usage: hypr-profile <profile>" >&2; exit 2; }
+PDIR="$(rice_profile_dir "$PROFILE" --must-exist)" || exit 1
+
+rice_export_env "$PROFILE" "$PDIR"
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
+export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
+
+# One log per session (previous kept), outside the XDG roots.
+LOG="$PDIR/session.log"
+[ ! -f "$LOG" ] || mv -f "$LOG" "$LOG.old"
+exec >>"$LOG" 2>&1
+echo "=== $(date -Is) starting profile '$PROFILE' ==="
+
+"$RICE_ROOT/bin/rice-sync" "$PROFILE" --quiet || echo "!!! rice-sync failed (continuing)"
+rice_source_env_file "$PDIR" || echo "!!! profile.env failed (continuing)"
+USE_UWSM="${USE_UWSM:-0}"
+
+# start-hyprland (>= 0.53: crash recovery, safe mode), except under uwsm or with
+# an explicit config, where the Hyprland binary's arguments are known.
+if [ -z "${HYPRLAND_BIN:-}" ]; then
+    HYPRLAND_BIN=Hyprland
+    if [ -z "${HYPRLAND_CONFIG:-}" ] && [ "$USE_UWSM" != 1 ] && command -v start-hyprland >/dev/null; then
+        HYPRLAND_BIN=start-hyprland
+    fi
+fi
+launch=("$HYPRLAND_BIN")
+[ -z "${HYPRLAND_CONFIG:-}" ] || launch+=(-c "$HYPRLAND_CONFIG")
+[ "$USE_UWSM" != 1 ] || launch=(uwsm start -- "${launch[@]}")
+
+# systemd --user and dbus started with default XDG paths: push ours in, and take
+# them out at logout so the next session doesn't inherit this profile.
+# shellcheck disable=SC2086
+systemctl --user import-environment $RICE_ENV_VARS XDG_SESSION_TYPE XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP \
+    || echo "!!! systemctl import-environment failed"
+# shellcheck disable=SC2086
+dbus-update-activation-environment $RICE_ENV_VARS || echo "!!! dbus-update-activation-environment failed"
+
+# shellcheck disable=SC2317  # runs from the EXIT trap
+cleanup() {
+    # shellcheck disable=SC2086
+    systemctl --user unset-environment $RICE_ENV_VARS 2>/dev/null
+    local v blank=()   # dbus can't unset; an empty XDG_*_HOME means "default"
+    for v in $RICE_ENV_VARS; do blank+=("$v="); done
+    dbus-update-activation-environment "${blank[@]}" 2>/dev/null
+    echo "=== $(date -Is) profile '$PROFILE' ended (status ${rc:-?}) ==="
+}
+trap cleanup EXIT
+
+# Runs before the compositor exists: hyprctl/hyprpm belong in exec-once instead.
+if [ -n "${PRE_EXEC:-}" ]; then
+    echo "--- PRE_EXEC: $PRE_EXEC"
+    bash -c "$PRE_EXEC" || echo "!!! PRE_EXEC failed (continuing)"
+fi
+
+echo "--- launching: ${launch[*]}"
+"${launch[@]}"   # foreground, not exec, so the EXIT trap runs
+rc=$?
+exit "$rc"

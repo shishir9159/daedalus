@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# rice-sync <profile> [--quiet] [--prune-only] [--report] [--adopt [--dry-run]]
+# Symlink farm: owned entries stay real dirs in the profile; everything else in
+# ~/.config, ~/.local/{share,state} and ~/.cache is linked in; stale links pruned.
+#   --report  entries apps created inside the profile: root, name, local|shadows
+#   --adopt   move "local" ones into the shared root and link back
+set -euo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+usage() { echo "usage: rice-sync <profile> [--quiet] [--prune-only] [--report] [--adopt [--dry-run]]" >&2; exit 2; }
+PROFILE="${1:-}"; [ -n "$PROFILE" ] || usage; shift
+QUIET=0 PRUNE_ONLY=0 REPORT=0 ADOPT=0 DRY=0
+for a in "$@"; do
+    case "$a" in
+        --quiet) QUIET=1 ;; --prune-only) PRUNE_ONLY=1 ;; --report) REPORT=1 ;;
+        --adopt) ADOPT=1 ;; -n|--dry-run) DRY=1 ;; *) usage ;;
+    esac
+done
+PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
+
+declare -A OWNED=() INTERNAL=()
+while IFS= read -r n; do [ -z "$n" ] || OWNED["$n"]=1; done < <(rice_owned "$PDIR")
+for n in $RICE_INTERNAL_NAMES; do INTERNAL["$n"]=1; done
+is_owned() { [ -n "${OWNED[$1]:-}" ]; }
+skip()     { [ -n "${OWNED[$1]:-}${INTERNAL[$1]:-}" ]; }
+say()      { [ "$QUIET" = 1 ] || echo "$@"; }
+
+divergent() { # <shared> <target> <label>: real, unowned entries in the profile
+    local entry name kind
+    [ -d "$2" ] || return 0
+    while IFS= read -r -d '' entry; do
+        name="${entry##*/}"
+        if [ -L "$entry" ] || skip "$name"; then continue; fi
+        if [ -e "$1/$name" ] || [ -L "$1/$name" ]; then kind=shadows; else kind=local; fi
+        printf '%s\t%s\t%s\n' "$3" "$name" "$kind"
+    done < <(find "$2" -mindepth 1 -maxdepth 1 -print0)
+}
+
+sync_root() { # <shared> <target>
+    local entry name
+    mkdir -p "$2"
+    while IFS= read -r -d '' entry; do      # prune dead links and newly owned ones
+        name="${entry##*/}"
+        if [ ! -e "$entry" ] || is_owned "$name"; then rm -f "$entry"; say "  prune  $name"; fi
+    done < <(find "$2" -mindepth 1 -maxdepth 1 -type l -print0)
+    if [ "$PRUNE_ONLY" = 1 ] || [ ! -d "$1" ]; then return 0; fi
+    while IFS= read -r -d '' entry; do
+        name="${entry##*/}"
+        skip "$name" && continue
+        if [ -L "$2/$name" ]; then continue
+        elif [ -e "$2/$name" ]; then say "  SKIP   $name (profile copy shadows the shared one)"
+        else ln -s "$entry" "$2/$name"; say "  link   $name"
+        fi
+    done < <(find "$1" -mindepth 1 -maxdepth 1 -print0)
+}
+
+adopt_root() { # <shared> <target> <label>
+    local rows line name kind
+    mapfile -t rows < <(divergent "$@")     # collect first: entries move out
+    for line in "${rows[@]}"; do
+        IFS=$'\t' read -r _ name kind <<< "$line"
+        if [ "$kind" = shadows ]; then say "  keep   $3/$name (also in $1 - resolve by hand)"
+        elif [ "$DRY" = 1 ];      then say "  would adopt  $3/$name"
+        else mkdir -p "$1"; mv "$2/$name" "$1/$name"; ln -s "$1/$name" "$2/$name"; say "  adopt  $3/$name"
+        fi
+    done
+}
+
+[ "$REPORT" = 1 ] || say "profile $PROFILE"
+for r in "config|$HOME/.config" "data|$HOME/.local/share" "state|$HOME/.local/state" "cache|$HOME/.cache"; do
+    label="${r%%|*}" shared="${r#*|}"
+    if [ "$REPORT" = 1 ]; then divergent "$shared" "$PDIR/$label" "$label"; continue; fi
+    say " $label:"
+    [ "$ADOPT" = 0 ] || adopt_root "$shared" "$PDIR/$label" "$label"
+    [ "$DRY" = 1 ]   || sync_root  "$shared" "$PDIR/$label"
+done

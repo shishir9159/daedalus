@@ -1,0 +1,16 @@
+# Default owned set: real per-profile dirs in ~/.config, ~/.local/{share,state}
+# and ~/.cache; everything else is shared via symlinks. Replaced on install --
+# override in ~/.rices/owned.txt (all profiles) or <profile>/owned.txt with
+# "name" to own or "!name" to share. Several names per line.
+
+hypr hyprpm uwsm                                             # compositor, plugins, session env
+quickshell noctalia caelestia ags astal eww waybar hyprpanel moon_rice   # shells
+rofi wofi fuzzel walker anyrun tofi                          # launchers
+mako dunst swaync swappy                                     # notifications, OSD
+kitty foot alacritty wezterm ghostty btop                    # apps rices theme
+gtk-2.0 gtk-3.0 gtk-4.0 dconf qt5ct qt6ct Kvantum xsettingsd # toolkit theming
+matugen wallust wal pywal                                    # palette generators
+swww wpaperd mpvpaper                                        # wallpaper daemons
+xdg-desktop-portal
+
+# Deliberately shared: nvim, git, shells, browsers.

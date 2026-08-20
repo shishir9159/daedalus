@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# rice-new <profile> ["Display Name"] -- create an isolated profile. Idempotent.
+set -euo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+PROFILE="${1:-}"
+[ -n "$PROFILE" ] || { echo "usage: rice-new <profile> [\"Display Name\"]" >&2; exit 2; }
+PDIR="$(rice_profile_dir "$PROFILE")"
+NAME="${2:-Hyprland ($PROFILE)}"
+case "$NAME" in *$'\n'*|*'"'*) rice_die "display name must not contain newlines or quotes" ;; esac
+
+mkdir -p "$PDIR"/{config,data,state,cache} "$PDIR/config/hypr"
+
+write_once() { [ -f "$1" ] || cat > "$1"; }   # <file>, content on stdin
+
+write_once "$PDIR/profile.env" <<ENV
+# Sourced by hypr-profile and rice-do for '$PROFILE'.
+DISPLAY_NAME="$NAME"
+USE_UWSM=0
+# USE_UWSM=1 only for rices that ship uwsm units (caelestia).
+# HYPRLAND_BIN=/opt/hyprland-0.45/bin/Hyprland   (default: start-hyprland, else Hyprland)
+# HYPRLAND_CONFIG=\$XDG_CONFIG_HOME/hypr/hyprland.lua
+# PRE_EXEC="..."   runs BEFORE Hyprland: no hyprctl/hyprpm here, use exec-once.
+ENV
+
+write_once "$PDIR/owned.txt" <<'OWN'
+# This profile's changes to ~/.rices/owned.default.txt: "name" owns, "!name" shares.
+OWN
+
+"$RICE_ROOT/bin/rice-sync" "$PROFILE" --quiet
+echo "profile ready: $PDIR"
+echo "next: rice-do $PROFILE -- <installer>   then: rice-session $PROFILE"

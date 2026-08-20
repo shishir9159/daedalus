@@ -29,3 +29,11 @@
 !/configs/vesktop/*.css
 !/configs/Obsidian/Vault/.obsidian/snippets/*.css
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/**/*.jsx
+
+# hyprland-multishell
+!/hyprland-multishell/*.sh
+!/hyprland-multishell/owned.default.txt
+!/hyprland-multishell/bin/*
+!/hyprland-multishell/lib/*.sh
+!/hyprland-multishell/system/*
+!/hyprland-multishell/tests/*.sh
