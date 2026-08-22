@@ -28,6 +28,28 @@ write_once "$PDIR/owned.txt" <<'OWN'
 # This profile's changes to ~/.rices/owned.default.txt: "name" owns, "!name" shares.
 OWN
 
+# Snapshot whitelist: config/ plus the state that matters (Noctalia's GUI settings).
+write_once "$PDIR/.gitignore" <<'GI'
+/*
+!/.gitignore
+!/profile.env
+!/owned.txt
+!/repos.txt
+!/config/
+!/state/
+/state/*
+!/state/noctalia/
+/state/noctalia/*
+!/state/noctalia/settings.toml
+*.log
+*.sock
+*.pid
+*secret*
+*.key
+*.pem
+GI
+[ -d "$PDIR/.git" ] || git -C "$PDIR" init -q
+
 "$RICE_ROOT/bin/rice-sync" "$PROFILE" --quiet
 echo "profile ready: $PDIR"
 echo "next: rice-do $PROFILE -- <installer>   then: rice-session $PROFILE"

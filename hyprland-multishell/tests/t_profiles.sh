@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Profiles: creation, name validation, the symlink farm, owned-set layering,
-# divergence/adopt, bootstrap idempotency, greeter entries.
+# divergence/adopt, bootstrap idempotency, greeter entries, snapshots.
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
@@ -10,6 +10,8 @@ section "names"
 refute "rejects a name with a space"         rice-new "my rice"
 refute "rejects path traversal"              rice-new "../escape"
 expect "accepts a normal name"               rice-new alpha
+expect "profile-root git repo"               test -d "$P/alpha/.git"
+expect "whitelist .gitignore"                has "$P/alpha/.gitignore" '!/state/noctalia/settings.toml'
 expect "per-profile owned.txt is an overlay, not a full copy" has_not "$P/alpha/owned.txt" 'quickshell'
 
 section "symlink farm"
@@ -36,6 +38,7 @@ mkdir -p "$HOME/.config/both" "$P/alpha/config/both"
 rice-sync alpha --report > "$SANDBOX/report"
 expect "profile-only entry reported as local" has "$SANDBOX/report" $'config\tnewapp\tlocal'
 expect "duplicate reported as shadows"       has "$SANDBOX/report" $'config\tboth\tshadows'
+expect ".git is never reported"              has_not "$SANDBOX/report" '.git'
 rice-sync alpha --adopt --quiet
 expect "adopt moved it into ~/.config"       test -d "$HOME/.config/newapp"
 expect "...and linked it back"               test -L "$P/alpha/config/newapp"
@@ -59,5 +62,19 @@ expect "TryExec hides it if the stub is gone" has "$D" 'TryExec=/usr/local/bin/h
 expect "remove"                              rice-session alpha --remove
 refute "entry is gone"                       test -e "$D"
 refute "invalid name refused"                rice-session "a b"
+
+section "snapshots"
+mkdir -p "$P/alpha/state/noctalia" "$P/alpha/state/other"
+echo 'gui = "tweak"' > "$P/alpha/state/noctalia/settings.toml"
+echo 'x' > "$P/alpha/state/other/junk"
+echo 'return {}' > "$P/alpha/config/hypr/hyprland.lua"
+expect "snapshot commits"                    rice-snapshot alpha "first"
+git -C "$P/alpha" ls-files > "$SANDBOX/tracked"
+expect "Noctalia GUI state is captured"      has "$SANDBOX/tracked" 'state/noctalia/settings.toml'
+expect "hypr config is captured"             has "$SANDBOX/tracked" 'config/hypr/hyprland.lua'
+expect "other state is not"                  has_not "$SANDBOX/tracked" 'state/other'
+mkdir -p "$P/alpha/config/.git"
+refute "old config/.git layout is refused, not nested" rice-snapshot alpha
+rm -rf "$P/alpha/config/.git"
 
 finish

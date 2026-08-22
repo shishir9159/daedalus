@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# rice-update [profile...] -- rebase upstream rices under your 'mine' branch.
+# <profile>/repos.txt: <path-in-profile> <url> [branch]  (branch: upstream default)
+# On conflict the rebase is aborted: the rice stays on your last working version.
+set -uo pipefail   # no -e: one failing repo must not stop the others
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+export GIT_TERMINAL_PROMPT=0   # bad URL: fail fast, don't prompt
+IDENT=()
+git config user.email >/dev/null 2>&1 || IDENT=(-c user.name=rice -c user.email=rice@localhost)
+
+update_repo() { # <profile-dir> <rel> <url> [branch]
+    local repo="$1/$2" rel="$2" url="$3" branch="${4:-}" gitdir cur before
+    g() { git -C "$repo" "${IDENT[@]}" "$@" </dev/null; }
+
+    case "$rel" in /*|*..*) echo "  !! $rel: must be a relative path inside the profile"; return 1 ;; esac
+    if [ ! -e "$repo/.git" ]; then
+        if [ -d "$repo" ] && [ -n "$(ls -A "$repo")" ]; then echo "  !! $rel exists and isn't a git checkout"; return 1; fi
+        echo "  $rel: cloning $url"
+        mkdir -p "${repo%/*}"
+        git clone -q --origin upstream "$url" "$repo" </dev/null || { echo "  !! clone failed"; return 1; }
+        g checkout -q -b mine
+        return
+    fi
+
+    echo "  $rel"
+    gitdir="$(git -C "$repo" rev-parse --absolute-git-dir)" || return 1
+    if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ] || [ -f "$gitdir/MERGE_HEAD" ]; then
+        echo "    !! unfinished rebase/merge - finish it: git -C '$repo' rebase --continue (or --abort)"
+        return 1   # committing now would commit the conflict markers
+    fi
+    g remote get-url upstream >/dev/null 2>&1 || g remote add upstream "$url" || return 1
+    if [ -z "$branch" ]; then
+        branch="$(g ls-remote --symref upstream HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\(.*\)[[:space:]]HEAD$|\1|p')"
+        [ -n "$branch" ] || { echo "    !! can't tell upstream's default branch - set it in repos.txt"; return 1; }
+    fi
+
+    # onto 'mine' without ever resetting it
+    cur="$(git -C "$repo" symbolic-ref -q --short HEAD || true)"
+    if [ "$cur" != mine ]; then
+        [ -z "$(g status --porcelain)" ] || { echo "    !! on '${cur:-detached}' with uncommitted changes - not switching"; return 1; }
+        if g show-ref -q --verify refs/heads/mine; then g checkout -q mine; else g checkout -q -b mine; fi || return 1
+    fi
+    if [ -n "$(g status --porcelain)" ]; then
+        { g add -A && g commit -qm "local changes before update $(date -Is)"; } || return 1
+        echo "    committed local changes"
+    fi
+
+    g fetch -q upstream "$branch" || { echo "    !! fetch failed"; return 1; }
+    before="$(g rev-parse HEAD)"
+    if g rebase -q "upstream/$branch" >/dev/null 2>&1; then
+        if [ "$before" = "$(g rev-parse HEAD)" ]; then echo "    up to date"; else echo "    rebased onto upstream/$branch"; fi
+        return 0
+    fi
+    g rebase --abort >/dev/null 2>&1
+    echo "    !! conflict with upstream/$branch - aborted, still on your version"
+    echo "       resolve: git -C '$repo' rebase upstream/$branch"
+    return 1
+}
+
+profiles=("$@")
+[ ${#profiles[@]} -gt 0 ] || mapfile -t profiles < <(rice_list_profiles)
+FAILED=0
+for p in "${profiles[@]}"; do
+    PDIR="$(rice_profile_dir "$p" --must-exist)" || { FAILED=$((FAILED + 1)); continue; }
+    [ -f "$PDIR/repos.txt" ] || continue
+    echo "== $p =="
+    while IFS= read -r line <&3 || [ -n "$line" ]; do   # fd 3: git can't eat the list
+        read -r rel url branch _ <<< "${line%%#*}"
+        [ -n "${rel:-}" ] || continue
+        if [ -z "${url:-}" ]; then echo "  !! malformed: $line"; FAILED=$((FAILED + 1)); continue; fi
+        update_repo "$PDIR" "$rel" "$url" "${branch:-}" || FAILED=$((FAILED + 1))
+    done 3< "$PDIR/repos.txt"
+done
+[ "$FAILED" -eq 0 ] || { printf '\n%s repo(s) need attention.\n' "$FAILED"; exit 1; }

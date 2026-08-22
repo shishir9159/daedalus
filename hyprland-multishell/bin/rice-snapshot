@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# rice-snapshot <profile> ["message"] -- git-commit the profile (what: see its
+# .gitignore whitelist), so installers are reviewable and revertable.
+set -euo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+PROFILE="${1:-}"
+[ -n "$PROFILE" ] || { echo "usage: rice-snapshot <profile> [message]" >&2; exit 2; }
+MSG="${2:-snapshot $(date -Is)}"
+PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
+
+# Old layout kept the repo in config/; nested, it would become a submodule pointer.
+if [ -d "$PDIR/config/.git" ]; then
+    rice_die "old layout (repo in config/). Once: mv '$PDIR/config/.git' '$PDIR/config.git.old' && rice-new $PROFILE"
+fi
+[ -f "$PDIR/.gitignore" ] || rice_die "no .gitignore - run: rice-new $PROFILE"
+[ -d "$PDIR/.git" ] || git -C "$PDIR" init -q
+G=(git -C "$PDIR" -c advice.addEmbeddedRepo=false -c user.name=rice -c user.email=rice@localhost)
+
+# Cloned rices are their own repos (recorded as a commit pointer here).
+while IFS= read -r -d '' gd; do
+    repo="${gd%/.git}"
+    [ -z "$(git -C "$repo" status --porcelain 2>/dev/null)" ] \
+        || echo "note: ${repo#"$PDIR"/} has uncommitted changes - not in this snapshot" >&2
+done < <(find "$PDIR/config" -mindepth 2 -name .git -type d -prune -print0 2>/dev/null)
+
+"${G[@]}" add -A
+if "${G[@]}" diff --cached --quiet; then echo "no changes in $PROFILE"; exit 0; fi
+"${G[@]}" commit -qm "$MSG"
+"${G[@]}" --no-pager show --stat --oneline HEAD | head -40
