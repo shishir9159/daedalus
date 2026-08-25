@@ -10,7 +10,9 @@ PDIR="$(rice_profile_dir "$PROFILE")"
 NAME="${2:-Hyprland ($PROFILE)}"
 case "$NAME" in *$'\n'*|*'"'*) rice_die "display name must not contain newlines or quotes" ;; esac
 
-mkdir -p "$PDIR"/{config,data,state,cache} "$PDIR/config/hypr"
+mkdir -p "$PDIR"/{config,data,state,cache} "$PDIR/config/hypr" \
+         "$PDIR/config/rice-theme"/{generated,locked,themes,active,templates}
+cp -n "$RICE_ROOT"/templates/* "$PDIR/config/rice-theme/templates/" 2>/dev/null || true
 
 write_once() { [ -f "$1" ] || cat > "$1"; }   # <file>, content on stdin
 
@@ -41,6 +43,9 @@ write_once "$PDIR/.gitignore" <<'GI'
 !/state/noctalia/
 /state/noctalia/*
 !/state/noctalia/settings.toml
+/config/rice-theme/generated/
+/config/rice-theme/active/
+/config/rice-theme/.lock
 *.log
 *.sock
 *.pid

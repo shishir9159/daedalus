@@ -1,0 +1,349 @@
+#!/usr/bin/env bash
+# rice-theme -- per-tool colour scheme locks for a rice profile.
+#   palette change -> generated/<tool> -> post_hook: apply -> policy (auto|lock)
+#   -> [adapter transform] -> active/<tool> (what the app reads) -> adapter reload
+# generated/, locked/ and themes/ hold template output; only active/ is transformed.
+set -euo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+usage() {
+    cat <<'U'
+rice-theme [--profile <name>] <command>    (profile defaults to $RICE_PROFILE)
+
+  status | check            per-tool policy and drift (check: tab-separated, exit 1 if a lock broke)
+  hints                     include line to add to each app's config
+  apply [tool...]           publish + reload per policy (Noctalia's post_hook)
+  lock <tool...> [-t theme] freeze on current colours, or on a named theme
+  unlock <tool...>          follow the wallpaper again
+  save <theme> [tool...]    keep current colours as a named theme
+  set <theme> [tool...]     switch tools to a named theme (locks them)
+  render <tool> <image> [--save <theme>]   colours from any image, wallpaper untouched
+  reload [tool...]          re-run reload hooks
+  watch                     restore locks if something writes into active/
+  noctalia-config           write Noctalia's templates.toml for this pipeline
+U
+}
+
+PROFILE="${RICE_PROFILE:-}"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -p|--profile) PROFILE="${2:-}"; shift 2 ;;
+        --profile=*)  PROFILE="${1#*=}"; shift ;;
+        -h|--help)    usage; exit 0 ;;
+        *)            break ;;
+    esac
+done
+CMD="${1:-status}"; shift || true
+case "$CMD" in help) usage; exit 0 ;; esac
+# Refuse to guess: there is no right answer outside a rice session.
+[ -n "$PROFILE" ] || rice_die "not in a rice session - use: rice-theme --profile <name> $CMD"
+PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
+TOOLS_D="${RICE_TOOLS_D:-$RICE_ROOT/tools.d}"
+
+TH="$PDIR/config/rice-theme"
+GEN="$TH/generated" LOCKED="$TH/locked" THEMES="$TH/themes" ACTIVE="$TH/active" CONF="$TH/theme.conf"
+mkdir -p "$GEN" "$LOCKED" "$THEMES" "$ACTIVE" "$TH/templates"
+[ -f "$CONF" ] || echo '# <tool> = auto | lock | lock:<theme>   (or use rice-theme lock/unlock/set)' > "$CONF"
+
+if [ -t 1 ]; then c_r=$'\033[31m' c_g=$'\033[32m' c_y=$'\033[33m' c_d=$'\033[2m' c_0=$'\033[0m'
+else c_r='' c_g='' c_y='' c_d='' c_0=''; fi
+info() { printf '%s\n' "$*"; }
+
+WORK="$(mktemp -d)"   # a dir, not files: subshells reset EXIT traps but share this
+trap 'rm -rf "$WORK"' EXIT
+
+valid_tool()  { [[ "$1" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; }
+valid_theme() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; }
+need_tool()   { valid_tool "$1"  || rice_die "invalid tool name '$1'"; }
+need_theme()  { valid_theme "$1" || rice_die "invalid theme name '$1' (letters, digits, . _ -)"; }
+
+# ------------------------------------------------------------------- policy --
+declare -A POLICY=()
+load_policies() {
+    local k v
+    POLICY=()
+    while IFS='=' read -r k v || [ -n "$k" ]; do
+        k="${k//[[:space:]]/}" v="${v%%#*}"
+        v="${v//[[:space:]]/}" v="${v//\"/}" v="${v//\'/}"
+        if valid_tool "$k"; then POLICY["$k"]="$v"; fi
+    done < "$CONF"
+}
+policy_of() { printf '%s' "${POLICY[$1]:-auto}"; }
+set_policy() { # <tool> <policy>: atomic rewrite (tmp in the same dir), cache updated
+    local tmp
+    tmp="$(mktemp "$CONF.XXXXXX")"
+    grep -v "^[[:space:]]*$1[[:space:]]*=" "$CONF" > "$tmp" || true
+    printf '%s = %s\n' "$1" "$2" >> "$tmp"
+    chmod 644 "$tmp"
+    mv -f "$tmp" "$CONF"
+    POLICY["$1"]="$2"
+}
+# Writers are serialised (parallel post_hooks vs. `lock`), and read policy only
+# once they hold the lock. Wrap top-level commands only: nesting would deadlock.
+locked() {
+    if command -v flock >/dev/null; then ( flock 9; load_policies; "$@" ) 9>"$TH/.lock"
+    else load_policies; "$@"; fi
+}
+
+# ----------------------------------------------------------------- adapters --
+# tools.d/<tool>.sh sets EXT, DESC, INCLUDE and defines reload(), optionally
+# transform() (stdin -> stdout, applied on the way into active/).
+load_tool() {
+    need_tool "$1"
+    unset -f reload transform
+    EXT="" DESC="" INCLUDE=""
+    [ -f "$TOOLS_D/$1.sh" ] || rice_die "unknown tool '$1' (no $TOOLS_D/$1.sh)"
+    # shellcheck disable=SC1090
+    . "$TOOLS_D/$1.sh"
+    TOOL="$1" EXT="${EXT:-.conf}" DESC="${DESC:-$1}"
+    GEN_F="$GEN/$1$EXT" ACTIVE_F="$ACTIVE/$1$EXT" LOCK_F="$LOCKED/$1$EXT"
+}
+has_adapter() { valid_tool "$1" && [ -f "$TOOLS_D/$1.sh" ]; }
+do_reload()   { declare -F reload >/dev/null && reload; }
+all_tools()   { find "$TOOLS_D" -maxdepth 1 -name '*.sh' -printf '%f\n' 2>/dev/null | sed -n 's/^\([a-z0-9][a-z0-9_-]*\)\.sh$/\1/p' | sort; }
+active_tools() { # tools with a policy or generated colours (temp files ignored)
+    { printf '%s\n' "${!POLICY[@]}"
+      find "$GEN" -maxdepth 1 -type f -printf '%f\n' | sed -n 's/^\([a-z0-9][a-z0-9_-]*\)\.[^.]*$/\1/p'
+    } | sed '/^$/d' | sort -u
+}
+
+# ---------------------------------------------------------------- core logic --
+source_of() { # <policy> -> source file of the loaded tool ("" if the policy is bad)
+    case "$1" in
+        auto)   printf '%s' "$GEN_F" ;;
+        lock)   printf '%s' "$LOCK_F" ;;
+        lock:*) if valid_theme "${1#lock:}"; then printf '%s' "$THEMES/${1#lock:}/$TOOL$EXT"; fi ;;
+    esac
+}
+make_expected() { # <source> -> sets EXPECTED, what active/ should contain
+    EXPECTED="$1"
+    if declare -F transform >/dev/null; then
+        EXPECTED="$WORK/expected.$TOOL"   # fixed name: `watch` runs for days
+        transform < "$1" > "$EXPECTED"
+    fi
+}
+publish() { # <file> <dest> -> 0 written, 2 already identical
+    if [ -f "$2" ] && cmp -s "$1" "$2"; then return 2; fi
+    local tmp="${2%/*}/.${2##*/}.tmp.$$"
+    cp -f "$1" "$tmp"
+    mv -f "$tmp" "$2"
+}
+tool_state() { # <policy> -> sets STATE: current|drifted|unpublished|missing|badpolicy
+    local src
+    src="$(source_of "$1")"
+    if   [ -z "$src" ];          then STATE=badpolicy
+    elif [ ! -f "$src" ];        then STATE=missing
+    elif [ ! -f "$ACTIVE_F" ];   then STATE=unpublished
+    else
+        make_expected "$src"
+        if cmp -s "$EXPECTED" "$ACTIVE_F"; then STATE=current; else STATE=drifted; fi
+    fi
+}
+each_state() { # tool <TAB> policy <TAB> state, for every tool in play
+    local t pol
+    for t in $(all_tools); do
+        load_tool "$t"
+        pol="$(policy_of "$t")"
+        [ "$pol" = auto ] && [ ! -f "$GEN_F" ] && [ ! -f "$ACTIVE_F" ] && continue
+        tool_state "$pol"
+        printf '%s\t%s\t%s\n' "$t" "$pol" "$STATE"
+    done
+}
+
+# ----------------------------------------------------------------- commands --
+cmd_apply() {
+    local tools=("$@") t pol src rc
+    [ ${#tools[@]} -gt 0 ] || mapfile -t tools < <(active_tools)
+    for t in "${tools[@]}"; do
+        has_adapter "$t" || { info "${c_d}skip $t (no adapter)$c_0"; continue; }
+        load_tool "$t"
+        pol="$(policy_of "$t")"
+        src="$(source_of "$pol")"
+        if [ -z "$src" ]; then info "${c_y}$t: bad policy '$pol' - left as is$c_0"; continue; fi
+        if [ ! -f "$src" ]; then
+            [ "$pol" = auto ] || info "${c_y}$t: pinned file missing: ${src#"$TH"/}$c_0"
+            continue
+        fi
+        make_expected "$src"
+        rc=0; publish "$EXPECTED" "$ACTIVE_F" || rc=$?
+        case $rc in
+            0) info "${c_g}updated$c_0 $t ${c_d}($pol)$c_0"; do_reload || true ;;
+            2) ;;
+            *) info "${c_y}$t: could not publish$c_0" ;;
+        esac
+    done
+}
+
+cmd_lock() {
+    local theme="" tools=() t pol src
+    while [ $# -gt 0 ]; do
+        case "$1" in -t|--theme) theme="${2:-}"; shift 2 ;; *) tools+=("$1"); shift ;; esac
+    done
+    [ ${#tools[@]} -gt 0 ] || rice_die "usage: rice-theme lock <tool...> [-t <theme>]"
+    [ -z "$theme" ] || need_theme "$theme"
+    for t in "${tools[@]}"; do
+        load_tool "$t"
+        if [ -n "$theme" ]; then
+            [ -f "$THEMES/$theme/$t$EXT" ] || rice_die "no themes/$theme/$t$EXT (create it: rice-theme save $theme $t)"
+            set_policy "$t" "lock:$theme"
+            info "${c_g}locked$c_0 $t -> theme '$theme'"
+            continue
+        fi
+        pol="$(policy_of "$t")"
+        if [ "$pol" = lock ]; then info "$t is already locked"; continue; fi
+        # Freeze the source, never active/: that is already transformed.
+        src="$(source_of "$pol")"
+        if [ -z "$src" ] || [ ! -f "$src" ]; then rice_die "$t has no colours to freeze yet"; fi
+        tool_state "$pol"
+        [ "$STATE" != drifted ] || info "${c_y}note:$c_0 $t's live file differs from its source; freezing the source"
+        cp -f "$src" "$LOCK_F"
+        set_policy "$t" lock
+        info "${c_g}locked$c_0 $t ${c_d}(${src#"$TH"/} -> locked/$t$EXT)$c_0"
+    done
+    cmd_apply "${tools[@]}"
+}
+
+cmd_unlock() {
+    [ $# -gt 0 ] || rice_die "usage: rice-theme unlock <tool...>"
+    local t
+    for t in "$@"; do
+        load_tool "$t"
+        set_policy "$t" auto
+        info "${c_g}unlocked$c_0 $t"
+    done
+    cmd_apply "$@"
+}
+
+cmd_save() {
+    local theme="${1:-}" tools t src n=0
+    [ -n "$theme" ] || rice_die "usage: rice-theme save <theme> [tool...]"
+    need_theme "$theme"; shift
+    tools=("$@")
+    [ ${#tools[@]} -gt 0 ] || mapfile -t tools < <(active_tools)
+    mkdir -p "$THEMES/$theme"
+    for t in "${tools[@]}"; do
+        has_adapter "$t" || continue
+        load_tool "$t"
+        src="$(source_of "$(policy_of "$t")")"
+        if [ -z "$src" ] || [ ! -f "$src" ]; then info "${c_d}skip $t (no colours yet)$c_0"; continue; fi
+        [ "$src" = "$THEMES/$theme/$t$EXT" ] || cp -f "$src" "$THEMES/$theme/$t$EXT"
+        info "saved $t -> themes/$theme/$t$EXT"
+        n=$((n + 1))
+    done
+    [ "$n" -gt 0 ] || rice_die "nothing saved"
+}
+
+cmd_set() {
+    local theme="${1:-}" tools
+    [ -n "$theme" ] || rice_die "usage: rice-theme set <theme> [tool...]"
+    need_theme "$theme"; shift
+    [ -d "$THEMES/$theme" ] || rice_die "no such theme: $theme"
+    tools=("$@")
+    [ ${#tools[@]} -gt 0 ] || mapfile -t tools < <(find "$THEMES/$theme" -maxdepth 1 -type f -printf '%f\n' \
+                                                   | sed -n 's/^\([a-z0-9][a-z0-9_-]*\)\..*/\1/p' | sort -u)
+    [ ${#tools[@]} -gt 0 ] || rice_die "theme '$theme' is empty"
+    cmd_lock "${tools[@]}" -t "$theme"
+}
+
+cmd_render() {
+    local t="${1:-}" img="${2:-}" save="" out
+    shift 2 2>/dev/null || true
+    if [ "${1:-}" = --save ]; then save="${2:-}"; need_theme "$save"; fi
+    if [ -z "$t" ] || [ -z "$img" ]; then rice_die "usage: rice-theme render <tool> <image> [--save <theme>]"; fi
+    [ -f "$img" ] || rice_die "no such image: $img"
+    command -v noctalia >/dev/null || rice_die "noctalia not found"
+    load_tool "$t"
+    [ -f "$TH/templates/$t.tmpl" ] || rice_die "no template templates/$t.tmpl"
+    out="$GEN_F"
+    if [ -n "$save" ]; then mkdir -p "$THEMES/$save"; out="$THEMES/$save/$t$EXT"; fi
+    noctalia theme "$img" -r "$TH/templates/$t.tmpl:$out"
+    info "rendered $t from ${img##*/} -> ${out#"$TH"/}"
+    if [ -n "$save" ]; then info "use it: rice-theme set $save $t"; return 0; fi
+    [ "$(policy_of "$t")" = auto ] || info "${c_y}note:$c_0 $t is locked, so nothing changed live; use --save and 'set'"
+    cmd_apply "$t"
+}
+
+cmd_reload() {
+    local tools=("$@") t
+    [ ${#tools[@]} -gt 0 ] || mapfile -t tools < <(active_tools)
+    for t in "${tools[@]}"; do
+        has_adapter "$t" || continue
+        load_tool "$t"
+        if do_reload; then info "reloaded $t"; else info "${c_d}$t: no live reload (new windows pick it up)$c_0"; fi
+    done
+}
+
+cmd_check() {
+    local bad=0 t pol state
+    while IFS=$'\t' read -r t pol state; do
+        printf '%s\t%s\t%s\n' "$t" "$pol" "$state"
+        if [ "$pol" != auto ] && [ "$state" != current ]; then bad=1; fi
+    done < <(each_state)
+    return "$bad"
+}
+
+cmd_status() {
+    local t pol state pcol scol
+    printf '%-12s %-18s %s\n' TOOL POLICY STATE
+    while IFS=$'\t' read -r t pol state; do
+        pcol=""; [ "$pol" = auto ] || pcol="$c_r"
+        case "$state" in current) scol="$c_g" ;; missing|badpolicy) scol="$c_r" ;; *) scol="$c_y" ;; esac
+        printf '%-12s %s%-18s%s %s%s%s\n' "$t" "$pcol" "$pol" "$c_0" "$scol" "$state" "$c_0"
+    done < <(each_state)
+}
+
+cmd_hints() {
+    local t
+    info "Add each line to that app's config (profile '$PROFILE'):"
+    for t in $(all_tools); do
+        load_tool "$t"
+        [ -z "$INCLUDE" ] || printf '\n%s%s%s (%s)\n  %s\n' "$c_g" "$t" "$c_0" "$DESC" "$INCLUDE"
+    done
+}
+
+cmd_watch() {
+    command -v inotifywait >/dev/null || rice_die "needs inotify-tools"
+    info "guarding locks in $ACTIVE (Ctrl-C to stop)"
+    # -m: one watcher, no gaps between events. Our own temp files are skipped;
+    # a burst of events (one palette change) is applied once.
+    inotifywait -m -q -e close_write,moved_to --format '%f' "$ACTIVE" "$GEN" \
+    | while IFS= read -r f; do
+        case "$f" in .*|*.tmp.*) continue ;; esac
+        while IFS= read -r -t 0.5 _; do :; done
+        locked cmd_apply || true
+    done
+}
+
+MARKER="# managed-by: rice-theme"
+cmd_noctalia_config() {
+    local out="$PDIR/config/noctalia/templates.toml" t tools=() bak
+    mkdir -p "${out%/*}"
+    if [ -f "$out" ] && ! grep -qF "$MARKER" "$out"; then
+        bak="$out.bak.$(date +%Y%m%d-%H%M%S)"
+        cp -f "$out" "$bak"
+        info "${c_y}existing templates.toml saved as ${bak##*/} - merge back what you need$c_0"
+    fi
+    # shellcheck disable=SC2016  # literal $XDG_CONFIG_HOME: Noctalia expands it
+    {
+        echo "$MARKER  (regenerate: rice-theme --profile $PROFILE noctalia-config)"
+        for t in $(all_tools); do
+            load_tool "$t"
+            [ -f "$TH/templates/$t.tmpl" ] || continue
+            tools+=("$t")
+            printf '\n[theme.templates.user.%s]\n' "$t"
+            printf 'input_path  = "$XDG_CONFIG_HOME/rice-theme/templates/%s.tmpl"\n' "$t"
+            printf 'output_path = "$XDG_CONFIG_HOME/rice-theme/generated/%s%s"\n' "$t" "$EXT"
+            printf 'post_hook   = "%s/bin/rice-theme --profile %s apply %s"\n' "$RICE_ROOT" "$PROFILE" "$t"
+        done
+    } > "$out"
+    info "wrote ${out#"$PDIR"/} (${tools[*]:-no templates})"
+    info "Remove ${tools[*]:-these tools} from Noctalia's builtin_ids/community_ids: those templates bypass locks."
+}
+
+case "$CMD" in
+    status|check|hints|reload|watch)  load_policies; "cmd_$CMD" "$@" ;;
+    apply|lock|unlock|save|set|render) locked "cmd_$CMD" "$@" ;;
+    noctalia-config)                   locked cmd_noctalia_config "$@" ;;
+    *)                                 usage >&2; exit 2 ;;
+esac

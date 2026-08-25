@@ -11,11 +11,16 @@ case "${1:-}" in --user-only) USER_ONLY=1 ;; "") USER_ONLY=0 ;; *) echo "usage: 
 missing=()
 for c in git find sed awk grep cmp readlink mktemp; do command -v "$c" >/dev/null || missing+=("$c"); done
 [ ${#missing[@]} -eq 0 ] || rice_die "missing: ${missing[*]}"
+for pair in flock:util-linux inotifywait:inotify-tools pkill:procps-ng; do
+    command -v "${pair%%:*}" >/dev/null || echo ":: optional: ${pair%%:*} missing (pacman -S ${pair#*:})"
+done
 
 echo ":: installing to $RICE_ROOT"
-mkdir -p "$RICE_ROOT"/{bin,lib,profiles}
+mkdir -p "$RICE_ROOT"/{bin,lib,tools.d,templates,profiles}
 install -m755 "$SRC"/bin/*        "$RICE_ROOT/bin/"
 install -m644 "$SRC"/lib/*.sh     "$RICE_ROOT/lib/"
+install -m644 "$SRC"/tools.d/*.sh "$RICE_ROOT/tools.d/"
+install -m644 "$SRC"/templates/*  "$RICE_ROOT/templates/"
 install -m644 "$SRC/owned.default.txt" "$RICE_ROOT/"
 [ -f "$RICE_ROOT/owned.txt" ] \
     || echo '# Your changes to owned.default.txt, all profiles: "name" owns, "!name" shares.' > "$RICE_ROOT/owned.txt"

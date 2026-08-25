@@ -13,6 +13,7 @@ expect "accepts a normal name"               rice-new alpha
 expect "profile-root git repo"               test -d "$P/alpha/.git"
 expect "whitelist .gitignore"                has "$P/alpha/.gitignore" '!/state/noctalia/settings.toml'
 expect "per-profile owned.txt is an overlay, not a full copy" has_not "$P/alpha/owned.txt" 'quickshell'
+expect "theme templates copied in"           test -f "$P/alpha/config/rice-theme/templates/ghostty.tmpl"
 
 section "symlink farm"
 mkdir -p "$HOME/.config/nvim" "$HOME/.config/kitty" "$HOME/.local/share/fonts"
@@ -67,11 +68,13 @@ section "snapshots"
 mkdir -p "$P/alpha/state/noctalia" "$P/alpha/state/other"
 echo 'gui = "tweak"' > "$P/alpha/state/noctalia/settings.toml"
 echo 'x' > "$P/alpha/state/other/junk"
+echo 'x' > "$P/alpha/config/rice-theme/generated/ghostty.conf"
 echo 'return {}' > "$P/alpha/config/hypr/hyprland.lua"
 expect "snapshot commits"                    rice-snapshot alpha "first"
 git -C "$P/alpha" ls-files > "$SANDBOX/tracked"
 expect "Noctalia GUI state is captured"      has "$SANDBOX/tracked" 'state/noctalia/settings.toml'
 expect "hypr config is captured"             has "$SANDBOX/tracked" 'config/hypr/hyprland.lua'
+expect "generated colours are not"           has_not "$SANDBOX/tracked" 'rice-theme/generated'
 expect "other state is not"                  has_not "$SANDBOX/tracked" 'state/other'
 mkdir -p "$P/alpha/config/.git"
 refute "old config/.git layout is refused, not nested" rice-snapshot alpha
