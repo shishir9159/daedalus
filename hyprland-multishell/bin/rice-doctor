@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# rice-doctor [profile...] -- audit profiles for what actually breaks. Exit 1 on FAIL.
+set -uo pipefail
+# shellcheck source=../lib/rice-common.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
+
+STUB="${RICE_STUB:-/usr/local/bin/hypr-profile}"
+SESSIONS_DIR="${RICE_SESSIONS_DIR:-/usr/share/wayland-sessions}"
+if [ -t 1 ]; then Y=$'\033[33m' R=$'\033[31m' G=$'\033[32m' N=$'\033[0m'; else Y='' R='' G='' N=''; fi
+FAILED=0
+warn() { printf '  %sWARN%s  %s\n' "$Y" "$N" "$*"; }
+bad()  { printf '  %sFAIL%s  %s\n' "$R" "$N" "$*"; FAILED=1; }
+ok()   { printf '  %sok%s    %s\n' "$G" "$N" "$*"; }
+
+profiles=("$@")
+[ ${#profiles[@]} -gt 0 ] || mapfile -t profiles < <(rice_list_profiles)
+
+echo "== global =="
+echo "  hyprland: $(Hyprland --version 2>/dev/null | head -1 || echo 'not found')"
+if [ -x "$STUB" ]; then ok "launcher $STUB"; else bad "$STUB missing - greeter sessions can't start (run install.sh)"; fi
+for f in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.zprofile"; do
+    if [ -f "$f" ] && grep -qiE 'caelestia|noctalia|hyprpanel|pywal|wal -' "$f"; then
+        warn "${f/#"$HOME"/\~} mentions a rice - rc files aren't isolated, this hits every profile"
+    fi
+done
+
+for p in "${profiles[@]}"; do
+    printf '\n== %s ==\n' "$p"
+    rice_valid_name "$p" || { bad "invalid profile name"; continue; }
+    PDIR="$RICE_ROOT/profiles/$p"
+    [ -d "$PDIR" ] || { bad "missing $PDIR"; continue; }
+
+    # compositor config; hyprland.lua silently wins over hyprland.conf (0.55+)
+    H="$PDIR/config/hypr"
+    if   [ -L "$H" ];                                          then bad  "config/hypr is a symlink - writes go to shared config"
+    elif [ ! -d "$H" ];                                        then bad  "no config/hypr - session starts on defaults"
+    elif [ -e "$H/hyprland.lua" ] && [ -e "$H/hyprland.conf" ]; then warn "hyprland.lua and .conf both exist: the .conf is silently ignored"
+    elif [ -e "$H/hyprland.lua" ];                             then ok   "hyprland.lua"
+    elif [ -e "$H/hyprland.conf" ];                            then warn "hyprland.conf only - hyprlang is deprecated, port to Lua"
+    else                                                            bad  "no hyprland.lua/.conf"
+    fi
+
+    # owned entries must be real dirs, or writes escape the profile
+    while IFS= read -r name; do
+        for root in config data state cache; do
+            [ ! -L "$PDIR/$root/$name" ] || bad "$root/$name is owned but a symlink - writes escape"
+        done
+    done < <(rice_owned "$PDIR")
+
+    # configs apps created inside the profile
+    local_n=() shadow_n=()
+    while IFS=$'\t' read -r root name kind; do
+        [ -n "$name" ] || continue
+        if [ "$kind" = local ]; then local_n+=("$root/$name"); else shadow_n+=("$root/$name"); fi
+    done < <("$RICE_ROOT/bin/rice-sync" "$p" --report 2>/dev/null)
+    [ ${#local_n[@]} -eq 0 ]  || warn "profile-only copies: ${local_n[*]} - share with: rice-sync $p --adopt"
+    [ ${#shadow_n[@]} -eq 0 ] || warn "copies shadowing shared ones: ${shadow_n[*]} - merge by hand or own them"
+
+    # hardcoded paths punch through the isolation
+    # shellcheck disable=SC2016  # literal: searching for the text "$HOME/.config"
+    mapfile -t hits < <(grep -rIl --exclude-dir=.git -E \
+        '(^|[^A-Za-z_])(\$HOME/\.config|~/\.config|/home/[a-z_][a-z0-9_-]*/\.config)' "$PDIR/config" 2>/dev/null | head -20)
+    if [ ${#hits[@]} -gt 0 ]; then
+        warn "hardcoded ~/.config (writes outside the profile; use \$XDG_CONFIG_HOME):"
+        printf '          %s\n' "${hits[@]#"$PDIR"/}"
+    else ok "no hardcoded ~/.config"; fi
+    foreign="$(grep -rIhoE --exclude-dir=.git '/home/[a-z_][a-z0-9_-]*' "$PDIR/config" 2>/dev/null \
+               | sort -u | grep -vxF "/home/${HOME##*/}" | head -5 | tr '\n' ' ')"
+    [ -z "$foreign" ] || warn "other users' home paths: $foreign"
+
+    n="$(find "$PDIR" -maxdepth 2 -xtype l 2>/dev/null | wc -l)"
+    [ "$n" -eq 0 ] || warn "$n dangling symlink(s) - run: rice-sync $p"
+
+    # colour locks (logic lives in rice-theme)
+    if [ -d "$PDIR/config/rice-theme" ]; then
+        while IFS=$'\t' read -r tool pol state; do
+            [ "$pol" != auto ] || continue
+            case "$state" in
+                current)     ok   "$tool locked ($pol)" ;;
+                drifted)     warn "$tool is locked ($pol) but its live file changed (fix: rice-theme -p $p apply $tool)" ;;
+                unpublished) warn "$tool is locked ($pol) but unpublished (fix: rice-theme -p $p apply $tool)" ;;
+                *)           bad  "$tool is locked ($pol) but its pinned colours are $state" ;;
+            esac
+        done < <("$RICE_ROOT/bin/rice-theme" --profile "$p" check 2>/dev/null)
+
+        # Noctalia's own templates write straight to the apps and beat any lock
+        mapfile -t managed < <(find "$PDIR/config/rice-theme/templates" -maxdepth 1 -name '*.tmpl' -printf '%f\n' 2>/dev/null | sed 's/\.tmpl$//')
+        ids="$(awk '/^[[:space:]]*(builtin|community)_ids[[:space:]]*=/{g=1} g{print} g&&/\]/{g=0}' \
+               "$PDIR"/config/noctalia/*.toml "$PDIR/state/noctalia/settings.toml" 2>/dev/null)"
+        clash=()
+        for t in "${managed[@]}"; do grep -q "\"[^\"]*$t" <<< "$ids" && clash+=("$t"); done
+        [ ${#clash[@]} -eq 0 ] || warn "Noctalia's built-in/community templates also target: ${clash[*]} - they bypass locks"
+        nt="$PDIR/config/noctalia/templates.toml"
+        if [ -f "$nt" ] && ! grep -q 'rice-theme' "$nt"; then
+            warn "noctalia/templates.toml bypasses rice-theme (run: rice-theme -p $p noctalia-config)"
+        fi
+    fi
+
+    # git: old layout, repos stuck mid-rebase
+    [ ! -d "$PDIR/config/.git" ] || warn "old snapshot layout (repo in config/) - see: rice-snapshot $p"
+    while IFS= read -r -d '' gd; do
+        if [ -d "$gd/rebase-merge" ] || [ -d "$gd/rebase-apply" ]; then bad "${gd%/.git} is stuck mid-rebase"; fi
+    done < <(find "$PDIR/config" "$PDIR/src" -mindepth 2 -maxdepth 4 -name .git -type d -print0 2>/dev/null)
+
+    if [ -f "$SESSIONS_DIR/rice-$p.desktop" ]; then ok "greeter entry"; else warn "not in the greeter - run: rice-session $p"; fi
+
+    envf="$PDIR/profile.env"
+    if grep -q '^USE_UWSM=1' "$envf" 2>/dev/null && ! command -v uwsm >/dev/null; then bad "USE_UWSM=1 but uwsm isn't installed"; fi
+    b="$(sed -n 's/^HYPRLAND_BIN=//p' "$envf" 2>/dev/null | tr -d "\"'" | tail -1)"
+    if [ -n "$b" ] && ! command -v "$b" >/dev/null; then bad "HYPRLAND_BIN=$b is not executable"; fi
+    if grep -qE '^[[:space:]]*PRE_EXEC=.*(hyprctl|hyprpm)' "$envf" 2>/dev/null; then
+        bad "PRE_EXEC uses hyprctl/hyprpm before Hyprland starts - use exec-once"
+    fi
+done
+
+echo
+if [ "$FAILED" = 0 ]; then echo "no failures."; else echo "failures found."; fi
+exit "$FAILED"
