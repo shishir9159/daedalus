@@ -1,0 +1,26 @@
+name: ci
+
+# Only hyprland-multishell has scripts to check; dotfile edits don't need a run.
+on:
+  push:
+    paths: [hyprland-multishell/**, .shellcheckrc, .github/workflows/ci.yml]
+  pull_request:
+    paths: [hyprland-multishell/**, .shellcheckrc, .github/workflows/ci.yml]
+
+jobs:
+  check:
+    # The scripts target CachyOS, so test on Arch rather than Ubuntu: same
+    # bash, coreutils, findutils and git versions the scripts will meet.
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git bash coreutils findutils sed grep gawk diffutils util-linux procps-ng shellcheck
+
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: ./hyprland-multishell/tests/shellcheck.sh
+
+      - name: scenario tests
+        run: ./hyprland-multishell/tests/run.sh
