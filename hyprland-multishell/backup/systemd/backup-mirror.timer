@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly mirror of / to the backup HDD
+
+[Timer]
+OnCalendar=*-*-* 03:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

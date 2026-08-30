@@ -1,0 +1,12 @@
+[Unit]
+Description=restic backup of / to the backup HDD
+RequiresMountsFor=/mnt/backup
+# If both are due at once (e.g. after a night powered off), let the mirror
+# finish first instead of two backups thrashing one spinning disk.
+After=backup-mirror.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/restic-backup all
+Nice=10
+IOSchedulingClass=idle

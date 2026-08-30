@@ -39,3 +39,6 @@
 !/hyprland-multishell/tests/*.sh
 !/hyprland-multishell/tools.d/*.sh
 !/hyprland-multishell/templates/*.tmpl
+!/hyprland-multishell/backup/*.sh
+!/hyprland-multishell/backup/systemd/*.service
+!/hyprland-multishell/backup/systemd/*.timer

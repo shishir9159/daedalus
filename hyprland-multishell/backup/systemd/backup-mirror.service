@@ -1,0 +1,9 @@
+[Unit]
+Description=Mirror / to the backup HDD and snapshot it (btrfs)
+RequiresMountsFor=/mnt/backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/xfs-to-btrfs-mirror
+Nice=10
+IOSchedulingClass=idle
