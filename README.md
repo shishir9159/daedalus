@@ -2,6 +2,7 @@
 
 | Path | What | Goes to |
 |---|---|---|
+| `hyprland-multishell/` | several Hyprland rices side by side: profiles, greeter sessions, colour locks, backups | `~/.rices` via its `install.sh`; see its README |
 | `linux/zsh.rc` | zsh config | `~/.zshrc` |
 | `linux/manjaro-bootstrap.sh` | packages and toolchains for a fresh Manjaro | run by hand, step by step |
 | `configs/okular/` | Okular settings | `~/.config/` |
