@@ -28,6 +28,11 @@
 !/configs/Obsidian/Vault/.obsidian/snippets/*.css
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/**/*.jsx
 
+!/configs/nvim/init.lua
+!/configs/nvim/nvim-pack-lock.json
+!/configs/nvim/lsp/*.lua
+!/configs/nvim/lua/**/*.lua
+
 !/hyprland-multishell/*.sh
 !/hyprland-multishell/owned.default.txt
 !/hyprland-multishell/bin/*

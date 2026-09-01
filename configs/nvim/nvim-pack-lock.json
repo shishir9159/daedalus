@@ -1,0 +1,67 @@
+{
+  "plugins": {
+    "blink.cmp": {
+      "rev": "78336bc89ee5365633bcf754d93df01678b5c08f",
+      "src": "https://github.com/Saghen/blink.cmp",
+      "version": "1.0.0 - 2.0.0"
+    },
+    "fff.nvim": {
+      "rev": "44a5b259570730a4236ecbf06673d43ef7b2263e",
+      "src": "https://github.com/dmtrKovalenko/fff.nvim",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "mini.ai": {
+      "rev": "d73c36349aa7b0bab5f77ad71701a1d42211a1df",
+      "src": "https://github.com/echasnovski/mini.ai",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "mini.clue": {
+      "rev": "62e9e38c3dc4b7d429f1b6e28d96f96cdff71132",
+      "src": "https://github.com/echasnovski/mini.clue",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "mini.diff": {
+      "rev": "0743d26bd858ebe32efcf5c86a91a422a000f273",
+      "src": "https://github.com/echasnovski/mini.diff",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "mini.pairs": {
+      "rev": "4a014143fcb4e9df26198ccb3ecff3b9e77a048c",
+      "src": "https://github.com/echasnovski/mini.pairs",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "mini.surround": {
+      "rev": "580e4cb98c5900d9fe743865fb5a5b2178b4ab18",
+      "src": "https://github.com/echasnovski/mini.surround",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "nvim-dap": {
+      "rev": "9e848e09a697ee95302a3ef2dd43fd6eb709e570",
+      "src": "https://github.com/mfussenegger/nvim-dap",
+      "version": "0.0.0 - 1.0.0"
+    },
+    "nvim-dap-view": {
+      "rev": "b8c8aa91f42055d7f69012587cde4f1d99f2a701",
+      "src": "https://github.com/igorlfs/nvim-dap-view",
+      "version": "1.0.0 - 2.0.0"
+    },
+    "nvim-dap-virtual-text": {
+      "rev": "fbdb48c2ed45f4a8293d0d483f7730d24467ccb6",
+      "src": "https://github.com/theHamsta/nvim-dap-virtual-text"
+    },
+    "nvim-treesitter": {
+      "rev": "4916d6592ede8c07973490d9322f187e07dfefac",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
+      "version": "'main'"
+    },
+    "perfanno.nvim": {
+      "rev": "7b4b876374607b139a029563ad0a27065edcaf7b",
+      "src": "https://github.com/t-troebst/perfanno.nvim"
+    },
+    "yazi.nvim": {
+      "rev": "d06c6c7a2e06f847963f5f14542feda1ca3872e0",
+      "src": "https://github.com/mikavilpas/yazi.nvim",
+      "version": "13.0.0 - 14.0.0"
+    }
+  }
+}
