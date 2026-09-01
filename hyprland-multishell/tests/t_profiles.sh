@@ -80,4 +80,10 @@ mkdir -p "$P/alpha/config/.git"
 refute "old config/.git layout is refused, not nested" rice-snapshot alpha
 rm -rf "$P/alpha/config/.git"
 
+section "dotter-linked install"
+for f in bin/rice-new bin/rice-sync templates/nvim.tmpl; do ln -sf "$REPO/$f" "$RICE_ROOT/$f"; done
+expect "install.sh succeeds"                 "$REPO/install.sh" --user-only
+expect "it keeps dotter's links"             test -L "$RICE_ROOT/bin/rice-sync" -a -L "$RICE_ROOT/templates/nvim.tmpl"
+expect "linked tools still work"             rice-new beta
+
 finish

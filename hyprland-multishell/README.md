@@ -60,6 +60,14 @@ rice-session noctalia   # per profile
 
 Upgrade: `git pull && ./install.sh` (profiles and your `owned.txt` untouched). `--user-only` skips the root step.
 
+**Or with [dotter](https://github.com/SuperCuber/dotter)** (`../.dotter/global.toml`): `bin/ lib/ tools.d/ templates/` are linked into `~/.rices` instead of copied, so `git pull` alone upgrades them — and a checkout or half-done edit in `bin/` is what your next login runs.
+```bash
+cd ~/src/daedalus && echo 'packages = ["hyprland"]' > .dotter/local.toml
+dotter deploy               # --force once if install.sh copies are already there
+hyprland-multishell/install.sh   # deps check + greeter stub; it leaves dotter's links alone
+```
+`dotter deploy` again after adding a file. Everything is linked, never templated: dotter would otherwise render the `{{ colors.* }}` tokens in `templates/` itself.
+
 | Command | Does |
 |---|---|
 | `rice-new <p> ["Name"]` | create a profile (names: letters, digits, `-`, `_`) |

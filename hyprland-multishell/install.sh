@@ -15,13 +15,19 @@ for pair in flock:util-linux inotifywait:inotify-tools pkill:procps-ng; do
     command -v "${pair%%:*}" >/dev/null || echo ":: optional: ${pair%%:*} missing (pacman -S ${pair#*:})"
 done
 
-echo ":: installing to $RICE_ROOT"
 mkdir -p "$RICE_ROOT"/{bin,lib,tools.d,templates,profiles}
-install -m755 "$SRC"/bin/*        "$RICE_ROOT/bin/"
-install -m644 "$SRC"/lib/*.sh     "$RICE_ROOT/lib/"
-install -m644 "$SRC"/tools.d/*.sh "$RICE_ROOT/tools.d/"
-install -m644 "$SRC"/templates/*  "$RICE_ROOT/templates/"
-install -m644 "$SRC/owned.default.txt" "$RICE_ROOT/"
+# dotter (../.dotter) links these into the repo instead; `install` would
+# replace each link with a copy.
+if [ -L "$RICE_ROOT/bin/rice-new" ]; then
+    echo ":: $RICE_ROOT is linked by dotter - not copying (new files: dotter deploy)"
+else
+    echo ":: installing to $RICE_ROOT"
+    install -m755 "$SRC"/bin/*        "$RICE_ROOT/bin/"
+    install -m644 "$SRC"/lib/*.sh     "$RICE_ROOT/lib/"
+    install -m644 "$SRC"/tools.d/*.sh "$RICE_ROOT/tools.d/"
+    install -m644 "$SRC"/templates/*  "$RICE_ROOT/templates/"
+    install -m644 "$SRC/owned.default.txt" "$RICE_ROOT/"
+fi
 [ -f "$RICE_ROOT/owned.txt" ] \
     || echo '# Your changes to owned.default.txt, all profiles: "name" owns, "!name" shares.' > "$RICE_ROOT/owned.txt"
 
