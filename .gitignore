@@ -33,6 +33,7 @@
 !/configs/nvim/nvim-pack-lock.json
 !/configs/nvim/lsp/*.lua
 !/configs/nvim/lua/**/*.lua
+!/configs/nvim/pack/plugins/start/surround.nvim/**/*.lua
 
 !/hyprland-multishell/*.sh
 !/hyprland-multishell/owned.default.txt
