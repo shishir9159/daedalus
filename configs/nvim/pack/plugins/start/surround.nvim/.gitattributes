@@ -1,0 +1,9 @@
+# Kept out of `git archive` tarballs. None of these are on any Neovim
+# runtimepath directory, so they are inert even if a user clones the whole
+# repo into pack/*/start/ -- this just keeps release archives to the plugin.
+dev/      export-ignore
+bench/    export-ignore
+tests/    export-ignore
+.gitattributes export-ignore
+
+*.lua text eol=lf

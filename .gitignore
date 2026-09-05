@@ -16,6 +16,7 @@
 !/windows/readme.md
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/report/Weekly Report (drop-in) -- reorgnaize.md
 !/configs/nvim/README.md
+!/configs/nvim/pack/plugins/start/surround.nvim/README.md
 
 !/linux/manjaro-bootstrap.sh
 !/linux/zsh.rc
@@ -33,6 +34,7 @@
 !/configs/nvim/nvim-pack-lock.json
 !/configs/nvim/lsp/*.lua
 !/configs/nvim/lua/**/*.lua
+!/configs/nvim/pack/plugins/start/surround.nvim/.gitattributes
 !/configs/nvim/pack/plugins/start/surround.nvim/**/*.lua
 
 !/hyprland-multishell/*.sh
