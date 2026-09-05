@@ -117,7 +117,9 @@ require("surround").setup({
   scan_radius   = 400,   -- lines each way before giving up; 0 = unbounded
   chunk         = 128,   -- lines fetched per buffer read
   escapes       = true,  -- honour backslash escapes when matching quotes
-  quote_search_forward = true,
+  quote_search_forward = true,  -- not inside quotes: next pair on the line
+  pair_search_forward  = true,  -- not inside brackets: next pair, like 0.12's `a(`
+                                -- (default: true on Nvim 0.12+, false before)
   keymaps = { normal = "ys", delete = "ds", change = "cs", visual = "S" },
 })
 ```

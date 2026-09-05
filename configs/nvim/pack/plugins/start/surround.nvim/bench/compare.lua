@@ -128,9 +128,9 @@ for _, path in ipairs(a.files) do
               vim.api.nvim_win_set_cursor(0, { row + 1, col })
               p.arm()
             end,
-            teardown = function()
+            teardown = function(timed)
               local now = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
-              if now ~= orig[row] then
+              if timed and now ~= orig[row] then
                 changed[pname] = (changed[pname] or 0) + 1
               end
             end,

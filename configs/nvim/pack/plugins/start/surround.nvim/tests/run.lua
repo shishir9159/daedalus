@@ -79,6 +79,17 @@ eq("braces", locate({ "x { y } z" }, 0, 5, "{" ), { 0, 2, 0, 6 })
 eq("alias b", locate({ "foo(bar)" }, 0, 5, "b"), { 0, 3, 0, 7 })
 ok("unmatched returns nil", locate({ "no parens here" }, 0, 3, "(") == nil)
 
+do
+  local save = config.opts.pair_search_forward
+  config.opts.pair_search_forward = true
+  eq("forward: next pair", locate({ "foo(bar)" }, 0, 0, "("), { 0, 3, 0, 7 })
+  eq("forward: crosses lines", locate({ "foo", "(bar)" }, 0, 1, "("), { 1, 0, 1, 4 })
+  ok("forward: a stray closer cancels it", locate({ "x )(y)" }, 0, 0, "(") == nil)
+  config.opts.pair_search_forward = false
+  ok("forward off: enclosing only", locate({ "foo(bar)" }, 0, 0, "(") == nil)
+  config.opts.pair_search_forward = save
+end
+
 -----------------------------------------------------------------------------
 print("-- scanner: bounded radius --")
 -----------------------------------------------------------------------------
@@ -196,6 +207,7 @@ do
   eq("cs()", feed({ "foo(bar)" }, 0, 5, "cs()"), { "foo(bar)" })
   eq("ysiw)", feed({ "foo bar" }, 0, 4, "ysiw)"), { "foo (bar)" })
   eq("yss)", feed({ "  foo bar" }, 0, 4, "yss)"), { "  (foo bar)" })
+  eq("keys queued behind ds( run after it", feed({ "(a) (b)" }, 0, 1, "ds(f("), { "a (b)" })
   eq("dot repeat", feed({ "(a) (b)" }, 0, 1, "ds(f(l."), { "a b" })
   eq("visual S", feed({ "foo bar" }, 0, 0, "vlleS)"), { "(foo bar)" })
 end
@@ -217,6 +229,10 @@ do
     -- The `)` inside the string on line 1 must not be treated as a delimiter.
     local r2 = resolve.find(b, 0, 12, "(")
     ok("paren inside string is invisible", r2 == nil, r2)
+    -- Edit after the tree exists: a stale tree would still say line 2.
+    vim.api.nvim_buf_set_lines(b, 0, 0, false, { "-- pushed down" })
+    local r3 = resolve.find(b, 2, 17, "(")
+    ok("tree is reparsed after an edit", r3 ~= nil and pos.unpack(r3[1]) == 2, r3)
     config.opts.scan_fallback = true
     config.opts.treesitter = false
   end

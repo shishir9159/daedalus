@@ -168,18 +168,23 @@ end
 -- Public API
 -----------------------------------------------------------------------------
 
+--- `g@l` goes to the front of the typeahead ("i"): appended, it would run
+--- after whatever a macro or `:normal` queued behind `ds(`, at the wrong spot.
+local function run_opfunc()
+  vim.o.operatorfunc = "v:lua.require'surround'._repeat"
+  api.nvim_feedkeys("g@l", "ni", false)
+end
+
 --- Delete the pair identified by `char` around the cursor.
 function M.delete(char)
   M._pending = { kind = "delete", char = char }
-  vim.o.operatorfunc = "v:lua.require'surround'._repeat"
-  api.nvim_feedkeys("g@l", "n", false)
+  run_opfunc()
 end
 
 --- Replace the pair identified by `old` with the delimiters for `new`.
 function M.change(old, left, right)
   M._pending = { kind = "change", char = old, left = left, right = right }
-  vim.o.operatorfunc = "v:lua.require'surround'._repeat"
-  api.nvim_feedkeys("g@l", "n", false)
+  run_opfunc()
 end
 
 --- Operator-pending / dot-repeat trampoline. Running the edit inside an

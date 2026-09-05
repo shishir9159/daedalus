@@ -58,7 +58,9 @@ function M.apply(keys)
     local m = vim.fn.mode()
     local esc = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
     -- Leave visual mode synchronously so '< and '> reflect this selection.
-    vim.api.nvim_feedkeys(esc, "nx", false)
+    -- `:normal!` has its own input; feedkeys "x" would first run the rest of
+    -- the typeahead, eating the `)` of a `S)` in a macro.
+    vim.cmd.normal({ esc, bang = true })
     require("surround").visual(m == "V")
   end, { silent = true, desc = "surround: add around selection" })
 

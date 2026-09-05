@@ -340,7 +340,9 @@ end
 --- iteration being slow -- the most common way Lua microbenchmarks lie.
 --- Allocation is reported separately instead.
 ---@param fn fun()
----@param opts? { iters?: integer, warmup?: integer, setup?: fun(), teardown?: fun() }
+--- `teardown` gets `true` on timed iterations and `false` on warmup ones, so
+--- a caller counting outcomes can leave the warmup out.
+---@param opts? { iters?: integer, warmup?: integer, setup?: fun(), teardown?: fun(timed: boolean) }
 function M.measure(fn, opts)
   opts = opts or {}
   local iters = opts.iters or 1000
@@ -352,7 +354,7 @@ function M.measure(fn, opts)
     end
     fn()
     if opts.teardown then
-      opts.teardown()
+      opts.teardown(false)
     end
   end
 
@@ -369,7 +371,7 @@ function M.measure(fn, opts)
     fn()
     samples[i] = hrtime() - t0
     if opts.teardown then
-      opts.teardown()
+      opts.teardown(true)
     end
   end
 

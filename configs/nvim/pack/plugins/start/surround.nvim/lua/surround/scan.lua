@@ -151,6 +151,12 @@ function M.pair(reader, count, row, col, open, close)
   else
     o = back(reader, row, col, open_b, close_b, cls, min_row)
   end
+  if not o and config.opts.pair_search_forward then
+    -- Not inside a pair: take the next opener, as Nvim 0.12's `a(` does. It is
+    -- fwd() with the roles swapped, so a stray closer on the way cancels the
+    -- opener after it, the same way: `x )(y)` finds nothing.
+    o = fwd(reader, row, col + 1, close_b, open_b, cls, max_row)
+  end
   if not o then
     return nil
   end

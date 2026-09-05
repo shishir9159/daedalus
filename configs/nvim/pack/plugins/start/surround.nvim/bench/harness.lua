@@ -42,6 +42,7 @@ function H.args()
     else
       a.files[#a.files + 1] = v
     end
+    i = i + 1
   end
   for _, d in ipairs(a.rtp) do
     vim.opt.runtimepath:append(vim.fn.fnamemodify(d, ":p"))

@@ -61,6 +61,10 @@ function M.available(buf)
   if not ok or not parser then
     return false
   end
+  -- get_node() reads whatever tree exists: none if nothing has parsed this
+  -- buffer yet (no highlighting), a stale one right after an edit. The parse
+  -- is incremental, so it costs nothing once highlighting has caught up.
+  parser:parse()
   return true
 end
 
