@@ -101,6 +101,10 @@ function M.fff()
 end
 
 -- Warm fff's file index right after startup so the first picker is instant.
-vim.schedule(M.fff)
+-- Only inside a repo: `nvim ~/.zshrc` from ~ would index and watch all of $HOME.
+local root = vim.fs.root(vim.uv.cwd(), '.git')
+if root and root ~= vim.fs.normalize(vim.uv.os_homedir()) then
+  vim.schedule(M.fff)
+end
 
 return M

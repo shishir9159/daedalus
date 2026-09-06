@@ -18,7 +18,7 @@ o.splitkeep = 'screen' -- don't scroll text when opening/closing splits
 o.undofile = true
 o.confirm = true
 o.updatetime = 250
-o.timeoutlen = 400 -- snappier which-key-less mapping feedback
+o.timeoutlen = 400 -- mini.clue's popup (300ms) shows just before a mapping times out
 
 -- ftplugins override where the language disagrees (go uses tabs)
 o.expandtab = true

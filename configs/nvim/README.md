@@ -2,7 +2,7 @@
 
 No plugin framework — only the builtin `vim.pack` manager. 8 plugins from
 vim.pack plus one that ships in this directory; everything else is Neovim 0.12
-builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, treesitter
+builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, code lens, treesitter
 highlighting + folding + selection, diagnostics, floating terminals for lazygit
 and yazi).
 
@@ -119,21 +119,22 @@ Group labels live in `lua/config/clue.lua`; `g`, `z`, `[`, `]`, `"` and
 | `za` / `zR` / `zM` | treesitter folds (files open unfolded) |
 | `gd`, `grn`, `gra`, `grr`, `gri`, `K`, `gO` | LSP (mostly builtin defaults) |
 | `<leader>th` | toggle inlay hints |
-| `<leader>cl` | run code lens under cursor |
+| `grx` | run code lens under cursor (builtin) |
 | `<leader>xq` | diagnostics → quickfix |
 | `F5/F10/F11/F12` | debug: continue / over / into / out |
 | `<leader>db` / `<leader>dB` | breakpoint / conditional breakpoint |
 | `<leader>dv` / `<leader>dk` / `<leader>dt` | debug view / inspect / terminate |
 
 Format-on-save is automatic for go/rust/zig/python/c/c++/lua (gopls also
-organizes imports; python formats via ruff, C/C++ via clang-format).
+organizes imports; python formats via ruff, C/C++ via clang-format). With no
+formatting server attached (not installed, still starting) the write just
+happens, without a warning.
 
 ### Code lens
 
-`<leader>cl` runs the lens under the cursor. Lenses refresh on `BufEnter`,
-`InsertLeave` and `BufWritePost` — deliberately not `TextChanged`, which would
-fire a request per keystroke. `LspDetach` tears down the buffer-local autocmds
-and clears rendered lenses.
+Builtin since 0.12: `vim.lsp.codelens.enable(true)` in `lua/config/lsp.lua`.
+Neovim refreshes lenses itself as you edit (debounced) and draws them as
+virtual lines for the visible rows only; `grx` runs the one under the cursor.
 
 Support is per-server: **gopls** (generate/test/tidy/upgrade — these emit
 nothing unless named in `codelenses`, so they are listed in `lsp/gopls.lua`),
@@ -162,7 +163,9 @@ also works for single-directory projects.
 - **Rust/Zig**: `lldb-dap` from the system `lldb` package; prompts for the
   binary (`target/debug/`, `zig-out/bin/`). Build with debug info first.
 - **Python**: debugpy — launch current file, or attach to
-  `python -m debugpy --listen 5678 ...`.
+  `python -m debugpy --listen 5678 ...`. The adapter runs on `/usr/bin/python3`
+  (`python-debugpy`), the program on `$VIRTUAL_ENV`'s python when one is
+  active, so venvs don't need debugpy installed.
 
 ## Zig incremental builds
 

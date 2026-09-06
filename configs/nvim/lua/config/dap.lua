@@ -59,11 +59,14 @@ dap.configurations.zig = { launch_binary('/zig-out/bin/') }
 dap.configurations.c = { launch_binary('/build/') }
 dap.configurations.cpp = dap.configurations.c
 
--- Python: debugpy
+-- Python: debugpy. The program runs on the venv's python; the adapter on the
+-- system one, which has python-debugpy (an active venv shadows `python3`, and
+-- most venvs don't have debugpy).
 local function python_exe()
   local venv = os.getenv('VIRTUAL_ENV')
   return venv and (venv .. '/bin/python') or 'python3'
 end
+local adapter_python = vim.fn.executable('/usr/bin/python3') == 1 and '/usr/bin/python3' or 'python3'
 dap.adapters.python = function(cb, config)
   if config.request == 'attach' then
     cb({
@@ -72,7 +75,7 @@ dap.adapters.python = function(cb, config)
       port = (config.connect or {}).port or 5678,
     })
   else
-    cb({ type = 'executable', command = python_exe(), args = { '-m', 'debugpy.adapter' } })
+    cb({ type = 'executable', command = adapter_python, args = { '-m', 'debugpy.adapter' } })
   end
 end
 dap.configurations.python = {

@@ -15,8 +15,9 @@ return {
     Lua = {
       runtime = { version = 'LuaJIT', path = { 'lua/?.lua', 'lua/?/init.lua' } },
       workspace = {
-        -- VIMRUNTIME only; pulling in every plugin's lua/ makes startup crawl
-        library = { vim.env.VIMRUNTIME .. '/lua', '${3rd}/luv/library' },
+        -- VIMRUNTIME only (it has the vim.uv types too since 0.12); pulling in
+        -- every plugin's lua/ makes startup crawl
+        library = { vim.env.VIMRUNTIME .. '/lua' },
         checkThirdParty = false,
       },
       diagnostics = { globals = { 'vim' } },
