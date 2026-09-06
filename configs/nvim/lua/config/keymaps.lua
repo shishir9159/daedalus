@@ -22,19 +22,17 @@ map('n', '<leader>bo', '<Cmd>%bdelete|edit#|bdelete#<CR>', { desc = 'Delete othe
 map('n', '<leader>tw', '<Cmd>set wrap!<CR>', { desc = 'Wrap' })
 map('n', '<leader>ts', '<Cmd>set spell!<CR>', { desc = 'Spell' })
 
--- file manager (yazi)
-local function yazi()
-  pack.load('yazi.nvim', function()
-    require('yazi').setup({})
-  end)
-  return require('yazi')
-end
-map({ 'n', 'v' }, '<leader>e', function() yazi().yazi() end, { desc = 'Yazi (file)' })
-map('n', '<leader>E', function() yazi().yazi(nil, vim.fn.getcwd()) end, { desc = 'Yazi (cwd)' })
+-- file manager: yazi in a float (builtin terminal)
+map('n', '<leader>e', function()
+  local file = vim.api.nvim_buf_get_name(0)
+  require('config.tui').yazi(vim.uv.fs_stat(file) and file or vim.fn.getcwd())
+end, { desc = 'Yazi (file)' })
+map('n', '<leader>E', function() require('config.tui').yazi(vim.fn.getcwd()) end, { desc = 'Yazi (cwd)' })
 
 -- git: lazygit in a float (builtin terminal), mini.diff hunk overlay
-map('n', '<leader>gg', function() require('config.git').lazygit() end, { desc = 'Lazygit' })
+map('n', '<leader>gg', function() require('config.tui').lazygit() end, { desc = 'Lazygit' })
 map('n', '<leader>gd', function()
+  pack.editing()
   require('mini.diff').toggle_overlay(0)
 end, { desc = 'Toggle diff overlay' })
 

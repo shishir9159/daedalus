@@ -16,7 +16,6 @@ clue.setup({
     { mode = 'x', keys = '"' },
     { mode = 'i', keys = '<C-r>' },
     { mode = 'n', keys = '<C-w>' }, -- windows
-    { mode = 'n', keys = 's' }, -- mini.surround
   },
 
   clues = {

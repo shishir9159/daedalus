@@ -42,46 +42,43 @@ vim.pack.add({
 
 -- Installed and tracked by vim.pack, but not loaded until first use.
 -- `version` pins to a release-tag range where upstream publishes tags; the two
--- without tags track their default branch.
+-- without tags track their default branch. mini.nvim is the one repo behind
+-- every mini.* module used here.
 vim.pack.add({
   { src = 'https://github.com/dmtrKovalenko/fff.nvim', version = vim.version.range('0.*') },
-  { src = 'https://github.com/mikavilpas/yazi.nvim', version = vim.version.range('13.*') },
   { src = 'https://github.com/mfussenegger/nvim-dap', version = vim.version.range('0.*') },
   { src = 'https://github.com/igorlfs/nvim-dap-view', version = vim.version.range('1.*') },
   { src = 'https://github.com/theHamsta/nvim-dap-virtual-text' }, -- untagged
   { src = 'https://github.com/t-troebst/perfanno.nvim' }, -- untagged
-  { src = 'https://github.com/echasnovski/mini.surround', version = vim.version.range('0.*') },
-  { src = 'https://github.com/echasnovski/mini.ai', version = vim.version.range('0.*') },
-  { src = 'https://github.com/echasnovski/mini.pairs', version = vim.version.range('0.*') },
-  { src = 'https://github.com/echasnovski/mini.diff', version = vim.version.range('0.*') },
-  { src = 'https://github.com/echasnovski/mini.clue', version = vim.version.range('0.*') },
+  { src = 'https://github.com/nvim-mini/mini.nvim', version = vim.version.range('0.*') },
 }, { load = function() end, confirm = false })
 
--- Editing/diff plugins: deferred until a real file buffer exists, so a bare
--- `nvim` never pays for them.
+-- Surround is not here: pack/plugins/start/surround.nvim ships with this
+-- config and maps ys/ds/cs/S at startup, loading the rest on first use.
+
+--- mini.ai/pairs/diff/clue, set up once. Runs on the first real file buffer,
+--- so a bare `nvim` never pays for them; keymaps that need them call it too.
+function M.editing()
+  M.load('mini.nvim', function()
+    require('mini.ai').setup({
+      -- a/i textobjects (brackets, quotes, args, calls); not treesitter-based.
+      -- Its `an`/`in` would shadow 0.12's treesitter selection (v_an, v_in),
+      -- and the default search already falls through to the next match.
+      mappings = { around_next = '', inside_next = '' },
+    })
+    require('mini.pairs').setup()
+    require('mini.diff').setup({
+      view = { style = 'sign', signs = { add = '┃', change = '┃', delete = '▁' } },
+    })
+    require('config.clue')
+  end)
+end
+
 vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   group = vim.api.nvim_create_augroup('config.pack.editing', {}),
   once = true,
   callback = function()
-    vim.schedule(function()
-      M.load('mini.surround', function()
-        require('mini.surround').setup() -- sa/sd/sr/sf/sn + `s` textobject
-      end)
-      M.load('mini.ai', function()
-        require('mini.ai').setup() -- treesitter-aware a/i textobjects
-      end)
-      M.load('mini.pairs', function()
-        require('mini.pairs').setup()
-      end)
-      M.load('mini.diff', function()
-        require('mini.diff').setup({
-          view = { style = 'sign', signs = { add = '┃', change = '┃', delete = '▁' } },
-        })
-      end)
-      M.load('mini.clue', function()
-        require('config.clue')
-      end)
-    end)
+    vim.schedule(M.editing)
   end,
 })
 
