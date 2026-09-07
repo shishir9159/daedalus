@@ -1,30 +1,60 @@
-source <(fzf --zsh)
+# ~/.zshrc, one file for every hyprland-multishell
+# profile: rc files aren't per profile, so nothing here may set XDG_*_HOME (a
+# rice session points them into its profile) or start anything rice-specific.
 
-XDG_DATA_HOME = ~/.local/share/
-XDG_STATE_HOME = ~/.local/state/
-XDG_CACHE_HOME = ~/.cache/
+# Manjaro's defaults (history, completion, prompt), which the ~/.zshrc this
+# replaces used to source.
+[[ -r /usr/share/zsh/manjaro-zsh-config ]] && source /usr/share/zsh/manjaro-zsh-config
+[[ -r /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
+(( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
 
-# remove vi and and add lunarvim alias for both vi and vim
+# What the uv/bun/pnpm installers add to ~/.zshrc; (N/) drops missing dirs.
+typeset -U path
+path=($HOME/.local/bin(N/) $HOME/.bun/bin(N/) $HOME/.local/share/pnpm(N/) $path)
+export PNPM_HOME="$HOME/.local/share/pnpm"
 
-alias update = "yay -Syyu; rustup update; curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell; pnpm self-update; bun upgrade; herdr update"
-alias clean = "sudo paccache -rk0; yay -Rsn $(yay -Qdtq); rm -rf .cache/yay; pnpm store prune --force; npm cache clean --force; npm prune --force; bun prune --force"
+export EDITOR=nvim VISUAL=nvim   # configs/nvim
+alias vi=nvim vim=nvim
 
-uv tool upgrade --all
+update() {
+  yay -Syyu
+  rustup update
+  curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+  pnpm self-update
+  bun upgrade
+  uv tool upgrade --all
+  herdr update
+}
+
+clean() {
+  sudo paccache -rk0
+  yay -Rsn $(yay -Qdtq)
+  rm -rf ~/.cache/yay
+  pnpm store prune --force
+  npm cache clean --force
+  npm prune --force
+  bun prune --force
+}
+
+(( $+commands[fzf] )) && source <(fzf --zsh)
+(( $+commands[uv] )) && eval "$(uv generate-shell-completion zsh)"
+(( $+commands[uvx] )) && eval "$(uvx --generate-shell-completion zsh)"
 
 # fnm
-FNM_PATH="/home/carmack/.local/share/fnm"
-if [ -d "$FNM_PATH" ]; then
-  export PATH="/home/carmack/.local/share/fnm:$PATH"
+FNM_PATH="$HOME/.local/share/fnm"
+if [[ -d $FNM_PATH ]]; then
+  path=("$FNM_PATH" $path)
   eval "$(fnm env --use-on-cd --shell zsh)"
 fi
 
-# mcfly
-eval "$(mcfly init zsh)"
+(( $+commands[mcfly] )) && eval "$(mcfly init zsh)"
+(( $+commands[procs] )) && source <(procs --gen-completion-out zsh)
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh)"
 
-# procs
-source <(procs --gen-completion-out zsh)
-
-# zoxide
-eval "$(zoxide init zsh)"
-
-setxkbmap -option caps:swapescapea
+# Caps <-> Esc. X11 only: under Wayland setxkbmap reaches nothing but XWayland;
+# Hyprland takes `input { kb_options = caps:swapescape }` in each profile.
+# An `if`, not `&&`: as the last line, a false test would be the status every
+# new prompt starts with.
+if [[ $XDG_SESSION_TYPE == x11 ]] && (( $+commands[setxkbmap] )); then
+  setxkbmap -option caps:swapescape
+fi
