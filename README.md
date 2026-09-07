@@ -1,11 +1,11 @@
-# daedalus for dotfiles
+# dotfiles
 
 | Path | What | Goes to |
 |---|---|---|
-| `hyprland-multishell/` | several Hyprland rices side by side: profiles, greeter sessions, colour locks, backups | `~/.rices` via its `install.sh`, or dotter (`.dotter/`, package `hyprland`); see its README |
-| `linux/zsh.rc` | zsh config | `~/.zshrc` |
+| `hyprland-multishell/` | several Hyprland rices side by side: profiles, greeter sessions, colour locks, backups | `~/.rices` via its `install.sh`, or dotter (`.dotter/`, package `hyprland`, which pulls in `zsh` and `nvim`); see its README |
+| `linux/zsh.rc` | zsh config | `~/.zshrc` (dotter package `zsh`) |
 | `linux/manjaro-bootstrap.sh` | packages and toolchains for a fresh Manjaro | run by hand, step by step |
-| `configs/nvim/` | Neovim 0.12 config | `~/.config/nvim`; see its README |
+| `configs/nvim/` | Neovim 0.12 config; ships my surround.nvim plugin in `pack/plugins/start/` | `~/.config/nvim` (dotter package `nvim`); see its README |
 | `configs/okular/` | Okular settings | `~/.config/` |
 | `configs/vesktop/pichu.css` | Vesktop theme (Emberkeep) | `~/.config/vesktop/themes/` |
 | `configs/Obsidian/Vault/` | CSS snippets and Datacore views | same paths inside the vault |

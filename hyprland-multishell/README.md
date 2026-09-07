@@ -61,12 +61,14 @@ rice-session noctalia   # per profile
 Upgrade: `git pull && ./install.sh` (profiles and your `owned.txt` untouched). `--user-only` skips the root step.
 
 **Or with [dotter](https://github.com/SuperCuber/dotter)** (`../.dotter/global.toml`): `bin/ lib/ tools.d/ templates/` are linked into `~/.rices` instead of copied, so `git pull` alone upgrades them — and a checkout or half-done edit in `bin/` is what your next login runs.
+The `hyprland` package also pulls in `zsh` (`../linux/zsh.rc` → `~/.zshrc`) and `nvim` (`../configs/nvim` → `~/.config/nvim`), both shared by every profile.
 ```bash
 cd ~/src/daedalus && echo 'packages = ["hyprland"]' > .dotter/local.toml
-dotter deploy               # --force once if install.sh copies are already there
+mv ~/.zshrc ~/.zshrc.pre-dotter; mv ~/.config/nvim ~/.config/nvim.pre-dotter   # if present
+dotter deploy               # --force only for leftover install.sh copies in ~/.rices
 hyprland-multishell/install.sh   # deps check + greeter stub; it leaves dotter's links alone
 ```
-`dotter deploy` again after adding a file. Everything is linked, never templated: dotter would otherwise render the `{{ colors.* }}` tokens in `templates/` itself.
+Move the old files aside rather than reaching for `--force`: it replaces an existing `~/.zshrc` and deletes an existing `~/.config/nvim` directory outright. `dotter deploy` again after adding a file under `hyprland-multishell/` (`~/.config/nvim` is a single link, so not for nvim). Everything is linked, never templated: dotter would otherwise render the `{{ colors.* }}` tokens in `templates/` itself.
 
 | Command | Does |
 |---|---|

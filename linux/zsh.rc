@@ -1,4 +1,4 @@
-# ~/.zshrc, one file for every hyprland-multishell
+# ~/.zshrc (dotter package `zsh`). One file for every hyprland-multishell
 # profile: rc files aren't per profile, so nothing here may set XDG_*_HOME (a
 # rice session points them into its profile) or start anything rice-specific.
 

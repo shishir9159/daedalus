@@ -1,6 +1,6 @@
 # Run from the repo root: `dotter deploy`. Each machine picks its packages in
 # .dotter/local.toml (or .dotter/<hostname>.toml), untracked:
-#   packages = ["hyprland"]
+#   packages = ["hyprland"]          # pulls in zsh and nvim too
 
 # Link everything, never template. In automatic mode dotter renders any file
 # containing "{{" as its own template and copies the result; the rice-theme
@@ -13,9 +13,23 @@ default_target_type = "symbolic"
 # install.sh: a git pull updates them in place. Run hyprland-multishell/install.sh
 # once after the first deploy for the greeter stub (root); it leaves these links alone.
 # Profiles and owned.txt are yours, not dotter's.
+[hyprland]
+depends = ["zsh", "nvim"]
+
 [hyprland.files]
 "hyprland-multishell/bin" = "~/.rices/bin"
 "hyprland-multishell/lib" = "~/.rices/lib"
 "hyprland-multishell/tools.d" = "~/.rices/tools.d"
 "hyprland-multishell/templates" = "~/.rices/templates"
 "hyprland-multishell/owned.default.txt" = "~/.rices/owned.default.txt"
+
+# zsh and nvim are shared by every rice profile: rc files aren't per profile,
+# and rice-sync links ~/.config/nvim into each one.
+[zsh.files]
+"linux/zsh.rc" = "~/.zshrc"
+
+# One link for the whole directory, not one per file: files created under
+# ~/.config/nvim and vim.pack's lockfile writes land in the repo. Always
+# ~/.config, never $XDG_CONFIG_HOME, which points into a profile in a rice.
+[nvim.files]
+"configs/nvim" = { target = "~/.config/nvim", type = "symbolic", recurse = false }

@@ -31,8 +31,8 @@ sudo pacman -Syyu jre21-openjdk
 
 # TODO: make conda installation optional
 sudo pacman -Syuu uv
-echo 'eval "$(uv generate-shell-completion zsh)"' >> ~/.zshrc
-echo 'eval "$(uvx --generate-shell-completion zsh)"' >> ~/.zshrc
+# uv completions are in zsh.rc. Never `>> ~/.zshrc` here: once dotter links it,
+# that appends to linux/zsh.rc in the repo.
 
 # optional --- yay -S galaxybudsclient-bin
 
@@ -60,12 +60,9 @@ pnpm install tree-sitter-cli
 
 sudo pip3 install patch-ng --break-system-packages
 
-# neovim
-LV_BRANCH='release-1.4/neovim-0.9' bash <(curl -s https://raw.githubusercontent.com/LunarVim/LunarVim/release-1.4/neovim-0.9/utils/installer/install.sh)
-# Would you like to install LunarVim's NodeJS/BunJS dependencies: neovim, tree-sitter-cli?
-# [y]es or [n]o (default: no) : y
-# Would you like to install LunarVim's Rust dependencies: fd::fd-find, rg::ripgrep?
-# [y]es or [n]o (default: no) : y
+# neovim: configs/nvim (replaces LunarVim); its README has the packages.
+# From the repo root, with packages = ["zsh", "nvim"] in .dotter/local.toml:
+#   dotter deploy
 
 #
 sudo pacman -S hyprland waybar rofi-wayland dunst xdg-desktop-portal-hyprland qt5-wayland qt6-wayland hyprpaper chromium ttf-font-awesome

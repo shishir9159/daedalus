@@ -85,5 +85,8 @@ for f in bin/rice-new bin/rice-sync templates/nvim.tmpl; do ln -sf "$REPO/$f" "$
 expect "install.sh succeeds"                 "$REPO/install.sh" --user-only
 expect "it keeps dotter's links"             test -L "$RICE_ROOT/bin/rice-sync" -a -L "$RICE_ROOT/templates/nvim.tmpl"
 expect "linked tools still work"             rice-new beta
+mv "$HOME/.config/nvim" "$SANDBOX/repo-nvim" && ln -s "$SANDBOX/repo-nvim" "$HOME/.config/nvim"
+rice-sync beta --quiet
+expect "a linked ~/.config/nvim reaches the profile" test "$(readlink -f "$P/beta/config/nvim")" = "$(readlink -f "$SANDBOX/repo-nvim")"
 
 finish

@@ -11,3 +11,7 @@ require('config.lsp')
 require('config.keymaps')
 require('config.autocmds')
 require('config.profiling')
+
+-- hyprland-multishell: this profile's colours from rice-theme (Normal, Visual,
+-- ...). Shared config, so the path is per session; a no-op outside a rice.
+pcall(dofile, vim.fn.expand('$XDG_CONFIG_HOME/rice-theme/active/nvim.lua'))

@@ -6,6 +6,12 @@ builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, code lens, treesitter
 highlighting + folding + selection, diagnostics, floating terminals for lazygit
 and yazi).
 
+This directory is `~/.config/nvim`. From the repo root: `dotter deploy` with
+the `nvim` package (one link for the whole directory, so new files and
+`vim.pack`'s lockfile writes land in the repo), or
+`ln -s "$PWD/configs/nvim" ~/.config/nvim`. Under hyprland-multishell it stays
+shared across profiles; `init.lua` loads the profile's rice-theme colours.
+
 ## Prerequisites
 
 ```sh
