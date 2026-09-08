@@ -46,6 +46,7 @@ vim.pack.add({
 -- every mini.* module used here.
 vim.pack.add({
   { src = 'https://github.com/dmtrKovalenko/fff.nvim', version = vim.version.range('0.*') },
+  { src = 'https://github.com/mikavilpas/yazi.nvim', version = vim.version.range('13.*') },
   { src = 'https://github.com/mfussenegger/nvim-dap', version = vim.version.range('0.*') },
   { src = 'https://github.com/igorlfs/nvim-dap-view', version = vim.version.range('1.*') },
   { src = 'https://github.com/theHamsta/nvim-dap-virtual-text' }, -- untagged

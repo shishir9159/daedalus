@@ -1,8 +1,11 @@
 local M = {}
 
---- Run a full-screen TUI in a floating terminal; `on_exit` runs once it closes.
---- No plugin: builtin floating window + `jobstart(..., { term = true })`.
-local function float(cmd, cwd, title, on_exit)
+--- Run a full-screen TUI in a floating terminal. No plugin: builtin floating
+--- window + `jobstart(..., { term = true })`. Reusable for any TUI.
+---@param cmd string[]
+---@param opts? { cwd?: string, title?: string, on_exit?: fun() } on_exit runs once the float is closed
+function M.float(cmd, opts)
+  opts = opts or {}
   if vim.fn.executable(cmd[1]) == 0 then
     return vim.notify(cmd[1] .. ' not found in $PATH', vim.log.levels.ERROR)
   end
@@ -16,7 +19,7 @@ local function float(cmd, cwd, title, on_exit)
     col = math.floor(vim.o.columns * 0.05),
     style = 'minimal',
     border = 'rounded',
-    title = ' ' .. title .. ' ',
+    title = ' ' .. (opts.title or cmd[1]) .. ' ',
     title_pos = 'center',
   })
 
@@ -25,7 +28,7 @@ local function float(cmd, cwd, title, on_exit)
 
   vim.fn.jobstart(cmd, {
     term = true,
-    cwd = cwd,
+    cwd = opts.cwd,
     on_exit = function()
       if vim.api.nvim_win_is_valid(win) then
         vim.api.nvim_win_close(win, true)
@@ -33,7 +36,9 @@ local function float(cmd, cwd, title, on_exit)
       if vim.api.nvim_buf_is_valid(buf) then
         vim.api.nvim_buf_delete(buf, { force = true })
       end
-      on_exit()
+      if opts.on_exit then
+        opts.on_exit()
+      end
     end,
   })
   vim.cmd.startinsert()
@@ -46,20 +51,7 @@ function M.lazygit()
     return vim.notify('not inside a git repository', vim.log.levels.WARN)
   end
   -- pick up commits/checkouts/rebases made inside lazygit
-  float({ 'lazygit' }, root, 'lazygit', vim.cmd.checktime)
-end
-
---- yazi on `path` (a file is revealed in its directory); files opened in yazi
---- (<Enter>) are edited here. `--chooser-file` is yazi's own picker protocol.
-function M.yazi(path)
-  local chosen = vim.fn.tempname()
-  float({ 'yazi', path, '--chooser-file', chosen }, nil, 'yazi', function()
-    local ok, files = pcall(vim.fn.readfile, chosen)
-    vim.fn.delete(chosen)
-    for _, f in ipairs(ok and files or {}) do
-      vim.cmd.edit(vim.fn.fnameescape(f))
-    end
-  end)
+  M.float({ 'lazygit' }, { cwd = root, on_exit = vim.cmd.checktime })
 end
 
 return M

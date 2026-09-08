@@ -1,10 +1,10 @@
 # Minimal Neovim 0.12 config
 
-No plugin framework — only the builtin `vim.pack` manager. 8 plugins from
+No plugin framework — only the builtin `vim.pack` manager. 9 plugins from
 vim.pack plus one that ships in this directory; everything else is Neovim 0.12
 builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, code lens, treesitter
-highlighting + folding + selection, diagnostics, floating terminals for lazygit
-and yazi).
+highlighting + folding + selection, diagnostics, a floating terminal for
+lazygit).
 
 This directory is `~/.config/nvim`. From the repo root: `dotter deploy` with
 the `nvim` package (one link for the whole directory, so new files and
@@ -41,6 +41,7 @@ profiling: `pipx install py-spy` (or `pacman -S py-spy`).
 | nvim-treesitter (main) | parser installer | startup |
 | blink.cmp | completion (+ cmdline, ghost text) | startup |
 | fff.nvim | file picker + live grep | deferred (index warms in background inside a git repo) |
+| yazi.nvim | file manager | first `<leader>e` |
 | mini.nvim: mini.ai / mini.pairs | textobjects, autopairs | first file buffer |
 | mini.nvim: mini.diff | git hunk signs + overlay | first file buffer |
 | mini.nvim: mini.clue | mnemonic key-group popup | first file buffer |
@@ -52,16 +53,20 @@ surround.nvim is a plugin of mine that lives in this config; its README, tests
 and benchmarks are next to it. mini.nvim is one repo for every mini.* module,
 so four plugins are one clone and one lockfile entry.
 
-lazygit and yazi need no plugin: `<leader>gg` / `<leader>e` run them in a
-builtin floating terminal (`lua/config/tui.lua`). Files opened in yazi
-(`<Enter>`) are edited in Neovim, through yazi's own `--chooser-file`.
+lazygit needs no plugin: `<leader>gg` runs it in a builtin floating terminal.
+That float is `require('config.tui').float(cmd, { cwd, title, on_exit })` in
+`lua/config/tui.lua`, ready for any other TUI.
 
-Coming from the older 13-plugin setup (mini.surround, yazi.nvim and the
-separate mini.* repos), delete those copies once, which also drops them from
-the lockfile:
+yazi.nvim runs with its defaults (`setup({})`). Two of its keys inside yazi hand
+off to plugins this config doesn't have: `<c-s>` (grep) to telescope, `<c-g>`
+(replace) to grug-far. Set `integrations.grep_in_directory` to a function that
+calls fff to use the first.
+
+Coming from the older setup (mini.surround and the separate mini.* repos),
+delete those copies once, which also drops them from the lockfile:
 
 ```vim
-:lua vim.pack.del({ 'mini.surround', 'mini.ai', 'mini.pairs', 'mini.diff', 'mini.clue', 'yazi.nvim' })
+:lua vim.pack.del({ 'mini.surround', 'mini.ai', 'mini.pairs', 'mini.diff', 'mini.clue' })
 ```
 
 ### Versions and updating
@@ -115,7 +120,7 @@ Group labels live in `lua/config/clue.lua`; `g`, `z`, `[`, `]`, `"` and
 | `<leader>fr` / `<leader>fw` | fff: resume picker / grep word under cursor |
 | `<leader>bd` / `<leader>bo` | delete buffer / delete other buffers |
 | `<leader>tw` / `<leader>ts` | toggle wrap / spell |
-| `<leader>e` / `<leader>E` | yazi at current file / cwd (floating terminal) |
+| `<leader>e` / `<leader>E` | yazi.nvim at current file / cwd |
 | `<leader>gg` | lazygit (floating terminal) |
 | `<leader>gd` | toggle mini.diff hunk overlay |
 | `ys{motion}{c}` / `ds{c}` / `cs{old}{new}` / `S{c}` | surround.nvim: add / delete / change / visual |
