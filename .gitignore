@@ -35,6 +35,7 @@
 !/configs/nvim/lsp/*.lua
 !/configs/nvim/lua/**/*.lua
 !/configs/nvim/pack/plugins/start/surround.nvim/.gitattributes
+!/configs/nvim/pack/plugins/start/surround.nvim/pkg.json
 !/configs/nvim/pack/plugins/start/surround.nvim/**/*.lua
 
 !/hyprland-multishell/*.sh

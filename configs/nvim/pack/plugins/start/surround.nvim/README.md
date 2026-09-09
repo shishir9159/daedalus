@@ -21,13 +21,13 @@ component (`plugins` here) is just a grouping name; pick anything.
 
 ```bash
 # Linux / macOS
-git clone https://github.com/you/surround.nvim \
+git clone https://github.com/shishir9159/surround.nvim \
   ~/.config/nvim/pack/plugins/start/surround.nvim
 ```
 
 ```bash
 # Windows (PowerShell)
-git clone https://github.com/you/surround.nvim `
+git clone https://github.com/shishir9159/surround.nvim `
   $env:LOCALAPPDATA\nvim\pack\plugins\start\surround.nvim
 ```
 
@@ -57,7 +57,7 @@ end, { expr = true })
 your config is itself a git repo, a submodule keeps the pin:
 
 ```bash
-git submodule add https://github.com/you/surround.nvim \
+git submodule add https://github.com/shishir9159/surround.nvim \
   pack/plugins/start/surround.nvim
 ```
 
@@ -69,8 +69,8 @@ whole repo into `pack/*/start/` still loads nothing but the plugin — the
 profiler is not merely unused, it is unreachable.
 
 For a minimal tree anyway, `.gitattributes` marks those directories
-`export-ignore`, so a release archive contains only `plugin/`, `lua/`, the
-README and the licence:
+`export-ignore`, so a release archive contains only `plugin/`, `lua/`,
+`pkg.json`, the README and the licence:
 
 ```bash
 git archive --format=tar.gz --prefix=surround.nvim/ -o surround.nvim.tar.gz HEAD
@@ -80,8 +80,12 @@ git archive --format=tar.gz --prefix=surround.nvim/ -o surround.nvim.tar.gz HEAD
 
 ```lua
 -- lazy.nvim
-{ "you/surround.nvim", opts = {} }
+{ "shishir9159/surround.nvim", opts = {} }
 ```
+
+`pkg.json` ([packspec](https://packspec.org/)) declares the package for managers
+that read it, lazy.nvim among them: Nvim >= 0.9.0 (tested on 0.9.5 through
+0.12) and no dependencies.
 
 Default keymaps are created at startup; nothing else under `lua/surround/` is
 loaded until the first surround command is pressed. Set
