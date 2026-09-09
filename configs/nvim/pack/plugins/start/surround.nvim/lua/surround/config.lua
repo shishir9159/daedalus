@@ -122,10 +122,10 @@ M.opts = {
   quote_search_forward = true,
 
   --- For brackets: if the cursor isn't inside a pair, take the next one, even
-  --- on a later line. Defaults to whatever the running Nvim's own `a(` does:
-  --- it searches forward from 0.12 on. Scanner only; the treesitter path
-  --- always wants an enclosing node, so this needs `scan_fallback`.
-  pair_search_forward = vim.fn.has("nvim-0.12") == 1,
+  --- on a later line -- what Nvim's own `a(` does. Scanner only; the
+  --- treesitter path always wants an enclosing node, so this needs
+  --- `scan_fallback`.
+  pair_search_forward = true,
 
   --- Where the cursor lands after an operation.
   ---   "begin"  start of the (former) opening delimiter -- vim-surround's

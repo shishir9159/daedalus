@@ -118,8 +118,7 @@ require("surround").setup({
   chunk         = 128,   -- lines fetched per buffer read
   escapes       = true,  -- honour backslash escapes when matching quotes
   quote_search_forward = true,  -- not inside quotes: next pair on the line
-  pair_search_forward  = true,  -- not inside brackets: next pair, like 0.12's `a(`
-                                -- (default: true on Nvim 0.12+, false before)
+  pair_search_forward  = true,  -- not inside brackets: next pair, like Nvim's `a(`
   keymaps = { normal = "ys", delete = "ds", change = "cs", visual = "S" },
 })
 ```
