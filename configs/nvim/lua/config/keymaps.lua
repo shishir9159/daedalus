@@ -25,6 +25,7 @@ map('n', '<leader>ts', '<Cmd>set spell!<CR>', { desc = 'Spell' })
 -- file manager (yazi)
 local function yazi()
   pack.load('yazi.nvim', function()
+    vim.cmd.packadd('plenary.nvim') -- yazi.nvim's declared dependency
     require('yazi').setup({})
   end)
   return require('yazi')

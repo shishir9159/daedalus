@@ -38,10 +38,14 @@
       "rev": "7b4b876374607b139a029563ad0a27065edcaf7b",
       "src": "https://github.com/t-troebst/perfanno.nvim"
     },
+    "plenary.nvim": {
+      "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
+      "src": "https://github.com/nvim-lua/plenary.nvim"
+    },
     "yazi.nvim": {
-      "rev": "d06c6c7a2e06f847963f5f14542feda1ca3872e0",
+      "rev": "d8bd4cc258fdbe2bad71a383d390a96c80ecb628",
       "src": "https://github.com/mikavilpas/yazi.nvim",
-      "version": "13.0.0 - 14.0.0"
+      "version": "14.0.0 - 15.0.0"
     }
   }
 }

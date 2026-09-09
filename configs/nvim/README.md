@@ -1,6 +1,6 @@
 # Minimal Neovim 0.12 config
 
-No plugin framework — only the builtin `vim.pack` manager. 9 plugins from
+No plugin framework — only the builtin `vim.pack` manager. 10 plugins from
 vim.pack plus one that ships in this directory; everything else is Neovim 0.12
 builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, code lens, treesitter
 highlighting + folding + selection, diagnostics, a floating terminal for
@@ -34,6 +34,8 @@ missing from the repos: AUR or `pipx install`. `cargo` is only needed if
 fff.nvim's prebuilt binary download falls back to a source build. For Python
 profiling: `pipx install py-spy` (or `pacman -S py-spy`).
 
+yazi.nvim 14 needs yazi 26.8.15 or newer; `:checkhealth yazi` compares versions.
+
 ## Plugins
 
 | Plugin | Purpose | Loaded |
@@ -41,7 +43,7 @@ profiling: `pipx install py-spy` (or `pacman -S py-spy`).
 | nvim-treesitter (main) | parser installer | startup |
 | blink.cmp | completion (+ cmdline, ghost text) | startup |
 | fff.nvim | file picker + live grep | deferred (index warms in background inside a git repo) |
-| yazi.nvim | file manager | first `<leader>e` |
+| yazi.nvim + plenary.nvim | file manager | first `<leader>e` |
 | mini.nvim: mini.ai / mini.pairs | textobjects, autopairs | first file buffer |
 | mini.nvim: mini.diff | git hunk signs + overlay | first file buffer |
 | mini.nvim: mini.clue | mnemonic key-group popup | first file buffer |
@@ -62,11 +64,20 @@ off to plugins this config doesn't have: `<c-s>` (grep) to telescope, `<c-g>`
 (replace) to grug-far. Set `integrations.grep_in_directory` to a function that
 calls fff to use the first.
 
-Coming from the older setup (mini.surround and the separate mini.* repos),
-delete those copies once, which also drops them from the lockfile:
+**Dependencies.** vim.pack doesn't resolve them, and no plugin here ships a
+[packspec](https://packspec.org/) `pkg.json` (surround.nvim does, with none).
+yazi.nvim declares plenary.nvim in its `lazy.lua` and rockspec instead, so
+`pack.lua` lists plenary itself and yazi's loader `packadd`s it first. Recheck
+those two files when bumping yazi.nvim.
+
+Coming from an older checkout: delete the retired copies once (which also
+drops them from the lockfile), and move yazi.nvim from 13 to the locked 14,
+confirming with `:write` in the review tab; plenary installs on its own at the
+next start.
 
 ```vim
 :lua vim.pack.del({ 'mini.surround', 'mini.ai', 'mini.pairs', 'mini.diff', 'mini.clue' })
+:lua vim.pack.update({ 'yazi.nvim' }, { target = 'lockfile' })
 ```
 
 ### Versions and updating
@@ -75,7 +86,8 @@ Plugins are pinned by *tag range* in `lua/config/pack.lua`, e.g.
 `version = vim.version.range('0.*')`. The lockfile records both the constraint
 and the resolved commit — `rev` is always a commit hash by design, that is what
 makes the lock reproducible. `perfanno.nvim` and `nvim-dap-virtual-text`
-publish no tags, so they track their default branch.
+publish no tags and plenary.nvim's last one (v0.1.4) is years old, so those
+three track their default branch.
 
 ```
 :Update                  -- treesitter parsers + all plugins, one command

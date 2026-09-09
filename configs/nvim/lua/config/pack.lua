@@ -41,12 +41,17 @@ vim.pack.add({
 }, { confirm = false })
 
 -- Installed and tracked by vim.pack, but not loaded until first use.
--- `version` pins to a release-tag range where upstream publishes tags; the two
--- without tags track their default branch. mini.nvim is the one repo behind
--- every mini.* module used here.
+-- `version` pins to a release-tag range where upstream publishes tags; the
+-- rest track their default branch. mini.nvim is the one repo behind every
+-- mini.* module used here.
+--
+-- vim.pack resolves no dependencies, and no plugin here ships a packspec
+-- pkg.json. yazi.nvim declares plenary.nvim in its lazy.lua and rockspec, so it
+-- is listed by hand; recheck those files when bumping yazi.nvim.
 vim.pack.add({
   { src = 'https://github.com/dmtrKovalenko/fff.nvim', version = vim.version.range('0.*') },
-  { src = 'https://github.com/mikavilpas/yazi.nvim', version = vim.version.range('13.*') },
+  { src = 'https://github.com/mikavilpas/yazi.nvim', version = vim.version.range('14.*') }, -- needs yazi >= 26.8.15
+  { src = 'https://github.com/nvim-lua/plenary.nvim' }, -- for yazi.nvim; its tags stopped at v0.1.4 (2023)
   { src = 'https://github.com/mfussenegger/nvim-dap', version = vim.version.range('0.*') },
   { src = 'https://github.com/igorlfs/nvim-dap-view', version = vim.version.range('1.*') },
   { src = 'https://github.com/theHamsta/nvim-dap-virtual-text' }, -- untagged
