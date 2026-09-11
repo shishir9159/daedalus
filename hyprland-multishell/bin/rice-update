@@ -8,7 +8,7 @@ set -uo pipefail   # no -e: one failing repo must not stop the others
 
 export GIT_TERMINAL_PROMPT=0   # bad URL: fail fast, don't prompt
 IDENT=()
-git config user.email >/dev/null 2>&1 || IDENT=(-c user.name=rice -c user.email=rice@localhost)
+git config user.email >/dev/null 2>&1 || IDENT=("${RICE_GIT_IDENT[@]}")
 
 update_repo() { # <profile-dir> <rel> <url> [branch]
     local repo="$1/$2" rel="$2" url="$3" branch="${4:-}" gitdir cur before
@@ -26,7 +26,7 @@ update_repo() { # <profile-dir> <rel> <url> [branch]
 
     echo "  $rel"
     gitdir="$(git -C "$repo" rev-parse --absolute-git-dir)" || return 1
-    if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ] || [ -f "$gitdir/MERGE_HEAD" ]; then
+    if rice_git_busy "$gitdir"; then
         echo "    !! unfinished rebase/merge - finish it: git -C '$repo' rebase --continue (or --abort)"
         return 1   # committing now would commit the conflict markers
     fi

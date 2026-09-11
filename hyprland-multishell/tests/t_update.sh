@@ -5,8 +5,7 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
-rice-new up >/dev/null
-PD="$RICE_ROOT/profiles/up"
+mkprofile up
 UP="$SANDBOX/upstream"
 R="$PD/config/quickshell/shell"
 

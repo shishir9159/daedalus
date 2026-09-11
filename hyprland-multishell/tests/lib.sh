@@ -51,7 +51,10 @@ stub() {
     } > "$STUBS/$1"
     chmod +x "$STUBS/$1"
 }
-unstub() { rm -f "$STUBS/$1"; }
+
+# mkprofile <name>  -- a fresh profile; PD is its directory
+# shellcheck disable=SC2034  # PD is for the calling test
+mkprofile() { rice-new "$1" >/dev/null; PD="$RICE_ROOT/profiles/$1"; }
 
 pass() { T_COUNT=$((T_COUNT + 1)); printf '  ok    %s\n' "$1"; }
 fail() {
@@ -64,11 +67,12 @@ fail() {
 # refute "description" <command...>       passes if the command fails
 expect() { local d="$1" out; shift; if out="$("$@" 2>&1)"; then pass "$d"; else fail "$d" "$out"; fi; }
 refute() { local d="$1" out; shift; if out="$("$@" 2>&1)"; then fail "$d (unexpectedly succeeded)" "$out"; else pass "$d"; fi; }
+# out_has "description" <text> <command...>   passes if the command's stdout has text
+out_has() { local d="$1" t="$2"; shift 2; "$@" > "$SANDBOX/out"; expect "$d" has "$SANDBOX/out" "$t"; }
 
 has()     { grep -qF -- "$2" "$1"; }          # has <file> <text>
 has_not() { ! grep -qF -- "$2" "$1"; }
 called()  { grep -qF -- "$1" "$CALLS"; }      # called <text>
-same()    { cmp -s "$1" "$2"; }
 
 section() { printf '\n%s\n' "$*"; }
 

@@ -4,13 +4,12 @@ set -uo pipefail
 # shellcheck source=../lib/rice-common.sh
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
 
-STUB="${RICE_STUB:-/usr/local/bin/hypr-profile}"
-SESSIONS_DIR="${RICE_SESSIONS_DIR:-/usr/share/wayland-sessions}"
-if [ -t 1 ]; then Y=$'\033[33m' R=$'\033[31m' G=$'\033[32m' N=$'\033[0m'; else Y='' R='' G='' N=''; fi
+STUB="${RICE_STUB:-$RICE_LAUNCHER}"
+rice_colors
 FAILED=0
-warn() { printf '  %sWARN%s  %s\n' "$Y" "$N" "$*"; }
-bad()  { printf '  %sFAIL%s  %s\n' "$R" "$N" "$*"; FAILED=1; }
-ok()   { printf '  %sok%s    %s\n' "$G" "$N" "$*"; }
+warn() { printf '  %sWARN%s  %s\n' "$c_y" "$c_0" "$*"; }
+bad()  { printf '  %sFAIL%s  %s\n' "$c_r" "$c_0" "$*"; FAILED=1; }
+ok()   { printf '  %sok%s    %s\n' "$c_g" "$c_0" "$*"; }
 
 profiles=("$@")
 [ ${#profiles[@]} -gt 0 ] || mapfile -t profiles < <(rice_list_profiles)
@@ -96,17 +95,17 @@ for p in "${profiles[@]}"; do
         fi
     fi
 
-    # git: old layout, repos stuck mid-rebase
+    # git: old layout, repos stuck mid-rebase or merge
     [ ! -d "$PDIR/config/.git" ] || warn "old snapshot layout (repo in config/) - see: rice-snapshot $p"
     while IFS= read -r -d '' gd; do
-        if [ -d "$gd/rebase-merge" ] || [ -d "$gd/rebase-apply" ]; then bad "${gd%/.git} is stuck mid-rebase"; fi
+        if rice_git_busy "$gd"; then bad "${gd%/.git} is stuck mid-rebase or merge"; fi
     done < <(find "$PDIR/config" "$PDIR/src" -mindepth 2 -maxdepth 4 -name .git -type d -print0 2>/dev/null)
 
-    if [ -f "$SESSIONS_DIR/rice-$p.desktop" ]; then ok "greeter entry"; else warn "not in the greeter - run: rice-session $p"; fi
+    if [ -f "$RICE_SESSIONS_DIR/rice-$p.desktop" ]; then ok "greeter entry"; else warn "not in the greeter - run: rice-session $p"; fi
 
     envf="$PDIR/profile.env"
     if grep -q '^USE_UWSM=1' "$envf" 2>/dev/null && ! command -v uwsm >/dev/null; then bad "USE_UWSM=1 but uwsm isn't installed"; fi
-    b="$(sed -n 's/^HYPRLAND_BIN=//p' "$envf" 2>/dev/null | tr -d "\"'" | tail -1)"
+    b="$(rice_env_get "$PDIR" HYPRLAND_BIN)"
     if [ -n "$b" ] && ! command -v "$b" >/dev/null; then bad "HYPRLAND_BIN=$b is not executable"; fi
     if grep -qE '^[[:space:]]*PRE_EXEC=.*(hyprctl|hyprpm)' "$envf" 2>/dev/null; then
         bad "PRE_EXEC uses hyprctl/hyprpm before Hyprland starts - use exec-once"

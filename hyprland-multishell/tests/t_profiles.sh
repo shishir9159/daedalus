@@ -60,6 +60,9 @@ expect "register"                            rice-session alpha "Alpha Rice"
 D="$RICE_SESSIONS_DIR/rice-alpha.desktop"
 expect "Exec line"                           has "$D" 'Exec=/usr/local/bin/hypr-profile alpha'
 expect "TryExec hides it if the stub is gone" has "$D" 'TryExec=/usr/local/bin/hypr-profile'
+echo "DISPLAY_NAME=\"Alpha's Later\"" >> "$P/alpha/profile.env"
+expect "name from profile.env"               rice-session alpha
+expect "...the last one, as when sourced"    has "$D" "Name=Alpha's Later"
 expect "remove"                              rice-session alpha --remove
 refute "entry is gone"                       test -e "$D"
 refute "invalid name refused"                rice-session "a b"

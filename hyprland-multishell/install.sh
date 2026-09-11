@@ -6,7 +6,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=lib/rice-common.sh
 . "$SRC/lib/rice-common.sh"
 
-case "${1:-}" in --user-only) USER_ONLY=1 ;; "") USER_ONLY=0 ;; *) echo "usage: install.sh [--user-only]" >&2; exit 2 ;; esac
+case "${1:-}" in --user-only) USER_ONLY=1 ;; "") USER_ONLY=0 ;; *) rice_usage "install.sh [--user-only]" ;; esac
 
 missing=()
 for c in git find sed awk grep cmp readlink mktemp; do command -v "$c" >/dev/null || missing+=("$c"); done
@@ -32,8 +32,8 @@ fi
     || echo '# Your changes to owned.default.txt, all profiles: "name" owns, "!name" shares.' > "$RICE_ROOT/owned.txt"
 
 if [ "$USER_ONLY" = 0 ]; then
-    echo ":: installing /usr/local/bin/hypr-profile (sudo)"
-    sudo install -Dm755 "$SRC/system/hypr-profile" /usr/local/bin/hypr-profile
+    echo ":: installing $RICE_LAUNCHER (sudo)"
+    sudo install -Dm755 "$SRC/system/hypr-profile" "$RICE_LAUNCHER"
 fi
-case ":$PATH:" in *":$RICE_ROOT/bin:"*) ;; *) echo ":: add to your shell rc: export PATH=\"\$HOME/.rices/bin:\$PATH\"" ;; esac
+case ":$PATH:" in *":$RICE_ROOT/bin:"*) ;; *) echo ":: add to your shell rc: export PATH=\"$RICE_ROOT/bin:\$PATH\"" ;; esac
 echo "done. next: ./bootstrap-profiles.sh"

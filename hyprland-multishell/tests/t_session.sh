@@ -5,11 +5,12 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
-rice-new s1 >/dev/null
-PD="$RICE_ROOT/profiles/s1"
-unstub start-hyprland 2>/dev/null
-# fake compositor: record what it was started with, then "log out" with status 7
-stub Hyprland 'echo "env XDG_CONFIG_HOME=$XDG_CONFIG_HOME RICE_PROFILE=$RICE_PROFILE" >> "$CALLS"; exit 7'
+mkprofile s1
+# fake compositors: record what they were started with, then "log out" with
+# status 7. Both, so a real start-hyprland on PATH is never launched.
+fake='echo "env XDG_CONFIG_HOME=$XDG_CONFIG_HOME RICE_PROFILE=$RICE_PROFILE" >> "$CALLS"; exit 7'
+stub Hyprland "$fake"
+stub start-hyprland "$fake"
 
 section "launch"
 hypr-profile s1; rc=$?
@@ -24,7 +25,6 @@ expect "previous log kept as .old"           test -f "$PD/session.log.old"
 refute "log is not inside an XDG root"       test -e "$PD/state/hypr-profile.log"
 
 section "launcher choice"
-stub start-hyprland 'echo "env XDG_CONFIG_HOME=$XDG_CONFIG_HOME RICE_PROFILE=$RICE_PROFILE" >> "$CALLS"'
 : > "$CALLS"; hypr-profile s1
 expect "start-hyprland preferred when present" called 'start-hyprland'
 echo 'HYPRLAND_CONFIG=/some/where.lua' >> "$PD/profile.env"
@@ -33,7 +33,6 @@ expect "explicit config uses Hyprland -c"    called 'Hyprland -c /some/where.lua
 sed -i '/^HYPRLAND_CONFIG=/d' "$PD/profile.env"
 
 section "a broken profile.env cannot lock you out"
-# shellcheck disable=SC2016  # literal: the unset reference is the point
 echo 'EXTRA="$DEFINITELY_UNSET/x"' >> "$PD/profile.env"
 : > "$CALLS"; hypr-profile s1
 expect "unset variable in profile.env: session still starts" called 'start-hyprland'

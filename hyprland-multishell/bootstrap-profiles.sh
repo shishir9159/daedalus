@@ -2,7 +2,8 @@
 # bootstrap-profiles.sh -- create the five profiles. Re-runnable: never
 # overwrites a profile.env or repos.txt that already exists.
 set -euo pipefail
-RICE_ROOT="${RICE_ROOT:-$HOME/.rices}"
+# shellcheck source=lib/rice-common.sh
+. "$(cd "$(dirname "$0")" && pwd)/lib/rice-common.sh"
 
 mk() { # <name> <display name> <use_uwsm>
     local env="$RICE_ROOT/profiles/$1/profile.env" fresh=0

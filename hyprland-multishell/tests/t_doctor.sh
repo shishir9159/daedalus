@@ -4,8 +4,7 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
-rice-new dr >/dev/null
-PD="$RICE_ROOT/profiles/dr"
+mkprofile dr
 echo 'return {}' > "$PD/config/hypr/hyprland.lua"
 printf '[colors-dark]\nbackground=#123456\n' > "$PD/config/rice-theme/generated/foot.ini"
 rice-theme -p dr lock foot >/dev/null
@@ -24,15 +23,12 @@ sed -i '/^PRE_EXEC=/d' "$PD/profile.env"
 
 mkdir -p "$PD/config/noctalia"
 printf '[theme.templates]\nbuiltin_ids = [\n  "kitty",\n]\n' > "$PD/config/noctalia/config.toml"
-rice-doctor dr > "$SANDBOX/out"
-expect "warns when Noctalia's own kitty template bypasses locks" has "$SANDBOX/out" 'also target: kitty'
+out_has "warns when Noctalia's own kitty template bypasses locks" 'also target: kitty' rice-doctor dr
 
 mkdir -p "$PD/config/brandnew"
-rice-doctor dr > "$SANDBOX/out"
-expect "reports profile-only copies"         has "$SANDBOX/out" 'config/brandnew'
+out_has "reports profile-only copies" 'config/brandnew' rice-doctor dr
 
 echo 'tampered' > "$PD/config/rice-theme/active/foot.ini"
-rice-doctor dr > "$SANDBOX/out"
-expect "reports a broken lock"               has "$SANDBOX/out" 'foot is locked (lock) but its live file changed'
+out_has "reports a broken lock" 'foot is locked (lock) but its live file changed' rice-doctor dr
 
 finish

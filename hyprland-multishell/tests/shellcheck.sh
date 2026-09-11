@@ -9,5 +9,5 @@ files=(
     backup/*.sh
     tests/*.sh
 )
-shellcheck -x "${files[@]}"
+shellcheck "${files[@]}"   # .shellcheckrc follows `source`s
 echo "shellcheck: ${#files[@]} files clean"

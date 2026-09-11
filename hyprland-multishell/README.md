@@ -148,7 +148,9 @@ Outside a rice session add `--profile <p>`.
 | Alacritty | automatic |
 | foot, GTK, btop, fuzzel | none — new windows/launches pick it up |
 
-New tool: `~/.rices/tools.d/<name>.sh` with `EXT`, `DESC`, `INCLUDE`, `reload()`, optional `transform()`.
+alacritty, btop and fuzzel have adapters but no starter template, so `noctalia-config` skips them until a `templates/<tool>.tmpl` exists.
+
+New tool: `~/.rices/tools.d/<name>.sh` setting `INCLUDE` (plus `EXT` and `DESC` when not `.conf` and the name), optionally `reload()` and `transform()`; and `templates/<name>.tmpl` for `noctalia-config`.
 
 ## 6. Snapshots and rollback
 

@@ -46,8 +46,7 @@ GEN="$TH/generated" LOCKED="$TH/locked" THEMES="$TH/themes" ACTIVE="$TH/active" 
 mkdir -p "$GEN" "$LOCKED" "$THEMES" "$ACTIVE" "$TH/templates"
 [ -f "$CONF" ] || echo '# <tool> = auto | lock | lock:<theme>   (or use rice-theme lock/unlock/set)' > "$CONF"
 
-if [ -t 1 ]; then c_r=$'\033[31m' c_g=$'\033[32m' c_y=$'\033[33m' c_d=$'\033[2m' c_0=$'\033[0m'
-else c_r='' c_g='' c_y='' c_d='' c_0=''; fi
+rice_colors
 info() { printf '%s\n' "$*"; }
 
 WORK="$(mktemp -d)"   # a dir, not files: subshells reset EXIT traps but share this
@@ -87,8 +86,9 @@ locked() {
 }
 
 # ----------------------------------------------------------------- adapters --
-# tools.d/<tool>.sh sets EXT, DESC, INCLUDE and defines reload(), optionally
-# transform() (stdin -> stdout, applied on the way into active/).
+# tools.d/<tool>.sh sets EXT (default .conf), DESC (default: the name) and
+# INCLUDE; optionally reload() and transform() (stdin -> stdout, applied on the
+# way into active/).
 load_tool() {
     need_tool "$1"
     unset -f reload transform
@@ -248,7 +248,7 @@ cmd_set() {
 
 cmd_render() {
     local t="${1:-}" img="${2:-}" save="" out
-    shift 2 2>/dev/null || true
+    shift 2 || true
     if [ "${1:-}" = --save ]; then save="${2:-}"; need_theme "$save"; fi
     if [ -z "$t" ] || [ -z "$img" ]; then rice_die "usage: rice-theme render <tool> <image> [--save <theme>]"; fi
     [ -f "$img" ] || rice_die "no such image: $img"

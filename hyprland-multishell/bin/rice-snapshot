@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# rice-snapshot <profile> ["message"] -- git-commit the profile (what: see its
+# rice-snapshot <profile> [message] -- git-commit the profile (what: see its
 # .gitignore whitelist), so installers are reviewable and revertable.
 set -euo pipefail
 # shellcheck source=../lib/rice-common.sh
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
 
 PROFILE="${1:-}"
-[ -n "$PROFILE" ] || { echo "usage: rice-snapshot <profile> [message]" >&2; exit 2; }
+[ -n "$PROFILE" ] || rice_usage "rice-snapshot <profile> [message]"
 MSG="${2:-snapshot $(date -Is)}"
 PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
 
@@ -16,7 +16,7 @@ if [ -d "$PDIR/config/.git" ]; then
 fi
 [ -f "$PDIR/.gitignore" ] || rice_die "no .gitignore - run: rice-new $PROFILE"
 [ -d "$PDIR/.git" ] || git -C "$PDIR" init -q
-G=(git -C "$PDIR" -c advice.addEmbeddedRepo=false -c user.name=rice -c user.email=rice@localhost)
+G=(git -C "$PDIR" -c advice.addEmbeddedRepo=false "${RICE_GIT_IDENT[@]}")
 
 # Cloned rices are their own repos (recorded as a commit pointer here).
 while IFS= read -r -d '' gd; do

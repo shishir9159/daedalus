@@ -5,8 +5,8 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
-rice-new th >/dev/null
-TH="$RICE_ROOT/profiles/th/config/rice-theme"
+mkprofile th
+TH="$PD/config/rice-theme"
 G="$TH/generated"; A="$TH/active"
 stub pkill 'exit 1'     # nothing running, unless a test says otherwise
 stub pgrep 'exit 1'

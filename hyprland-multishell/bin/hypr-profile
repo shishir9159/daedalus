@@ -7,7 +7,7 @@ set -uo pipefail
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
 
 PROFILE="${1:-}"
-[ -n "$PROFILE" ] || { echo "usage: hypr-profile <profile>" >&2; exit 2; }
+[ -n "$PROFILE" ] || rice_usage "hypr-profile <profile>"
 PDIR="$(rice_profile_dir "$PROFILE" --must-exist)" || exit 1
 
 rice_export_env "$PROFILE" "$PDIR"
@@ -44,7 +44,7 @@ systemctl --user import-environment $RICE_ENV_VARS XDG_SESSION_TYPE XDG_CURRENT_
 # shellcheck disable=SC2086
 dbus-update-activation-environment $RICE_ENV_VARS || echo "!!! dbus-update-activation-environment failed"
 
-# shellcheck disable=SC2317  # runs from the EXIT trap
+# shellcheck disable=SC2317,SC2329  # runs from the EXIT trap
 cleanup() {
     # shellcheck disable=SC2086
     systemctl --user unset-environment $RICE_ENV_VARS 2>/dev/null

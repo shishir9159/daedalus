@@ -4,9 +4,6 @@
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 
-# Git for Windows: make `ln -s` create real symlinks, or rice-sync can't work.
-case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) export MSYS=winsymlinks:nativestrict ;; esac
-
 tests=("$@")
 [ ${#tests[@]} -gt 0 ] || tests=(t_*.sh)
 

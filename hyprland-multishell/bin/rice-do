@@ -7,7 +7,7 @@ set -euo pipefail
 
 PROFILE="${1:-}"; shift || true
 [ "${1:-}" != "--" ] || shift
-{ [ -n "$PROFILE" ] && [ $# -gt 0 ]; } || { echo "usage: rice-do <profile> -- <command...>" >&2; exit 2; }
+{ [ -n "$PROFILE" ] && [ $# -gt 0 ]; } || rice_usage "rice-do <profile> -- <command...>"
 PDIR="$(rice_profile_dir "$PROFILE" --must-exist)"
 
 # Refresh links first, so apps added to ~/.config since login stay shared.

@@ -5,7 +5,7 @@ set -euo pipefail
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/rice-common.sh"
 
 PROFILE="${1:-}"
-[ -n "$PROFILE" ] || { echo "usage: rice-new <profile> [\"Display Name\"]" >&2; exit 2; }
+[ -n "$PROFILE" ] || rice_usage 'rice-new <profile> ["Display Name"]'
 PDIR="$(rice_profile_dir "$PROFILE")"
 NAME="${2:-Hyprland ($PROFILE)}"
 case "$NAME" in *$'\n'*|*'"'*) rice_die "display name must not contain newlines or quotes" ;; esac

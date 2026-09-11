@@ -11,8 +11,28 @@ RICE_ENV_VARS="RICE_PROFILE RICE_HOME XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HO
 # Never linked, adopted or reported inside a profile's XDG roots.
 # shellcheck disable=SC2034  # used by sourcing scripts
 RICE_INTERNAL_NAMES=".git .gitignore"
+# What greeter entries exec (fixed: the greeter can't read your home), and
+# where they live. Tests point RICE_STUB and RICE_SESSIONS_DIR elsewhere.
+# shellcheck disable=SC2034  # used by sourcing scripts
+RICE_LAUNCHER=/usr/local/bin/hypr-profile
+# shellcheck disable=SC2034  # used by sourcing scripts
+RICE_SESSIONS_DIR="${RICE_SESSIONS_DIR:-/usr/share/wayland-sessions}"
+# Commit identity when the user has none (profile snapshots, rice-update).
+# shellcheck disable=SC2034  # used by sourcing scripts
+RICE_GIT_IDENT=(-c user.name=rice -c user.email=rice@localhost)
 
-rice_die() { printf '%s: %s\n' "${0##*/}" "$*" >&2; exit 1; }
+rice_die()   { printf '%s: %s\n' "${0##*/}" "$*" >&2; exit 1; }
+rice_usage() { printf 'usage: %s\n' "$*" >&2; exit 2; }
+
+# shellcheck disable=SC2034  # used by sourcing scripts
+rice_colors() { # sets c_r c_g c_y c_d c_0: escapes on a terminal, else empty
+    if [ -t 1 ]; then c_r=$'\033[31m' c_g=$'\033[32m' c_y=$'\033[33m' c_d=$'\033[2m' c_0=$'\033[0m'
+    else c_r='' c_g='' c_y='' c_d='' c_0=''; fi
+}
+
+rice_git_busy() { # <git-dir>: stuck mid-rebase or mid-merge
+    [ -d "$1/rebase-merge" ] || [ -d "$1/rebase-apply" ] || [ -f "$1/MERGE_HEAD" ]
+}
 
 # Names land in paths, a .desktop Exec= line and the systemd env: keep them boring.
 rice_valid_name() { [[ "${1:-}" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]]; }
@@ -50,6 +70,12 @@ rice_export_env() { # <name> <profile-dir>
     export XDG_CONFIG_HOME="$2/config" XDG_DATA_HOME="$2/data"
     export XDG_STATE_HOME="$2/state"   XDG_CACHE_HOME="$2/cache"
     export NOCTALIA_CONFIG_HOME="$XDG_CONFIG_HOME" NOCTALIA_STATE_HOME="$XDG_STATE_HOME"
+}
+
+# A KEY=value from profile.env without sourcing it: the last assignment wins,
+# as when sourced; one pair of outer quotes is dropped.
+rice_env_get() { # <profile-dir> <KEY>
+    sed -n "s/^$2=//p" "$1/profile.env" 2>/dev/null | tail -1 | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"
 }
 
 # profile.env is hand-edited: relax the caller's nounset while sourcing it, or
