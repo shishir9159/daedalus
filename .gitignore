@@ -1,3 +1,5 @@
+# A whitelist: everything is ignored unless a line below lets it in, so a new
+# file stays untracked until it gets one.
 *
 !*/
 
@@ -7,13 +9,9 @@
 !/.github/workflows/*.yml
 !/.dotter/global.toml
 !/LICENSE
-!/roadmap
-
 !/README.md
 !/CONTRIBUTING.md
-!/COMMIT_MESSAGE_GUIDELINES.md
 !/hyprland-multishell/README.md
-!/windows/readme.md
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/report/Weekly Report (drop-in) -- reorgnaize.md
 !/configs/nvim/README.md
 !/configs/nvim/pack/plugins/start/surround.nvim/README.md
@@ -21,6 +19,7 @@
 !/linux/manjaro-bootstrap.sh
 !/linux/zsh.rc
 
+!/windows/readme.md
 !/windows/profile.ps1
 !/windows/*.omp.toml
 

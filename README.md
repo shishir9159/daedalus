@@ -1,35 +1,23 @@
 # dotfiles
 
-| Path | What | Goes to |
-|---|---|---|
-| `hyprland-multishell/` | several Hyprland rices side by side: profiles, greeter sessions, colour locks, backups | `~/.rices` via its `install.sh`, or dotter (`.dotter/`, package `hyprland`, which pulls in `zsh` and `nvim`); see its README |
-| `linux/zsh.rc` | zsh config | `~/.zshrc` (dotter package `zsh`) |
-| `linux/manjaro-bootstrap.sh` | packages and toolchains for a fresh Manjaro | run by hand, step by step |
-| `configs/nvim/` | Neovim 0.12 config; ships my surround.nvim plugin in `pack/plugins/start/` | `~/.config/nvim` (dotter package `nvim`); see its README |
-| `configs/okular/` | Okular settings | `~/.config/` |
-| `configs/vesktop/pichu.css` | Vesktop theme (Emberkeep) | `~/.config/vesktop/themes/` |
-| `configs/Obsidian/Vault/` | CSS snippets and Datacore views | same paths inside the vault |
-| `windows/` | PowerShell profile, oh-my-posh theme | see `windows/readme.md` |
+## Notes to Self
 
-`.gitignore` is a whitelist: a new file stays untracked until it gets a line there.
+Todo:
 
-## Notes
+- take inspiration again for new configuration: https://github.com/prasanthrangan/hyprdots 5766d02
+- configure wezterm per distro: https://github.com/KevinSilvester/wezterm-config,
+  https://github.com/XNM1/linux-nixos-hyprland-config-dotfiles, https://github.com/catppuccin/wezterm
 
-Todo: take Inspiration again for new configuration:
-
-https://github.com/prasanthrangan/hyprdots 5766d02
-
-```Bash
+```bash
 grep -E "(ctrl|caps):" /usr/share/X11/xkb/rules/base.lst
 grep -E "caps:swapescape" /usr/share/X11/xkb/rules/base.lst
 # for temporary change for the session
 setxkbmap -option caps:swapescape
 ```
 
-for just file
+just completions:
 ```zsh
 just --completions zsh > /tmp/_just
-fpath += /tmp
+fpath+=(/tmp)
 compinit
-source <(just --completions bash)
 ```
