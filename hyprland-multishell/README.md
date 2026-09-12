@@ -14,7 +14,7 @@ each profile gets its own four.
 | Hyprland ≥ 0.55 loads `hyprland.lua` and **silently ignores** `hyprland.conf` | Caelestia (Lua) installs → every `.conf` rice in a shared `~/.config/hypr` stops loading | per-profile `hypr/`; `rice-doctor` warns on both. Hyprlang is deprecated: port `.conf` rices to Lua |
 | `caelestia install` overwrites `~/.config/hypr` (+ fish, foot, btop, nvim, gtk, …) | your config replaced | run it via `rice-do caelestia --` |
 | matugen-based theming (Caelestia, Noctalia, skwd-wall) writes *other* apps' configs: gtk, kitty, foot, qt, dconf | last rice used wins everywhere | those dirs are owned per profile; hardcoded `~/.config` paths escape — `rice-doctor` finds them |
-| `hyprpm` state is shared; plugins are ABI-locked to the Hyprland version | plugins leak across rices; Rivendell's (comp #4) won't build on 0.55+ | `hyprpm` owned per profile; `HYPRLAND_BIN` for an older build |
+| `hyprpm` state is shared; plugins are ABI-locked to the Hyprland version | plugins leak across rices; Rivendell's won't build on 0.55+ | `hyprpm` owned per profile; `HYPRLAND_BIN` for an older build |
 | Not covered by XDG: `~/.bashrc`/`.zshrc`, `~/.face`, `~/Pictures/Wallpapers`, systemd unit files | shared by all profiles | `rice-doctor` flags rice lines in rc files |
 
 ### The rices
@@ -23,11 +23,10 @@ each profile gets its own four.
 |---|---|
 | **Noctalia v5** | Native binary (not Quickshell; v4 theming docs don't apply). Profile-aware via `NOCTALIA_CONFIG_HOME`/`NOCTALIA_STATE_HOME`. |
 | **Caelestia** | AUR + `caelestia install`. Lua config; customise only `~/.config/caelestia/hypr-user.lua`, `hypr-vars.lua`, `shell.json`, `shell-tokens.json`, `cli.json`. Ships uwsm units. |
-| **Persona** | Pure Quickshell (`qs -c persona`), Lua-era keybinds. Needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin) or delete `CavaVisualizer.qml` + lines 171–180 of `WallpaperEngine.qml`. No compositor config of its own. |
+| **Persona** | Pure Quickshell (`qs -c persona`), Lua-era keybinds. Needs the [Qt6 Cava plugin](https://github.com/Yujonpradhananga/Qt6-Cava-plugin) or delete `CavaVisualizer.qml` and its use in `WallpaperEngine.qml`. No compositor config of its own. |
 | **Rivendell** | No installer; hardcoded `/home/zac` paths; two custom plugins likely broken on 0.55+. |
 | **Moon rice** | A Flutter app (+ `devenv.nix`) to build and wire up by hand. |
-| ~~hypr-comp~~ | Dropped: QML depending on components only in the author's NixOS config. |
-| **skwd-wall** | Not a session: a wallpaper/matugen tool. Run it per profile (`rice-do <p> -- skwd-wall`). V1; Rust rewrite pending. |
+| **skwd-wall** | Not a session: a wallpaper/matugen tool. Run it per profile (`rice-do <p> -- skwd-wall`). |
 
 ## 2. Design
 
@@ -47,7 +46,7 @@ each profile gets its own four.
 - **Layered ownership:** `owned.default.txt` < `~/.rices/owned.txt` < `<profile>/owned.txt`. `name` owns, `!name` shares (e.g. `!kitty`).
 - **Divergence:** an app first launched *inside* a profile gets a profile-only config. `rice-doctor` lists these; `rice-sync <p> --adopt` shares them.
 - **Login/logout:** `hypr-profile` pushes the profile's paths into systemd/dbus and removes them at logout, so the next session doesn't inherit them. Launches via `start-hyprland` (≥ 0.53: crash recovery) when available.
-- **Greeter:** `rice-session <p>` writes `/usr/share/wayland-sessions/rice-<p>.desktop` (the greeter can't read your home). noctalia-greeter, regreet, tuigreet, SDDM, ly all read it; F3 in noctalia-greeter. Entries use `TryExec`; if `~/.rices` vanishes the stub starts plain Hyprland instead of bouncing.
+- **Greeter:** `rice-session <p>` writes `/usr/share/wayland-sessions/rice-<p>.desktop` (the greeter can't read your home); any greeter that reads wayland-sessions lists it (F3 in noctalia-greeter). Entries use `TryExec`; if `~/.rices` vanishes the stub starts plain Hyprland instead of bouncing.
 - Your stock `~/.config` session is never touched — always a fallback.
 
 ## 3. Install
@@ -60,15 +59,13 @@ rice-session noctalia   # per profile
 
 Upgrade: `git pull && ./install.sh` (profiles and your `owned.txt` untouched). `--user-only` skips the root step.
 
-**Or with [dotter](https://github.com/SuperCuber/dotter)** (`../.dotter/global.toml`): `bin/ lib/ tools.d/ templates/` are linked into `~/.rices` instead of copied, so `git pull` alone upgrades them — and a checkout or half-done edit in `bin/` is what your next login runs.
-The `hyprland` package also pulls in `zsh` (`../linux/zsh.rc` → `~/.zshrc`) and `nvim` (`../configs/nvim` → `~/.config/nvim`), both shared by every profile.
+**Or with [dotter](https://github.com/SuperCuber/dotter)**: the `hyprland` package links `bin/ lib/ tools.d/ templates/` into `~/.rices` (`git pull` upgrades them, and your working tree is what the next login runs) and pulls in the shared `zsh` and `nvim` configs; see `../.dotter/global.toml`.
 ```bash
 cd ~/src/daedalus && echo 'packages = ["hyprland"]' > .dotter/local.toml
-mv ~/.zshrc ~/.zshrc.pre-dotter; mv ~/.config/nvim ~/.config/nvim.pre-dotter   # if present
-dotter deploy               # --force only for leftover install.sh copies in ~/.rices
-hyprland-multishell/install.sh   # deps check + greeter stub; it leaves dotter's links alone
+mv ~/.zshrc ~/.zshrc.pre-dotter; mv ~/.config/nvim ~/.config/nvim.pre-dotter   # if present; --force would delete them
+dotter deploy                    # again after adding a file under hyprland-multishell/
+hyprland-multishell/install.sh   # deps check + greeter stub; leaves dotter's links alone
 ```
-Move the old files aside rather than reaching for `--force`: it replaces an existing `~/.zshrc` and deletes an existing `~/.config/nvim` directory outright. `dotter deploy` again after adding a file under `hyprland-multishell/` (`~/.config/nvim` is a single link, so not for nvim). Everything is linked, never templated: dotter would otherwise render the `{{ colors.* }}` tokens in `templates/` itself.
 
 | Command | Does |
 |---|---|
@@ -98,7 +95,7 @@ GUI tweaks land in `state/noctalia/settings.toml` (overrides config) — snapsho
 paru -S caelestia-cli caelestia-shell
 rice-snapshot caelestia empty && rice-do caelestia -- caelestia install && rice-snapshot caelestia installed
 ```
-The diff shows what the installer did. The shell's clone line in `repos.txt` is off on purpose: an unbuilt clone shadows the AUR copy.
+The diff shows what the installer did.
 
 **Persona**
 ```bash
@@ -109,7 +106,7 @@ cp -r ~/.rices/profiles/noctalia/config/hypr/. ~/.rices/profiles/persona/config/
 hl.exec_once("qs -c persona")
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("qs -c persona ipc call searchapp toggle"))
 ```
-Commit local edits (e.g. the Cava removal) on `mine`; updates rebase underneath. On conflict the rebase is aborted and the rice stays on your version.
+Commit local edits (e.g. the Cava removal) on `mine`; `rice-update` rebases them onto upstream.
 
 **Rivendell / moon**: copy their `.config/` into the profile, then `rice-doctor` lists `/home/zac` paths to fix. For plugins needing an older Hyprland: `HYPRLAND_BIN=/opt/hyprland-0.45/bin/Hyprland` in `profile.env`, and `exec-once = hyprpm reload -n` in the hypr config (not `PRE_EXEC`, which runs before Hyprland).
 
@@ -158,66 +155,11 @@ Each profile is a git repo (`rice-snapshot`). The `.gitignore` whitelist capture
 ```bash
 cd ~/.rices/profiles/caelestia && git log --oneline
 ```
-That covers a broken rice, not a dead disk — §7.
+That covers a broken rice, not a dead disk: see §7.
 
-## 7. Backups: XFS root → btrfs HDD
+## 7. Backups
 
-- **btrfs on the HDD: yes** — compression, checksums (`scrub` finds bit rot), cheap CoW snapshots. Not `send`/`receive`: that needs btrfs on both ends.
-- **Timeshift** only works in RSYNC mode here, and its history is hard links: one corrupt block hits every "snapshot".
-- **Recommended:** restic (primary) + an rsync→btrfs mirror (browsable, bootable). Both on the HDD.
-- XFS has no local rollback, so the HDD is your *only* safety net. Keep `/var/cache/pacman/pkg` populated for `downgrade`.
-
-**Identify the disk** by size and model (`/dev/sdX` names aren't stable):
-```bash
-lsblk -o NAME,SIZE,MODEL,SERIAL,MOUNTPOINTS,FSTYPE
-```
-
-**Format and mount**
-```bash
-sudo wipefs -a /dev/sdX && sudo sgdisk -Z -n 1:0:0 -t 1:8300 /dev/sdX
-sudo mkfs.btrfs -L backup /dev/sdX1
-```
-`/etc/fstab` (`nofail`: a slow disk can't block boot):
-```
-UUID=<hdd-uuid>  /mnt/backup  btrfs  noatime,compress=zstd:3,nofail,x-systemd.device-timeout=10  0 0
-```
-```bash
-sudo mkdir -p /mnt/backup && sudo systemctl daemon-reload && sudo mount -a
-```
-
-**restic** — password prompted, never in shell history; keep a copy off the SSD:
-```bash
-sudo pacman -S restic
-sudo bash -c 'umask 077; read -rsp "passphrase: " p; echo; printf "%s\n" "$p" > /root/.restic-pass'
-sudo restic init --repo /mnt/backup/restic --password-file /root/.restic-pass
-sudo install -Dm755 backup/restic-backup.sh /usr/local/sbin/restic-backup
-sudo restic-backup         # backup + prune (14 daily / 8 weekly / 12 monthly)
-sudo restic-backup check   # monthly
-```
-Settings: `/etc/restic-backup.env`. Restore a file: `restic restore <id> --target /tmp/out --include <path>`, or `restic mount`.
-
-**Mirror** — `/mnt/backup/mirror` (newest) + `/mnt/backup/snapshots/<stamp>` (read-only history):
-```bash
-sudo install -Dm755 backup/xfs-to-btrfs-mirror.sh /usr/local/sbin/xfs-to-btrfs-mirror
-sudo xfs-to-btrfs-mirror --dry-run && sudo xfs-to-btrfs-mirror
-```
-Refuses to run from a live USB; one run at a time; unreadable files → snapshot named `…-partial`, non-zero exit; prunes only its own snapshots (`KEEP`, ≥ 1). Extra excludes: `/etc/xfs-to-btrfs-mirror.exclude`.
-
-**Automate** — independent timers (mirror 03:00, restic 04:00, restic waits if both are due):
-```bash
-sudo install -Dm644 -t /etc/systemd/system backup/systemd/*
-sudo systemctl daemon-reload && sudo systemctl enable --now backup-mirror.timer backup-restic.timer
-sudo systemctl enable --now btrfs-scrub@$(systemd-escape -p /mnt/backup).timer
-sudo pacman -S smartmontools && sudo systemctl enable --now smartd
-```
-
-**Restore** — a file: copy it out of `/mnt/backup/snapshots/<stamp>/`. The system, after replacing the SSD: from the live ISO, `mkfs.xfs` and mount the new drive, then
-```bash
-sudo rsync -aHAXx --numeric-ids /mnt/backup/snapshots/<stamp>/ /mnt/newroot/
-```
-fix `/etc/fstab` UUIDs and reinstall the bootloader via [cachy-chroot](https://wiki.cachyos.org/features/cachy_chroot/). **Test a restore once, now.**
-
-`~/.rices` lives in `/home`: both backups cover it; keep it in if you narrow excludes. Profile repos are versioned, not backed up.
+XFS root → btrfs HDD: restic plus a browsable, bootable rsync mirror, on timers. Setup and restore: [backup/README.md](backup/README.md). `~/.rices` lives in `/home`, so both cover it.
 
 ## Sources
 
@@ -231,6 +173,4 @@ fix `/etc/fstab` UUIDs and reinstall the bootloader via [cachy-chroot](https://w
 [skwd-wall](https://github.com/liixini/skwd-wall) ·
 [Ghostty SIGUSR2](https://github.com/ghostty-org/ghostty/issues/7747) ·
 [foot reload](https://codeberg.org/dnkl/foot/issues/708) ·
-[Timeshift](https://github.com/teejee2008/timeshift) ([btrfs mode is same-disk](https://github.com/teejee2008/timeshift/issues/832)) ·
-[restic](https://restic.net/) · [uwsm](https://github.com/Vladimir-csp/uwsm) ·
-[CachyOS filesystems](https://wiki.cachyos.org/installation/filesystem/)
+[uwsm](https://github.com/Vladimir-csp/uwsm)

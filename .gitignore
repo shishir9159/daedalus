@@ -11,7 +11,6 @@
 !/LICENSE
 !/README.md
 !/CONTRIBUTING.md
-!/hyprland-multishell/README.md
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/report/Weekly Report (drop-in) -- reorgnaize.md
 !/configs/nvim/README.md
 !/configs/nvim/pack/plugins/start/surround.nvim/README.md
@@ -37,6 +36,7 @@
 !/configs/nvim/pack/plugins/start/surround.nvim/pkg.json
 !/configs/nvim/pack/plugins/start/surround.nvim/**/*.lua
 
+!/hyprland-multishell/**/README.md
 !/hyprland-multishell/*.sh
 !/hyprland-multishell/owned.default.txt
 !/hyprland-multishell/bin/*
