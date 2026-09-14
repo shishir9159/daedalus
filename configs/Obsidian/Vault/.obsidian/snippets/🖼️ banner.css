@@ -5,9 +5,11 @@
    the images you embed, so a note is decorated simply by embedding an image
    following configurations within name.
 
-    Reserving the space needs :has() pointed at the embed, and Obsidian unloads far-off-screen content in both views. On a very long note, scrolling ~1000px+ past the top can drop the padding and shift the scroll position. Same applies for a moment while your cursor is on the banner's own line in Live Preview. Every CSS-only banner snippet has this; only a plugin escapes it. Not a problem for normal-length notes.Reserving the space needs :has() pointed at the embed,
-    and Obsidian unloads far-off-screen content in both views. On a very long note,
-    scrolling~1000px+past the top can drop the padding and shift the scroll position. Same applies for a moment while your cursor is on the banner's own line in Live Preview. Every CSS-only banner snippet has this; only a plugin escapes it. Not a problem for normal-length notes.
+   Caveat: reserving the space needs :has() pointed at the embed, and
+   Obsidian unloads far-off-screen content in both views. On a very long note,
+   scrolling ~1000px+ past the top can drop the padding and shift the scroll
+   position; so can the cursor sitting on the banner's own line in Live
+   Preview. Every CSS-only banner snippet has this; only a plugin escapes it.
 
     ![[banner-sunset-over-dhaka.png]]         →  banner across the top
     ![[banner-gradient-sunset.png]]           →  banner that fades out at the bottom
@@ -33,20 +35,12 @@
                            from there. 0…600, step 10.
                            e.g. banner-h300-s100-sunset.png  →  window of 300px
                            starting at pixel 100 of the image
+                           (CSS pixels of the width-scaled image: section 3)
      -iHEX-                icon BACKGROUND colour, 3-digit hex, 000…FFF
                            e.g. banner-iEEE-sunset.png       →  #EEE
                            e.g. banner-round-i222-sunset.png →  #222
                            (only grayscale + a handful of accents are wired;
                             add more from the "-i" section at the bottom)
-ince object-fit: cover scales the image so its width equals the pane,
-
-
-Since object-fit: cover scales the image so its width equals the pane,
--sNNN- counts CSS pixels of that width-scaled image,
-not raw source pixels. For typical banner photos (wide, similar aspect ratios) the two are close enough
- that you can think in "pixels of the original," but on a 400×2000 portrait cropped into a 1250-wide pane,
--s100- shifts by about 32 source pixels. Documented at the top of section 3.
-                            
    ========================================================================== */
 /* @settings
 
@@ -78,18 +72,6 @@ settings:
         max: 32
         step: 1
         format: px
-    -
-        id: ab-object-position
-        title: Banner crop focus
-        description: Which part of the image survives the crop (X Y).
-        type: variable-select
-        default: 50% 50%
-        options:
-            - 50% 50%
-            - 50% 0%
-            - 50% 25%
-            - 50% 75%
-            - 50% 100%
     -
         id: ab-gradient-fade
         title: Gradient banner — where the fade starts
@@ -163,7 +145,6 @@ body {
     --ab-offset: 0px;
     /* -sNNN- writes here, in pixels */
     --ab-radius: 0px;
-    --ab-object-position: 50% 50%;
     --ab-gradient-fade: 55%;
 
     --ab-icon-size: 88px;
@@ -174,11 +155,10 @@ body {
     --ab-icon-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
     --ab-gap: 12px;
 
-    /* Obsidian core calls it --file-margins-x; Fancy-a-Story calls it
-       --file-margins-inline. Never use --file-margins inside calc(): since
+    /* Obsidian core calls it --file-margins-y; Fancy-a-Story calls it
+       --file-margins-block. Never use --file-margins inside calc(): since
        1.12 it is a two-value shorthand ("32px 32px") and calc() rejects it.
        That one change is what silently broke most older banner snippets. */
-    --ab-mx: var(--file-margins-inline, var(--file-margins-x, var(--size-4-8)));
     --ab-my: var(--file-margins-block, var(--file-margins-y, var(--size-4-8)));
 }
 
@@ -295,9 +275,7 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     object-fit: cover;
-    /* Two-value object-position: the object-position variable holds the X
-       component (kept from the setting), and we compose it with the Y offset
-       from -sNNN-. Length values on the Y axis behave like Y-align tuning. */
+    /* centred horizontally; -sNNN- shifts the crop up */
     object-position: 50% calc(-1 * var(--ab-offset));
     border-radius: var(--ab-radius) !important;
     box-shadow: none !important;
@@ -397,260 +375,57 @@ body {
    Values outside the generated set fall back to the default.
    ========================================================================== */
 
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h100-" i], [src*="-h100." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h100-" i], [src*="-h100." i])) {
-    --ab-height: 100px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h110-" i], [src*="-h110." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h110-" i], [src*="-h110." i])) {
-    --ab-height: 110px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h120-" i], [src*="-h120." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h120-" i], [src*="-h120." i])) {
-    --ab-height: 120px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h130-" i], [src*="-h130." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h130-" i], [src*="-h130." i])) {
-    --ab-height: 130px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h140-" i], [src*="-h140." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h140-" i], [src*="-h140." i])) {
-    --ab-height: 140px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h150-" i], [src*="-h150." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h150-" i], [src*="-h150." i])) {
-    --ab-height: 150px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h160-" i], [src*="-h160." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h160-" i], [src*="-h160." i])) {
-    --ab-height: 160px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h170-" i], [src*="-h170." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h170-" i], [src*="-h170." i])) {
-    --ab-height: 170px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h180-" i], [src*="-h180." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h180-" i], [src*="-h180." i])) {
-    --ab-height: 180px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h190-" i], [src*="-h190." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h190-" i], [src*="-h190." i])) {
-    --ab-height: 190px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h200-" i], [src*="-h200." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h200-" i], [src*="-h200." i])) {
-    --ab-height: 200px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h210-" i], [src*="-h210." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h210-" i], [src*="-h210." i])) {
-    --ab-height: 210px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h220-" i], [src*="-h220." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h220-" i], [src*="-h220." i])) {
-    --ab-height: 220px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h230-" i], [src*="-h230." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h230-" i], [src*="-h230." i])) {
-    --ab-height: 230px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h240-" i], [src*="-h240." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h240-" i], [src*="-h240." i])) {
-    --ab-height: 240px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h250-" i], [src*="-h250." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h250-" i], [src*="-h250." i])) {
-    --ab-height: 250px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h260-" i], [src*="-h260." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h260-" i], [src*="-h260." i])) {
-    --ab-height: 260px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h270-" i], [src*="-h270." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h270-" i], [src*="-h270." i])) {
-    --ab-height: 270px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h280-" i], [src*="-h280." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h280-" i], [src*="-h280." i])) {
-    --ab-height: 280px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h290-" i], [src*="-h290." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h290-" i], [src*="-h290." i])) {
-    --ab-height: 290px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h300-" i], [src*="-h300." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h300-" i], [src*="-h300." i])) {
-    --ab-height: 300px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h310-" i], [src*="-h310." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h310-" i], [src*="-h310." i])) {
-    --ab-height: 310px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h320-" i], [src*="-h320." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h320-" i], [src*="-h320." i])) {
-    --ab-height: 320px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h330-" i], [src*="-h330." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h330-" i], [src*="-h330." i])) {
-    --ab-height: 330px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h340-" i], [src*="-h340." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h340-" i], [src*="-h340." i])) {
-    --ab-height: 340px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h350-" i], [src*="-h350." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h350-" i], [src*="-h350." i])) {
-    --ab-height: 350px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h360-" i], [src*="-h360." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h360-" i], [src*="-h360." i])) {
-    --ab-height: 360px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h370-" i], [src*="-h370." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h370-" i], [src*="-h370." i])) {
-    --ab-height: 370px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h380-" i], [src*="-h380." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h380-" i], [src*="-h380." i])) {
-    --ab-height: 380px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h390-" i], [src*="-h390." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h390-" i], [src*="-h390." i])) {
-    --ab-height: 390px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h400-" i], [src*="-h400." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h400-" i], [src*="-h400." i])) {
-    --ab-height: 400px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h410-" i], [src*="-h410." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h410-" i], [src*="-h410." i])) {
-    --ab-height: 410px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h420-" i], [src*="-h420." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h420-" i], [src*="-h420." i])) {
-    --ab-height: 420px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h430-" i], [src*="-h430." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h430-" i], [src*="-h430." i])) {
-    --ab-height: 430px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h440-" i], [src*="-h440." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h440-" i], [src*="-h440." i])) {
-    --ab-height: 440px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h450-" i], [src*="-h450." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h450-" i], [src*="-h450." i])) {
-    --ab-height: 450px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h460-" i], [src*="-h460." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h460-" i], [src*="-h460." i])) {
-    --ab-height: 460px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h470-" i], [src*="-h470." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h470-" i], [src*="-h470." i])) {
-    --ab-height: 470px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h480-" i], [src*="-h480." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h480-" i], [src*="-h480." i])) {
-    --ab-height: 480px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h490-" i], [src*="-h490." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h490-" i], [src*="-h490." i])) {
-    --ab-height: 490px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h500-" i], [src*="-h500." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h500-" i], [src*="-h500." i])) {
-    --ab-height: 500px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h510-" i], [src*="-h510." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h510-" i], [src*="-h510." i])) {
-    --ab-height: 510px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h520-" i], [src*="-h520." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h520-" i], [src*="-h520." i])) {
-    --ab-height: 520px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h530-" i], [src*="-h530." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h530-" i], [src*="-h530." i])) {
-    --ab-height: 530px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h540-" i], [src*="-h540." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h540-" i], [src*="-h540." i])) {
-    --ab-height: 540px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h550-" i], [src*="-h550." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h550-" i], [src*="-h550." i])) {
-    --ab-height: 550px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h560-" i], [src*="-h560." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h560-" i], [src*="-h560." i])) {
-    --ab-height: 560px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h570-" i], [src*="-h570." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h570-" i], [src*="-h570." i])) {
-    --ab-height: 570px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h580-" i], [src*="-h580." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h580-" i], [src*="-h580." i])) {
-    --ab-height: 580px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h590-" i], [src*="-h590." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h590-" i], [src*="-h590." i])) {
-    --ab-height: 590px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h600-" i], [src*="-h600." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-h600-" i], [src*="-h600." i])) {
-    --ab-height: 600px;
-}
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h100-" i], [src*="-h100." i])) { --ab-height: 100px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h110-" i], [src*="-h110." i])) { --ab-height: 110px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h120-" i], [src*="-h120." i])) { --ab-height: 120px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h130-" i], [src*="-h130." i])) { --ab-height: 130px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h140-" i], [src*="-h140." i])) { --ab-height: 140px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h150-" i], [src*="-h150." i])) { --ab-height: 150px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h160-" i], [src*="-h160." i])) { --ab-height: 160px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h170-" i], [src*="-h170." i])) { --ab-height: 170px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h180-" i], [src*="-h180." i])) { --ab-height: 180px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h190-" i], [src*="-h190." i])) { --ab-height: 190px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h200-" i], [src*="-h200." i])) { --ab-height: 200px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h210-" i], [src*="-h210." i])) { --ab-height: 210px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h220-" i], [src*="-h220." i])) { --ab-height: 220px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h230-" i], [src*="-h230." i])) { --ab-height: 230px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h240-" i], [src*="-h240." i])) { --ab-height: 240px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h250-" i], [src*="-h250." i])) { --ab-height: 250px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h260-" i], [src*="-h260." i])) { --ab-height: 260px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h270-" i], [src*="-h270." i])) { --ab-height: 270px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h280-" i], [src*="-h280." i])) { --ab-height: 280px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h290-" i], [src*="-h290." i])) { --ab-height: 290px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h300-" i], [src*="-h300." i])) { --ab-height: 300px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h310-" i], [src*="-h310." i])) { --ab-height: 310px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h320-" i], [src*="-h320." i])) { --ab-height: 320px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h330-" i], [src*="-h330." i])) { --ab-height: 330px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h340-" i], [src*="-h340." i])) { --ab-height: 340px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h350-" i], [src*="-h350." i])) { --ab-height: 350px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h360-" i], [src*="-h360." i])) { --ab-height: 360px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h370-" i], [src*="-h370." i])) { --ab-height: 370px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h380-" i], [src*="-h380." i])) { --ab-height: 380px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h390-" i], [src*="-h390." i])) { --ab-height: 390px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h400-" i], [src*="-h400." i])) { --ab-height: 400px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h410-" i], [src*="-h410." i])) { --ab-height: 410px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h420-" i], [src*="-h420." i])) { --ab-height: 420px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h430-" i], [src*="-h430." i])) { --ab-height: 430px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h440-" i], [src*="-h440." i])) { --ab-height: 440px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h450-" i], [src*="-h450." i])) { --ab-height: 450px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h460-" i], [src*="-h460." i])) { --ab-height: 460px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h470-" i], [src*="-h470." i])) { --ab-height: 470px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h480-" i], [src*="-h480." i])) { --ab-height: 480px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h490-" i], [src*="-h490." i])) { --ab-height: 490px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h500-" i], [src*="-h500." i])) { --ab-height: 500px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h510-" i], [src*="-h510." i])) { --ab-height: 510px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h520-" i], [src*="-h520." i])) { --ab-height: 520px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h530-" i], [src*="-h530." i])) { --ab-height: 530px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h540-" i], [src*="-h540." i])) { --ab-height: 540px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h550-" i], [src*="-h550." i])) { --ab-height: 550px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h560-" i], [src*="-h560." i])) { --ab-height: 560px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h570-" i], [src*="-h570." i])) { --ab-height: 570px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h580-" i], [src*="-h580." i])) { --ab-height: 580px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h590-" i], [src*="-h590." i])) { --ab-height: 590px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-h600-" i], [src*="-h600." i])) { --ab-height: 600px; }
 
 
 /* ============================================================================
@@ -664,310 +439,67 @@ body {
    inheritance and lands on the image via object-position in section 3.
    ========================================================================== */
 
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s0-" i], [src*="-s0." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s0-" i], [src*="-s0." i])) {
-    --ab-offset: 0px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s10-" i], [src*="-s10." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s10-" i], [src*="-s10." i])) {
-    --ab-offset: 10px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s20-" i], [src*="-s20." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s20-" i], [src*="-s20." i])) {
-    --ab-offset: 20px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s30-" i], [src*="-s30." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s30-" i], [src*="-s30." i])) {
-    --ab-offset: 30px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s40-" i], [src*="-s40." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s40-" i], [src*="-s40." i])) {
-    --ab-offset: 40px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s50-" i], [src*="-s50." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s50-" i], [src*="-s50." i])) {
-    --ab-offset: 50px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s60-" i], [src*="-s60." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s60-" i], [src*="-s60." i])) {
-    --ab-offset: 60px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s70-" i], [src*="-s70." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s70-" i], [src*="-s70." i])) {
-    --ab-offset: 70px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s80-" i], [src*="-s80." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s80-" i], [src*="-s80." i])) {
-    --ab-offset: 80px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s90-" i], [src*="-s90." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s90-" i], [src*="-s90." i])) {
-    --ab-offset: 90px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s100-" i], [src*="-s100." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s100-" i], [src*="-s100." i])) {
-    --ab-offset: 100px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s110-" i], [src*="-s110." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s110-" i], [src*="-s110." i])) {
-    --ab-offset: 110px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s120-" i], [src*="-s120." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s120-" i], [src*="-s120." i])) {
-    --ab-offset: 120px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s130-" i], [src*="-s130." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s130-" i], [src*="-s130." i])) {
-    --ab-offset: 130px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s140-" i], [src*="-s140." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s140-" i], [src*="-s140." i])) {
-    --ab-offset: 140px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s150-" i], [src*="-s150." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s150-" i], [src*="-s150." i])) {
-    --ab-offset: 150px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s160-" i], [src*="-s160." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s160-" i], [src*="-s160." i])) {
-    --ab-offset: 160px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s170-" i], [src*="-s170." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s170-" i], [src*="-s170." i])) {
-    --ab-offset: 170px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s180-" i], [src*="-s180." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s180-" i], [src*="-s180." i])) {
-    --ab-offset: 180px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s190-" i], [src*="-s190." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s190-" i], [src*="-s190." i])) {
-    --ab-offset: 190px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s200-" i], [src*="-s200." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s200-" i], [src*="-s200." i])) {
-    --ab-offset: 200px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s210-" i], [src*="-s210." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s210-" i], [src*="-s210." i])) {
-    --ab-offset: 210px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s220-" i], [src*="-s220." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s220-" i], [src*="-s220." i])) {
-    --ab-offset: 220px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s230-" i], [src*="-s230." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s230-" i], [src*="-s230." i])) {
-    --ab-offset: 230px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s240-" i], [src*="-s240." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s240-" i], [src*="-s240." i])) {
-    --ab-offset: 240px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s250-" i], [src*="-s250." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s250-" i], [src*="-s250." i])) {
-    --ab-offset: 250px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s260-" i], [src*="-s260." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s260-" i], [src*="-s260." i])) {
-    --ab-offset: 260px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s270-" i], [src*="-s270." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s270-" i], [src*="-s270." i])) {
-    --ab-offset: 270px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s280-" i], [src*="-s280." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s280-" i], [src*="-s280." i])) {
-    --ab-offset: 280px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s290-" i], [src*="-s290." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s290-" i], [src*="-s290." i])) {
-    --ab-offset: 290px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s300-" i], [src*="-s300." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s300-" i], [src*="-s300." i])) {
-    --ab-offset: 300px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s310-" i], [src*="-s310." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s310-" i], [src*="-s310." i])) {
-    --ab-offset: 310px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s320-" i], [src*="-s320." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s320-" i], [src*="-s320." i])) {
-    --ab-offset: 320px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s330-" i], [src*="-s330." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s330-" i], [src*="-s330." i])) {
-    --ab-offset: 330px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s340-" i], [src*="-s340." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s340-" i], [src*="-s340." i])) {
-    --ab-offset: 340px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s350-" i], [src*="-s350." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s350-" i], [src*="-s350." i])) {
-    --ab-offset: 350px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s360-" i], [src*="-s360." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s360-" i], [src*="-s360." i])) {
-    --ab-offset: 360px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s370-" i], [src*="-s370." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s370-" i], [src*="-s370." i])) {
-    --ab-offset: 370px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s380-" i], [src*="-s380." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s380-" i], [src*="-s380." i])) {
-    --ab-offset: 380px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s390-" i], [src*="-s390." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s390-" i], [src*="-s390." i])) {
-    --ab-offset: 390px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s400-" i], [src*="-s400." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s400-" i], [src*="-s400." i])) {
-    --ab-offset: 400px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s410-" i], [src*="-s410." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s410-" i], [src*="-s410." i])) {
-    --ab-offset: 410px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s420-" i], [src*="-s420." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s420-" i], [src*="-s420." i])) {
-    --ab-offset: 420px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s430-" i], [src*="-s430." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s430-" i], [src*="-s430." i])) {
-    --ab-offset: 430px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s440-" i], [src*="-s440." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s440-" i], [src*="-s440." i])) {
-    --ab-offset: 440px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s450-" i], [src*="-s450." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s450-" i], [src*="-s450." i])) {
-    --ab-offset: 450px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s460-" i], [src*="-s460." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s460-" i], [src*="-s460." i])) {
-    --ab-offset: 460px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s470-" i], [src*="-s470." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s470-" i], [src*="-s470." i])) {
-    --ab-offset: 470px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s480-" i], [src*="-s480." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s480-" i], [src*="-s480." i])) {
-    --ab-offset: 480px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s490-" i], [src*="-s490." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s490-" i], [src*="-s490." i])) {
-    --ab-offset: 490px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s500-" i], [src*="-s500." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s500-" i], [src*="-s500." i])) {
-    --ab-offset: 500px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s510-" i], [src*="-s510." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s510-" i], [src*="-s510." i])) {
-    --ab-offset: 510px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s520-" i], [src*="-s520." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s520-" i], [src*="-s520." i])) {
-    --ab-offset: 520px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s530-" i], [src*="-s530." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s530-" i], [src*="-s530." i])) {
-    --ab-offset: 530px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s540-" i], [src*="-s540." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s540-" i], [src*="-s540." i])) {
-    --ab-offset: 540px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s550-" i], [src*="-s550." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s550-" i], [src*="-s550." i])) {
-    --ab-offset: 550px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s560-" i], [src*="-s560." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s560-" i], [src*="-s560." i])) {
-    --ab-offset: 560px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s570-" i], [src*="-s570." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s570-" i], [src*="-s570." i])) {
-    --ab-offset: 570px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s580-" i], [src*="-s580." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s580-" i], [src*="-s580." i])) {
-    --ab-offset: 580px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s590-" i], [src*="-s590." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s590-" i], [src*="-s590." i])) {
-    --ab-offset: 590px;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s600-" i], [src*="-s600." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-s600-" i], [src*="-s600." i])) {
-    --ab-offset: 600px;
-}
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s0-" i], [src*="-s0." i])) { --ab-offset: 0px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s10-" i], [src*="-s10." i])) { --ab-offset: 10px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s20-" i], [src*="-s20." i])) { --ab-offset: 20px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s30-" i], [src*="-s30." i])) { --ab-offset: 30px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s40-" i], [src*="-s40." i])) { --ab-offset: 40px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s50-" i], [src*="-s50." i])) { --ab-offset: 50px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s60-" i], [src*="-s60." i])) { --ab-offset: 60px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s70-" i], [src*="-s70." i])) { --ab-offset: 70px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s80-" i], [src*="-s80." i])) { --ab-offset: 80px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s90-" i], [src*="-s90." i])) { --ab-offset: 90px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s100-" i], [src*="-s100." i])) { --ab-offset: 100px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s110-" i], [src*="-s110." i])) { --ab-offset: 110px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s120-" i], [src*="-s120." i])) { --ab-offset: 120px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s130-" i], [src*="-s130." i])) { --ab-offset: 130px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s140-" i], [src*="-s140." i])) { --ab-offset: 140px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s150-" i], [src*="-s150." i])) { --ab-offset: 150px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s160-" i], [src*="-s160." i])) { --ab-offset: 160px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s170-" i], [src*="-s170." i])) { --ab-offset: 170px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s180-" i], [src*="-s180." i])) { --ab-offset: 180px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s190-" i], [src*="-s190." i])) { --ab-offset: 190px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s200-" i], [src*="-s200." i])) { --ab-offset: 200px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s210-" i], [src*="-s210." i])) { --ab-offset: 210px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s220-" i], [src*="-s220." i])) { --ab-offset: 220px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s230-" i], [src*="-s230." i])) { --ab-offset: 230px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s240-" i], [src*="-s240." i])) { --ab-offset: 240px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s250-" i], [src*="-s250." i])) { --ab-offset: 250px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s260-" i], [src*="-s260." i])) { --ab-offset: 260px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s270-" i], [src*="-s270." i])) { --ab-offset: 270px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s280-" i], [src*="-s280." i])) { --ab-offset: 280px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s290-" i], [src*="-s290." i])) { --ab-offset: 290px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s300-" i], [src*="-s300." i])) { --ab-offset: 300px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s310-" i], [src*="-s310." i])) { --ab-offset: 310px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s320-" i], [src*="-s320." i])) { --ab-offset: 320px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s330-" i], [src*="-s330." i])) { --ab-offset: 330px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s340-" i], [src*="-s340." i])) { --ab-offset: 340px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s350-" i], [src*="-s350." i])) { --ab-offset: 350px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s360-" i], [src*="-s360." i])) { --ab-offset: 360px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s370-" i], [src*="-s370." i])) { --ab-offset: 370px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s380-" i], [src*="-s380." i])) { --ab-offset: 380px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s390-" i], [src*="-s390." i])) { --ab-offset: 390px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s400-" i], [src*="-s400." i])) { --ab-offset: 400px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s410-" i], [src*="-s410." i])) { --ab-offset: 410px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s420-" i], [src*="-s420." i])) { --ab-offset: 420px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s430-" i], [src*="-s430." i])) { --ab-offset: 430px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s440-" i], [src*="-s440." i])) { --ab-offset: 440px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s450-" i], [src*="-s450." i])) { --ab-offset: 450px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s460-" i], [src*="-s460." i])) { --ab-offset: 460px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s470-" i], [src*="-s470." i])) { --ab-offset: 470px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s480-" i], [src*="-s480." i])) { --ab-offset: 480px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s490-" i], [src*="-s490." i])) { --ab-offset: 490px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s500-" i], [src*="-s500." i])) { --ab-offset: 500px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s510-" i], [src*="-s510." i])) { --ab-offset: 510px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s520-" i], [src*="-s520." i])) { --ab-offset: 520px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s530-" i], [src*="-s530." i])) { --ab-offset: 530px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s540-" i], [src*="-s540." i])) { --ab-offset: 540px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s550-" i], [src*="-s550." i])) { --ab-offset: 550px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s560-" i], [src*="-s560." i])) { --ab-offset: 560px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s570-" i], [src*="-s570." i])) { --ab-offset: 570px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s580-" i], [src*="-s580." i])) { --ab-offset: 580px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s590-" i], [src*="-s590." i])) { --ab-offset: 590px; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-s600-" i], [src*="-s600." i])) { --ab-offset: 600px; }
 
 
 /* ============================================================================
@@ -981,135 +513,32 @@ body {
    3-digit hex expands the way it does in CSS: i222 → #222 → #222222.
    ========================================================================== */
 
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i000-" i], [src*="-i000." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i000-" i], [src*="-i000." i])) {
-    --ab-icon-bg: #000;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i111-" i], [src*="-i111." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i111-" i], [src*="-i111." i])) {
-    --ab-icon-bg: #111;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i222-" i], [src*="-i222." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i222-" i], [src*="-i222." i])) {
-    --ab-icon-bg: #222;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i333-" i], [src*="-i333." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i333-" i], [src*="-i333." i])) {
-    --ab-icon-bg: #333;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i444-" i], [src*="-i444." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i444-" i], [src*="-i444." i])) {
-    --ab-icon-bg: #444;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i555-" i], [src*="-i555." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i555-" i], [src*="-i555." i])) {
-    --ab-icon-bg: #555;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i666-" i], [src*="-i666." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i666-" i], [src*="-i666." i])) {
-    --ab-icon-bg: #666;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i777-" i], [src*="-i777." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i777-" i], [src*="-i777." i])) {
-    --ab-icon-bg: #777;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i888-" i], [src*="-i888." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i888-" i], [src*="-i888." i])) {
-    --ab-icon-bg: #888;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i999-" i], [src*="-i999." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i999-" i], [src*="-i999." i])) {
-    --ab-icon-bg: #999;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iAAA-" i], [src*="-iAAA." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iAAA-" i], [src*="-iAAA." i])) {
-    --ab-icon-bg: #AAA;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iBBB-" i], [src*="-iBBB." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iBBB-" i], [src*="-iBBB." i])) {
-    --ab-icon-bg: #BBB;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iCCC-" i], [src*="-iCCC." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iCCC-" i], [src*="-iCCC." i])) {
-    --ab-icon-bg: #CCC;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iDDD-" i], [src*="-iDDD." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iDDD-" i], [src*="-iDDD." i])) {
-    --ab-icon-bg: #DDD;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iEEE-" i], [src*="-iEEE." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iEEE-" i], [src*="-iEEE." i])) {
-    --ab-icon-bg: #EEE;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iFFF-" i], [src*="-iFFF." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iFFF-" i], [src*="-iFFF." i])) {
-    --ab-icon-bg: #FFF;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF00-" i], [src*="-iF00." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF00-" i], [src*="-iF00." i])) {
-    --ab-icon-bg: #F00;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i0F0-" i], [src*="-i0F0." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i0F0-" i], [src*="-i0F0." i])) {
-    --ab-icon-bg: #0F0;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i00F-" i], [src*="-i00F." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i00F-" i], [src*="-i00F." i])) {
-    --ab-icon-bg: #00F;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iFF0-" i], [src*="-iFF0." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iFF0-" i], [src*="-iFF0." i])) {
-    --ab-icon-bg: #FF0;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF0F-" i], [src*="-iF0F." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF0F-" i], [src*="-iF0F." i])) {
-    --ab-icon-bg: #F0F;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i0FF-" i], [src*="-i0FF." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i0FF-" i], [src*="-i0FF." i])) {
-    --ab-icon-bg: #0FF;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF80-" i], [src*="-iF80." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF80-" i], [src*="-iF80." i])) {
-    --ab-icon-bg: #F80;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i08F-" i], [src*="-i08F." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i08F-" i], [src*="-i08F." i])) {
-    --ab-icon-bg: #08F;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF08-" i], [src*="-iF08." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-iF08-" i], [src*="-iF08." i])) {
-    --ab-icon-bg: #F08;
-}
-
-.markdown-preview-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i8F0-" i], [src*="-i8F0." i])),
-.cm-sizer:has(.internal-embed[src*="banner-" i]:is([src*="-i8F0-" i], [src*="-i8F0." i])) {
-    --ab-icon-bg: #8F0;
-}
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i000-" i], [src*="-i000." i])) { --ab-icon-bg: #000; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i111-" i], [src*="-i111." i])) { --ab-icon-bg: #111; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i222-" i], [src*="-i222." i])) { --ab-icon-bg: #222; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i333-" i], [src*="-i333." i])) { --ab-icon-bg: #333; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i444-" i], [src*="-i444." i])) { --ab-icon-bg: #444; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i555-" i], [src*="-i555." i])) { --ab-icon-bg: #555; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i666-" i], [src*="-i666." i])) { --ab-icon-bg: #666; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i777-" i], [src*="-i777." i])) { --ab-icon-bg: #777; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i888-" i], [src*="-i888." i])) { --ab-icon-bg: #888; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i999-" i], [src*="-i999." i])) { --ab-icon-bg: #999; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iAAA-" i], [src*="-iAAA." i])) { --ab-icon-bg: #AAA; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iBBB-" i], [src*="-iBBB." i])) { --ab-icon-bg: #BBB; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iCCC-" i], [src*="-iCCC." i])) { --ab-icon-bg: #CCC; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iDDD-" i], [src*="-iDDD." i])) { --ab-icon-bg: #DDD; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iEEE-" i], [src*="-iEEE." i])) { --ab-icon-bg: #EEE; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iFFF-" i], [src*="-iFFF." i])) { --ab-icon-bg: #FFF; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iF00-" i], [src*="-iF00." i])) { --ab-icon-bg: #F00; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i0F0-" i], [src*="-i0F0." i])) { --ab-icon-bg: #0F0; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i00F-" i], [src*="-i00F." i])) { --ab-icon-bg: #00F; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iFF0-" i], [src*="-iFF0." i])) { --ab-icon-bg: #FF0; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iF0F-" i], [src*="-iF0F." i])) { --ab-icon-bg: #F0F; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i0FF-" i], [src*="-i0FF." i])) { --ab-icon-bg: #0FF; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iF80-" i], [src*="-iF80." i])) { --ab-icon-bg: #F80; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i08F-" i], [src*="-i08F." i])) { --ab-icon-bg: #08F; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-iF08-" i], [src*="-iF08." i])) { --ab-icon-bg: #F08; }
+:is(.markdown-preview-sizer, .cm-sizer):has(.internal-embed[src*="banner-" i]:is([src*="-i8F0-" i], [src*="-i8F0." i])) { --ab-icon-bg: #8F0; }
 
 
 /* ============================================================================
