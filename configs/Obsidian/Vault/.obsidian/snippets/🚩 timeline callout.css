@@ -112,14 +112,3 @@ div:has(> [data-callout="timeline"])+div>[data-callout="timeline"] .callout-icon
 .cm-embed-block:has([data-callout="timeline"]) {
   box-shadow: none;
 }
-
-/* Reading view: any timeline followed by another timeline
-div:has(> [data-callout="timeline"]):has(+ div > [data-callout="timeline"])>[data-callout="timeline"] {
-  box-shadow: none;
-}
-
-/* Live Preview: same, accounting for the blank line between them. the last element only properties */
-/* .cm-embed-block:has([data-callout="timeline"]):has(+ .cm-line + .cm-embed-block [data-callout="timeline"]),
-.cm-embed-block:has(+ .cm-line + .cm-embed-block [data-callout="timeline"]) [data-callout="timeline"] {
-  box-shadow: none;
-} */

@@ -204,9 +204,6 @@ body {
 
 .canvas-node:has(.tag[href="#node-title-arcane"], .node-title-arcane):not(.is-editing) .canvas-node-container {
   border: none;
-}
-
-.canvas-node:has(.tag[href="#node-title-arcane"], .node-title-arcane):not(.is-editing) .canvas-node-container {
   box-shadow: none;
 }
 
