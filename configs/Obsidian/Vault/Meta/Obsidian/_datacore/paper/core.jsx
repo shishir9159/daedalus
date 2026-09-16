@@ -248,9 +248,8 @@ function readPaper(path, rev, collectedBy = null) {
     }
   }
 
-  // The PDF is resolved here rather than at render time, because two questions
-  // that used to be guesses are answered by it: whether there is a paper behind
-  // this note at all, and whether it has been marked up.
+  // The PDF is resolved here rather than at render time: it answers whether
+  // there is a paper behind this note at all, and whether it has been marked up.
   const pdfLink = get("paper") ?? get("pdf") ?? get("title");
   const pdfFile = resolvePdf(pdfLink, path);
   const highlights = num(get("highlights"));
@@ -460,13 +459,8 @@ function mirrorTwins(a, b) {
 /**
  * The papers you SAID belong beside this one. Nothing else.
  *
- * This used to top the list up from the shelf: declared relations first, then
- * anything sharing a topic, then the rest of the drawer. That was wrong twice
- * over. It filled RELATED with papers you never connected — every card in the
- * drawer is "same topic", so the section was a slice of the drawer you were
- * already looking at — and it labelled them "same topic" while claiming to be
- * a list of relations, which is how a paper ends up captioned "same topic"
- * next to one it shares nothing exact with.
+ * No topping up from the shelf: every card in the drawer shares a topic, so
+ * that would fill RELATED with papers you never connected.
  *
  * builds-on · extends · compare-with · refutes · superseded-by · prereq ·
  * related. If none of those are filled in, the section is empty, and an empty

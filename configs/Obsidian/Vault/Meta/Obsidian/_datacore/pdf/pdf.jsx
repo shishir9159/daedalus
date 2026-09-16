@@ -35,8 +35,7 @@ const VENDOR = "Meta/Obsidian/_datacore/vendor";
 
 // ── pdf.js ──────────────────────────────────────────────────────────────────
 //  Obsidian only publishes `pdfjsLib` once its own PDF view has been
-//  constructed, which is why a paper note used to show nothing until you had
-//  opened a PDF by hand at least once. Three ways in, cheapest first:
+//  constructed. Three ways in, cheapest first:
 //
 //    1. the global, if Obsidian has already built its viewer
 //    2. a vendored ES build dropped in Meta/Obsidian/_datacore/vendor/
@@ -546,9 +545,8 @@ function nodeGet(url, { headers = {}, hops = 5 } = {}) {
  * Returns { status, text, arrayBuffer } or null. `crossOrigin: true` means the
  * host is known not to send CORS headers: if no transport can bypass that,
  * return null instead of asking fetch to fail loudly. `binary: true` asks for
- * the bytes and skips the text decode — and, on the fetch path, is the only
- * way to get an arrayBuffer at all, which is why a mobile update used to fail
- * before it had asked anyone for anything.
+ * the bytes and skips the text decode; on the fetch path (mobile) it is the
+ * only way to get an arrayBuffer at all.
  *
  * The status is always handed back. Callers are expected to look at it: arXiv
  * says 403 with a perfectly well-formed body, and a body is not a yes.
@@ -642,9 +640,8 @@ async function keepOldCopy(file, tag) {
  * Pull vN of a paper down and write it over the file already in the vault.
  *
  * Returns { ok, reason, backup } rather than a bare boolean. Every way this can
- * fail now says which one it was, both to the caller — so the button can show
- * it — and to the console. The old version swallowed the lot into `false`,
- * which is exactly the "fails with no message and nothing logged" you hit.
+ * fail says which one it was, to the caller (so the button can show it) and
+ * to the console.
  */
 async function replaceArxivPdf(file, arxivId, version, { haveVersion = null } = {}) {
   const fail = (reason) => {

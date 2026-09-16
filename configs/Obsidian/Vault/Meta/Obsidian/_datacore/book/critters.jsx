@@ -146,13 +146,9 @@ const WEB_DENSITY = [
  * `width` and `height` are the box the web is hanging in, not the web's own
  * size — it works out its reach from them.
  *
- * That distinction is the fix for "the webs stopped showing". A web used to be
- * sized off a single number the caller had already massaged (spine thickness
- * times 2.2), so when the case was rescaled and a spine went from 250px tall to
- * 430px, its web stayed the size it had been and ended up a knot in the top
- * corner of a box more than twice as tall — technically drawn, effectively
- * gone. A corner web reaches across the narrow side and about half way down the
- * long one, which is what the two dimensions together say and what one cannot.
+ * Both matter: a web sized off one number stays a knot in the corner when the
+ * case is rescaled and the box grows. A corner web reaches across the narrow
+ * side and about half way down the long one.
  */
 const webReach = (width, height) =>
   Math.max(width, Math.min(height * 0.5, width * 3));

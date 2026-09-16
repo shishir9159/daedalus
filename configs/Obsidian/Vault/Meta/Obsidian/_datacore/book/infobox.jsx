@@ -87,9 +87,8 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
   /**
    * Render a frontmatter list as "a · b · c", dropping the blanks.
    *
-   * A YAML list written out but not yet filled in comes through as [""], and
-   * `reduce` over that used to emit a separator with nothing on either side —
-   * a row that existed to say nothing.
+   * A YAML list written out but not yet filled in comes through as [""];
+   * without the filter that renders a lone separator.
    */
   const joined = (items, sep = " · ") => {
     const parts = [].concat(items ?? []).map(val).filter(Boolean);

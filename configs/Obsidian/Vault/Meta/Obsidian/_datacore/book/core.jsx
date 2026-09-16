@@ -253,11 +253,8 @@ const openBook = (book, evt, { atPage, force } = {}) => {
 //  AND writing frontmatter are all shared with the paper infobox, so they live
 //  in Meta/Obsidian/_datacore/pdf/pdf.jsx rather than being duplicated here.
 //
-//  `writeFields` in particular used to exist twice, and the two disagreed: this
-//  file's copy assigned unconditionally, so a view that wrote a value it had
-//  just read triggered a reindex, which re-rendered it, which wrote again. The
-//  surviving version compares first and reports whether it actually wrote,
-//  which is what breaks that loop.
+//  `writeFields` compares before writing and reports whether it wrote: writing
+//  a value a view has just read would reindex, re-render and write again.
 // ════════════════════════════════════════════════════════════════════════════
 const pdf = await dc.require("Meta/Obsidian/_datacore/pdf/pdf.jsx");
 const {
@@ -496,8 +493,8 @@ const COVER_FX = new Set(["none", "plain", "board", "lit"]);
  * by path, so a shelf of coverless books looks like a shelf rather than a row
  * of the same swatch.
  *
- * A blank cover used to be a flat gradient with the filename on it, which read
- * as a missing image. Nothing here needs a file to exist.
+ * Nothing here needs a file to exist; a flat gradient with the filename on it
+ * would read as a missing image.
  */
 function BlankCover({ book }) {
   const key = hashOf(book.path);
@@ -977,12 +974,10 @@ const CSS = `
      hangs 4px below the last board — a scroll container clips both otherwise */
   padding: 20px 0 12px;
   /* ONE COLUMN, and every shelf is that column wide.
-     A grid column sizes to the widest item and then stretches the rest to it,
-     which is the whole trick: shelves used to be width: max-content each, so a
-     six-book shelf ended six books along and scrolling out to the end of a
-     twenty-book shelf above it left nothing underneath — you were looking past
-     the end of the furniture. minmax(100%, max-content) also keeps a case with
-     nothing much in it filling the pane. */
+     A grid column sizes to the widest item and stretches the rest to it, so a
+     short shelf under a long one still runs the full length (max-content per
+     shelf would end the furniture early). minmax(100%, max-content) also keeps
+     a nearly empty case filling the pane. */
   display: grid;
   grid-auto-flow: row;
   grid-template-columns: minmax(100%, max-content);
@@ -1057,9 +1052,8 @@ const CSS = `
 .hcs.no-rack .hcs-label { bottom: -1px; }
 
 /* ── the label plate, screwed to the front edge of the board ──────────── */
-/* Plate and button travel together at the near end of the board. They used to
-   be pinned to opposite ends, which put "Full shelf" a screen and a half away
-   once a row could be longer than the case. */
+/* Plate and button travel together at the near end of the board: at opposite
+   ends, "Full shelf" ends up a screen and a half away on a long row. */
 .hcs-label {
   position: absolute; z-index: 12; left: 24px; bottom: -4px;
   display: flex; align-items: center; gap: 14px;
@@ -1432,8 +1426,8 @@ const CSS = `
 
 /* ═══ BOOKEND ═════════════════════════════════════════════════════════ */
 /* Aged brass rather than chrome — brushed, warm, and it belongs next to wood. */
-/* A third of the way up the board, the way a real one is — it used to take its
-   height from --book-w, which meant a 270px-wide book got a 259px bookend. */
+/* A third of the way up the board, the way a real one is (not sized off
+   --book-w, which gives a 270px-wide book a 259px bookend). */
 .hcs-bookend {
   position: relative; flex: 0 0 auto; align-self: flex-end;
   width: 9px; height: calc(var(--book-w) * .3);
@@ -1755,9 +1749,8 @@ const CSS = `
 /* Behind the lamps. At z-index 5 it out-stacked every slot that was not
    hovered — the hovered book jumped to 5 and cleared it, and the rest of the
    row had their heads painted over by the bar they hang from. */
-/* Across the stems, wherever the headroom puts them. It used to be pinned at
-   20px, which was most of the way down a shallow compartment and a tenth of
-   the way down a deep one. */
+/* Across the stems, wherever the headroom puts them: a fixed offset would sit
+   low in a shallow compartment and high in a deep one. */
 .hcs-rail {
   position: absolute; z-index: 3; pointer-events: none;
   left: 8px; right: 8px; top: calc(var(--head-h) * .12); height: 5px; border-radius: 3px;
@@ -1847,9 +1840,8 @@ const CSS = `
    alternative was a stripe of light down each book with dark bands between.
    The apex is narrow (6% of the cone) because that is the bulb; the old 10%
    read as a slab of light leaving the fixture rather than a point source. */
-/* Starts at the bulb, which is --fix-h down from the compartment ceiling — the
-   fixture's own height, not the 40px constant that used to leave a gap under a
-   big shade and cut into the shade under a small one.
+/* Starts at the bulb, --fix-h (the fixture's own height) down from the
+   compartment ceiling, so it meets big and small shades alike.
    The apex is the study's 14% rather than 6%: a point source under a shade
    this size read as a laser, and a picture light does throw from a slot. */
 .hcs-beam {

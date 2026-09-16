@@ -809,7 +809,7 @@ function scopeCss(css, scope) {
   return out.join("");
 }
 
-const LEGACY = { medieval: "medieval", "fancy-a-story": "fancy" };
+const LEGACY = { "fancy-a-story": "fancy" };
 function normalise(id) {
   if (SKINS[id]) return id;
   if (LEGACY[id] && SKINS[LEGACY[id]]) return LEGACY[id];

@@ -432,11 +432,9 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
           ) : (
             /* The preview is a bonus; the way in is not. Whether pdf.js has
                turned up or not, if there is a PDF behind this note the panel
-               opens it — the placeholder used to be inert, so a paper you had
-               not rendered yet could only be opened from the frontmatter link.
-               `ready` is false until pdf.js exists, and it starts existing the
-               moment any PDF is opened anywhere, at which point the image
-               appears on its own. */
+               opens it, placeholder or not. `ready` is false until pdf.js
+               exists, which it does from the moment any PDF is opened
+               anywhere; then the image appears on its own. */
             <div
               class={"pcx-page pcx-empty" + (file ? " is-openable" : "")}
               style={{ width: width + "px", maxHeight: maxHeight + "px" }}

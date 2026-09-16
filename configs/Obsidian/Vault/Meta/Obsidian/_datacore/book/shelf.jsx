@@ -267,11 +267,10 @@ function FaceBook({
         {open && <div class="hcs-open-ribbon" />}
         <Progress book={book} pattern={pattern} layer="art" />
       </div>
-      {/* Hung from the top of the compartment, not from the top of the book —
-          which is where it used to start, and why it appeared to be sitting on
-          the cover rather than dangling in front of it. Drop and scale both
-          come out of sizeOf, so the spider keeps its size and its reach
-          relative to the book however the case is scaled. */}
+      {/* Hung from the top of the compartment, not of the book (from there it
+          sits on the cover instead of dangling in front of it). Drop and scale
+          come out of sizeOf, so the spider keeps its size and reach relative to
+          the book however the case is scaled. */}
       {spider && (
         <Spider
           style={{ left: "calc(100% - 12px)", top: HANG_TOP }}

@@ -344,8 +344,8 @@ function Drawer({
       </div>
 
       {/* The drawer front, on its hinge — folded by the perspective on the
-          drawer itself rather than by sharing a flattened 3D context with the
-          well, which is what used to eat the clicks on the leaves. */}
+          drawer itself, not a 3D context shared with the well (that one eats
+          the clicks on the leaves). */}
       <div class="pvd-flap" onClick={shut} title="shut the drawer">
         <span class="pv-lozenge" />
         <span class="pvd-flap-idx">{drawer.idx}</span>
@@ -424,13 +424,9 @@ function Chest({
   /**
    * The queue starts EMPTY.
    *
-   * It used to be seeded with everything unread, which read as broken: the
-   * papers you were most likely to click were already in it, so clicking one
-   * moved it to the front and changed nothing you could see — the stamp was
-   * already on the leaf and the count did not move. An empty queue is also the
-   * honest one: it is a list you are building right now, not a query. The
-   * REFILL button under an empty queue still fills it from unread if that is
-   * what you wanted.
+   * Seeded with everything unread, clicking a paper changes nothing you can
+   * see: it is already queued. It is a list you are building, not a query;
+   * REFILL under an empty queue fills it from unread.
    */
   const [queue, setQueue] = dc.useState([]);
   const [qi, setQi] = dc.useState(0);
@@ -449,11 +445,8 @@ function Chest({
   /**
    * The top drawer opens ONCE, when the papers first arrive.
    *
-   * This used to be "if nothing is open, open the first one", which meant a
-   * chest that could not be shut: every way of closing a drawer set open to
-   * null, the effect saw null on the very next pass and pulled drawer one
-   * straight back out, replaying the opening animation. Right-click looked
-   * like it was re-opening the drawer because it was.
+   * Not "whenever nothing is open": closing sets open to null, so that would
+   * pull drawer one straight back out and the chest could never be shut.
    */
   const opened = dc.useRef(false);
   dc.useEffect(() => {
