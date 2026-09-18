@@ -34,6 +34,4 @@ function M.col(p)
   return p % SHIFT
 end
 
-M.MAX_COL = SHIFT
-
 return M

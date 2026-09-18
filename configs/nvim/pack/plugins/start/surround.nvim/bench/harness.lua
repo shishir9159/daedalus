@@ -2,8 +2,8 @@
 ---
 --- Usage from a bench script:
 ---   local H = dofile("bench/harness.lua")
----   H.add("name", fn, { setup = ..., teardown = ... })
----   H.run()
+---   H.add("name", fn, opts)   -- opts go to profile.measure()
+---   H.run(title, iters)
 local root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p:h:h")
 vim.opt.runtimepath:prepend(root)
 package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.path

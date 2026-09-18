@@ -70,7 +70,7 @@ profiler is not merely unused, it is unreachable.
 
 For a minimal tree anyway, `.gitattributes` marks those directories
 `export-ignore`, so a release archive contains only `plugin/`, `lua/`,
-`pkg.json`, the README and the licence:
+`pkg.json` and the README:
 
 ```bash
 git archive --format=tar.gz --prefix=surround.nvim/ -o surround.nvim.tar.gz HEAD
@@ -128,13 +128,14 @@ require("surround").setup({
 ```
 
 Add your own delimiters. A surround is a record of operations keyed by
-character, so `find` can be a spec or an arbitrary function:
+character, so `find` can be a spec or an arbitrary function. Specs match
+single characters; multi-character delimiters need a function:
 
 ```lua
 require("surround").setup({
   surrounds = {
-    ["e"] = { add = { "**", "**" }, find = { kind = "quote", open = "**" } },
-    ["#"] = { add = { "#{", "}" },  find = { kind = "pair", open = "#{", close = "}" } },
+    ["e"] = { add = { "**", "**" } },  -- insert only
+    ["|"] = { add = { "|", "|" }, find = { kind = "quote", open = "|" } },
     ["j"] = {
       add = { "<%= ", " %>" },
       -- packed, end-exclusive; see lua/surround/pos.lua
@@ -146,106 +147,45 @@ require("surround").setup({
 
 ## Profiling (development only)
 
-**The shipped plugin contains no profiling code.** No hooks, no flags, no
-counters, no `:Surround*` command — nothing in `lua/` or `plugin/` knows the
-profiler exists. It lives in `dev/profile.lua`, off the runtimepath, and
-reconstructs everything from the outside by patching module functions while it
-is running and unpatching when it stops.
-
-Load it only when you want it:
+The shipped plugin contains no profiling code. `dev/profile.lua`, off the
+runtimepath, patches module functions from the outside while it runs and
+unpatches them when it stops; its header explains how cache hits, answering
+path and buffer reads are derived.
 
 ```vim
 :lua dofile(vim.fn.expand("~/.config/nvim/pack/plugins/start/surround.nvim/dev/profile.lua"))
+:SurroundProfile          " toggle; also: report, reset
 ```
-
-`:SurroundProfile` exists from that point on:
-
-```vim
-:SurroundProfile          " toggle
-:SurroundProfile report   " print without stopping
-:SurroundProfile reset
-```
-
-Or keep the handle and drive it from Lua:
-
-```lua
-local prof = dofile(".../dev/profile.lua")
-prof.start()
--- ... do some editing ...
-prof.stop()
-print(prof.report())
-```
-
-Do some real editing between start and stop, then read the table:
 
 ```
 stage                  calls      total      mean       p50       p95       max
 ------------------------------------------------------------------------------
 resolve.find              31     1.84ms    59.4us      41.0     148.1     301.4
-  ts.available            31     0.12ms     3.9us       3.1       7.2      11.0
   ts.pair                 28     0.91ms    32.5us      29.8      61.4      98.2
   scan.pair                3     0.42ms   140.1us     131.0     201.7     212.9
 edit.replace_pair         31     0.21ms     6.8us       6.1      11.9      18.4
 
 cache        8 hits / 39 queries (20.5%)
-buffer       14 fetches, 1792 lines read
 path         ts 28, scan 3
 ```
 
-Timing comes from wrappers installed on module boundaries. The counters that
-would otherwise need in-tree hooks are *derived* instead:
+The derived counters assume `resolve.find`'s current early return; revisit the
+profiler if that changes.
 
-- **cache hits** — `resolve.find` returning without calling any sub-stage. The
-  cache check returns before `line.reader` and `ts.available`, so "no
-  sub-calls" is exactly "hit".
-- **path** — which sub-stage returned non-nil.
-- **buffer reads** — `nvim_buf_get_lines` is patched globally but only counted
-  while inside a patched surround call, so unrelated editor traffic isn't
-  attributed to the plugin.
-
-That's the trade for keeping the plugin clean: these are exact for the current
-control flow in `resolve.lua`, but they are assumptions *about* it rather than
-assertions *from inside* it. If you restructure `find`'s early return, revisit
-`dev/profile.lua`.
-
-`prof.data()` returns the raw numbers if you want to serialise them.
-
-## Benchmarks
-
-Both scripts run against **your** files — point them at something large and
-real, not a generated fixture.
-
-Micro: the enclosing-pair query in isolation, sampled across 64 positions
-spread through the file.
+## Tests and benchmarks
 
 ```bash
-nvim -l bench/find.lua path/to/big.ts --iters 1000
+nvim -l tests/run.lua
+nvim -l bench/find.lua path/to/big.ts --iters 1000          # treesitter, scanner, cache hit, searchpairpos(), `a(`
+nvim -l bench/compare.lua path/to/big.ts --iters 300   --rtp ~/.local/share/nvim/lazy/nvim-surround --rtp ~/.local/share/nvim/lazy/mini.nvim
 ```
 
-Compares the treesitter path, the byte scanner, a cache hit, `searchpairpos()`,
-and Vim's own `a(` motion.
-
-End-to-end against other plugins — keystroke-to-buffer-change latency, the only
-honest cross-plugin comparison since they all expose different internals:
-
-```bash
-nvim -l bench/compare.lua path/to/big.ts \
-  --rtp ~/.local/share/nvim/lazy/nvim-surround \
-  --rtp ~/.local/share/nvim/lazy/mini.nvim \
-  --iters 300
-```
-
-Contenders not on the runtimepath are reported as skipped rather than silently
-omitted. Buffer restore, cursor placement and keymap re-arming all happen
-outside the timed region, and each contender reports how many iterations
-*actually modified the buffer* — a plugin whose keystrokes no-op would
-otherwise look like the winner.
-
-The harness collects the GC before each run and stops it during, reporting
-allocation per operation separately. A collection landing inside one iteration
-is otherwise indistinguishable from that iteration being slow, which is the
-single most common way Lua microbenchmarks lie. It reports p50/p95/max rather
-than just a mean for the same reason.
+Point the benchmarks at large real files. `compare.lua` measures
+keystroke-to-buffer-change latency, counts only iterations that changed the
+buffer, and reports contenders missing from the runtimepath as skipped. GC
+runs before each contender and is stopped during it; allocation per op and
+p50/p95/max are reported separately, so a collection can't pass for a slow
+iteration.
 
 ---
 
@@ -358,12 +298,3 @@ Not adopted: routing every candidate through `nvim_feedkeys` with
 `winsaveview`/`winrestview` around it (the thing being optimised away here),
 and Lua-pattern delete specs like `"^(.)().-(.)()$"`, which re-parse text the
 find step has already located.
-
-## Tests and benchmarks
-
-```bash
-nvim -l tests/run.lua
-```
-
-See [Benchmarks](#benchmarks) above for `bench/find.lua` and
-`bench/compare.lua`, both of which take your own files as input.

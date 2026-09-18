@@ -56,7 +56,6 @@ M.add = {
   ["["] = { "[ ", " ]" },
   ["]"] = { "[", "]" },
   ["r"] = { "[", "]" },
-  ["<"] = { "< ", " >" },
   [">"] = { "<", ">" },
   ["a"] = { "<", ">" },
 }
@@ -135,16 +134,8 @@ M.opts = {
   --- unlike the delimiter positions, the cursor genuinely does need remapping
   --- across the edits.
   move_cursor = "begin",
-
-  keymaps = {
-    normal = "ys",
-    normal_cur = "yss",
-    normal_line = "yS",
-    normal_cur_line = "ySS",
-    visual = "S",
-    delete = "ds",
-    change = "cs",
-  },
+  --- Overrides for keymaps.lua's defaults; false or "" disables one.
+  keymaps = {},
 }
 
 function M.setup(user)

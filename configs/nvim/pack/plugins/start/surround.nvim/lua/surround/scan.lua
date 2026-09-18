@@ -121,6 +121,15 @@ local function fwd(reader, row, from, open_b, close_b, cls, max_row)
   return nil
 end
 
+--- Rows a scan may visit: `scan_radius` around `row`, or the whole buffer.
+local function bounds(row, count)
+  local r = config.opts.scan_radius
+  if r > 0 then
+    return math.max(0, row - r), math.min(count - 1, row + r)
+  end
+  return 0, count - 1
+end
+
 --- Find the single-character delimiter pair enclosing the cursor.
 ---@return integer|nil os, integer oe, integer cs, integer ce packed, end-exclusive
 function M.pair(reader, count, row, col, open, close)
@@ -129,9 +138,7 @@ function M.pair(reader, count, row, col, open, close)
     return nil
   end
 
-  local radius = config.opts.scan_radius
-  local min_row = radius > 0 and math.max(0, row - radius) or 0
-  local max_row = radius > 0 and math.min(count - 1, row + radius) or (count - 1)
+  local min_row, max_row = bounds(row, count)
 
   local open_b, close_b = byte(open), byte(close)
   local cls = class_of(open, close)
@@ -196,22 +203,17 @@ function M.quote(reader, row, col, q)
     return nil
   end
 
+  -- Pairs are in order, so the first one ending at or after the cursor either
+  -- contains it or is the next one along.
   local c1 = col + 1
   for k = 1, n - 1, 2 do
     local a, b = idxs[k], idxs[k + 1]
-    if c1 >= a and c1 <= b then
+    if b >= c1 then
+      if a > c1 and not config.opts.quote_search_forward then
+        return nil
+      end
       local o, c = pack(row, a - 1), pack(row, b - 1)
       return o, o + 1, c, c + 1
-    end
-  end
-
-  if config.opts.quote_search_forward then
-    for k = 1, n - 1, 2 do
-      local a, b = idxs[k], idxs[k + 1]
-      if a >= c1 then
-        local o, c = pack(row, a - 1), pack(row, b - 1)
-        return o, o + 1, c, c + 1
-      end
     end
   end
   return nil
@@ -268,9 +270,7 @@ local function tag_tokens(line, max_start, out)
 end
 
 function M.tag(reader, count, row, col)
-  local radius = config.opts.scan_radius
-  local min_row = radius > 0 and math.max(0, row - radius) or 0
-  local max_row = radius > 0 and math.min(count - 1, row + radius) or (count - 1)
+  local min_row, max_row = bounds(row, count)
 
   local line = reader(row)
   if not line then

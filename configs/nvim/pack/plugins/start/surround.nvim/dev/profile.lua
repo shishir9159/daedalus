@@ -87,9 +87,9 @@ local function remember(tbl, name)
   return tbl[name]
 end
 
---- Time a sub-stage and record which path answered.
---- `path` is the label to attribute to `resolve.find` if this call succeeded.
-local function patch_stage(modname, name, label, path)
+--- Time a stage. `path`: the label to attribute to `resolve.find` if this call
+--- answered it.
+local function patch(modname, name, label, path)
   local mod = require(modname)
   if type(mod[name]) ~= "function" then
     return
@@ -111,21 +111,6 @@ local function patch_stage(modname, name, label, path)
   end
 end
 
-local function patch_plain(modname, name, label)
-  local mod = require(modname)
-  if type(mod[name]) ~= "function" then
-    return
-  end
-  local orig = remember(mod, name)
-  mod[name] = function(...)
-    depth = depth + 1
-    local t0 = hrtime()
-    local a, b = orig(...)
-    M.record(label, hrtime() - t0)
-    depth = depth - 1
-    return a, b
-  end
-end
 
 local function patch_find()
   local resolve = require("surround.resolve")
@@ -170,16 +155,16 @@ function M.start()
 
   patch_find()
 
-  patch_stage("surround.ts", "available", "  ts.available", nil)
-  patch_stage("surround.ts", "pair", "  ts.pair", "ts")
-  patch_stage("surround.ts", "tag", "  ts.tag", "ts")
-  patch_stage("surround.scan", "pair", "  scan.pair", "scan")
-  patch_stage("surround.scan", "quote", "  scan.quote", "scan")
-  patch_stage("surround.scan", "tag", "  scan.tag", "scan")
+  patch("surround.ts", "available", "  ts.available", nil)
+  patch("surround.ts", "pair", "  ts.pair", "ts")
+  patch("surround.ts", "tag", "  ts.tag", "ts")
+  patch("surround.scan", "pair", "  scan.pair", "scan")
+  patch("surround.scan", "quote", "  scan.quote", "scan")
+  patch("surround.scan", "tag", "  scan.tag", "scan")
 
-  patch_plain("surround.edit", "replace_pair", "edit.replace_pair")
-  patch_plain("surround.edit", "wrap", "edit.wrap")
-  patch_plain("surround.edit", "wrap_lines", "edit.wrap_lines")
+  patch("surround.edit", "replace_pair", "edit.replace_pair")
+  patch("surround.edit", "wrap", "edit.wrap")
+  patch("surround.edit", "wrap_lines", "edit.wrap_lines")
 
   patch_buffer_reads()
 end
@@ -301,7 +286,7 @@ function M.report()
   end
 
   local paths = {}
-  for _, p in ipairs({ "ts", "scan", "custom", "none" }) do
+  for _, p in ipairs({ "ts", "scan", "none" }) do
     local n = counters["path: " .. p]
     if n then
       paths[#paths + 1] = ("%s %d"):format(p, n)
@@ -312,21 +297,6 @@ function M.report()
   end
 
   return table.concat(out, "\n")
-end
-
---- Raw numbers, for feeding a comparison harness or writing to JSON.
-function M.data()
-  local o = { stats = {}, counters = vim.deepcopy(counters) }
-  for label, s in pairs(stats) do
-    o.stats[label] = {
-      calls = s.calls,
-      total_ns = s.total,
-      mean_ns = s.calls > 0 and s.total / s.calls or 0,
-      min_ns = s.min ~= math.huge and s.min or 0,
-      max_ns = s.max,
-    }
-  end
-  return o
 end
 
 -----------------------------------------------------------------------------

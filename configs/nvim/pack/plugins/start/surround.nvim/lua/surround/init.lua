@@ -119,23 +119,7 @@ end
 -- Operations
 -----------------------------------------------------------------------------
 
-local function do_delete(char)
-  local b = buf()
-  local row, col = cursor()
-  local region = resolve.find(b, row, col, char)
-  if not region then
-    return false
-  end
-  if OPEN_FORM[char] then
-    region = trim_padding(b, region)
-  end
-  local r, c = with_cursor_policy(b, row, col, function()
-    return edit.replace_pair(b, region, "", "")
-  end)
-  edit.set_cursor(r, c)
-  return true
-end
-
+--- Replace the pair `char` names around the cursor; "" and "" deletes it.
 local function do_change(char, left, right)
   local b = buf()
   local row, col = cursor()
@@ -162,6 +146,27 @@ local function do_wrap(b, sr, sc, er, ec, left, right, linewise)
     return edit.wrap(b, sr, sc, er, ec, left, right)
   end)
   edit.set_cursor(r, c)
+end
+
+--- `']` / `'>` are inclusive and can sit past EOL (an empty line, or
+--- 'selection' "exclusive"): the exclusive end column.
+local function end_col(b, er, ec)
+  local l = api.nvim_buf_get_lines(b, er, er + 1, false)[1] or ""
+  return ec >= #l and #l or char_end(l, ec)
+end
+
+--- Range between two marks, rows 0-based.
+local function marks(b, first, last)
+  local s, e = api.nvim_buf_get_mark(b, first), api.nvim_buf_get_mark(b, last)
+  return s[1] - 1, s[2], e[1] - 1, e[2]
+end
+
+--- Read a char, then its delimiters; nil when cancelled.
+local function prompt_delims()
+  local c = input.char()
+  if c then
+    return input.delimiters(c)
+  end
 end
 
 -----------------------------------------------------------------------------
@@ -197,7 +202,7 @@ function M._repeat()
   end
   local ok
   if p.kind == "delete" then
-    ok = do_delete(p.char)
+    ok = do_change(p.char, "", "")
   elseif p.kind == "change" then
     ok = do_change(p.char, p.left, p.right)
   end
@@ -219,101 +224,55 @@ function M.prompt_change()
   if not old then
     return
   end
-  local new = input.char()
-  if not new then
-    return
+  local left, right = prompt_delims()
+  if left then
+    M.change(old, left, right)
   end
-  local left, right = input.delimiters(new)
-  if not left then
-    return
-  end
-  M.change(old, left, right)
 end
 
 --- `ys{motion}{char}` opfunc. `_fresh` is set by the mapping and cleared here,
 --- so a subsequent `.` reuses the delimiters instead of re-prompting.
 function M._add(mode)
-  local left, right
   if M._fresh then
-    local c = input.char()
-    if not c then
-      return
-    end
-    left, right = input.delimiters(c)
+    local left, right = prompt_delims()
     if not left then
       return
     end
     M._add_delims = { left, right, M._linewise }
     M._fresh = false
-  else
-    local d = M._add_delims
-    if not d then
-      return
-    end
-    left, right = d[1], d[2]
   end
-
-  local b = buf()
-  local s = api.nvim_buf_get_mark(b, "[")
-  local e = api.nvim_buf_get_mark(b, "]")
-  local sr, sc = s[1] - 1, s[2]
-  local er, ec = e[1] - 1, e[2]
-
-  if M._add_delims[3] then
-    do_wrap(b, sr, 0, er, 0, left, right, true)
+  local d = M._add_delims
+  if not d then
     return
   end
 
+  local b = buf()
+  local sr, sc, er, ec = marks(b, "[", "]")
+  if d[3] then
+    return do_wrap(b, sr, 0, er, 0, d[1], d[2], true)
+  end
   if mode == "line" then
     local l = api.nvim_buf_get_lines(b, sr, sr + 1, false)[1] or ""
     sc = #(l:match("^%s*") or "")
     ec = #(api.nvim_buf_get_lines(b, er, er + 1, false)[1] or "")
   else
-    local l = api.nvim_buf_get_lines(b, er, er + 1, false)[1] or ""
-    -- `']` is inclusive; it can also sit past EOL on an empty line.
-    ec = ec >= #l and #l or char_end(l, ec)
+    ec = end_col(b, er, ec)
   end
-
-  do_wrap(b, sr, sc, er, ec, left, right, false)
+  do_wrap(b, sr, sc, er, ec, d[1], d[2], false)
 end
 
 --- Visual-mode `S`.
 function M.visual(linewise)
-  local c = input.char()
-  if not c then
-    return
-  end
-  local left, right = input.delimiters(c)
+  local left, right = prompt_delims()
   if not left then
     return
   end
-
   local b = buf()
-  local s = api.nvim_buf_get_mark(b, "<")
-  local e = api.nvim_buf_get_mark(b, ">")
-  local sr, sc = s[1] - 1, s[2]
-  local er, ec = e[1] - 1, e[2]
-
+  local sr, sc, er, ec = marks(b, "<", ">")
   if linewise then
-    do_wrap(b, sr, 0, er, 0, left, right, true)
-    return
+    return do_wrap(b, sr, 0, er, 0, left, right, true)
   end
-
-  local l = api.nvim_buf_get_lines(b, er, er + 1, false)[1] or ""
-  -- `'>` is inclusive, and can sit past EOL when 'selection' is "exclusive".
-  if ec >= #l then
-    ec = #l
-  else
-    ec = char_end(l, ec)
-  end
-  do_wrap(b, sr, sc, er, ec, left, right, false)
-end
-
---- Exposed for tests and benchmarks. Forwards rather than aliasing so that a
---- caller which replaces `resolve.find` (dev/profile.lua does) is still seen
---- through this entry point.
-function M.find(b, row, col, char)
-  return resolve.find(b, row, col, char)
+  do_wrap(b, sr, sc, er, end_col(b, er, ec), left, right, false)
 end
 
 function M.setup(opts)

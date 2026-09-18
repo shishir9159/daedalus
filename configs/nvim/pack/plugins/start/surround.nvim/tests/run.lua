@@ -177,9 +177,7 @@ print("-- padding trim --")
 -----------------------------------------------------------------------------
 do
   local function ds(lines, row, col, char)
-    return do_op(lines, row, col, function(b, r, c)
-      vim.api.nvim_win_set_cursor(0, { r + 1, c })
-      local _ = b
+    return do_op(lines, row, col, function()
       surround._pending = { kind = "delete", char = char }
       surround._repeat()
     end)
@@ -268,9 +266,7 @@ print("-- cursor policy --")
 do
   local function ds_at(lines, row, col, char, mode)
     config.opts.move_cursor = mode
-    local b = mkbuf(lines, row, col)
-    vim.api.nvim_win_set_cursor(0, { row + 1, col })
-    local _ = b
+    mkbuf(lines, row, col)
     surround._pending = { kind = "delete", char = char }
     surround._repeat()
     local c = vim.api.nvim_win_get_cursor(0)

@@ -66,6 +66,25 @@ local function extend_callee(reader, o_s)
   return pos.pack(row, col - #name)
 end
 
+--- Treesitter answers first: it is right about brackets inside strings and
+--- comments, and about multi-line strings. The scanner runs without a parser,
+--- or after a treesitter miss when `scan_fallback` is set.
+local function scan_too(use_ts, found)
+  return not found and (not use_ts or config.opts.scan_fallback)
+end
+
+---@return integer|nil os, integer oe, integer cs, integer ce
+local function quote(buf, reader, row, col, q, use_ts)
+  local a, b, d, e
+  if use_ts then
+    a, b, d, e = ts.pair(buf, row, col, q, q)
+  end
+  if scan_too(use_ts, a) then
+    return scan.quote(reader, row, col, q)
+  end
+  return a, b, d, e
+end
+
 --- Find the delimiter pair enclosing the cursor.
 ---@param buf integer
 ---@param row integer 0-indexed
@@ -95,14 +114,14 @@ function M.find(buf, row, col, char)
     if use_ts then
       o_s, o_e, c_s, c_e = ts.tag(buf, row, col)
     end
-    if not o_s and (not use_ts or config.opts.scan_fallback) then
+    if scan_too(use_ts, o_s) then
       o_s, o_e, c_s, c_e = scan.tag(reader, count, row, col)
     end
   elseif target.kind == "quote" and target.open == "q" then
     -- `q`: innermost of the three quote styles.
     local best
     for _, q in ipairs(QUOTES) do
-      local a, b, d, e = M.raw_quote(buf, reader, count, row, col, q, use_ts)
+      local a, b, d, e = quote(buf, reader, row, col, q, use_ts)
       if a and (not best or a > best[1]) then
         best = { a, b, d, e }
       end
@@ -111,12 +130,12 @@ function M.find(buf, row, col, char)
       o_s, o_e, c_s, c_e = best[1], best[2], best[3], best[4]
     end
   elseif target.kind == "quote" then
-    o_s, o_e, c_s, c_e = M.raw_quote(buf, reader, count, row, col, target.open, use_ts)
+    o_s, o_e, c_s, c_e = quote(buf, reader, row, col, target.open, use_ts)
   else
     if use_ts then
       o_s, o_e, c_s, c_e = ts.pair(buf, row, col, target.open, target.close)
     end
-    if not o_s and (not use_ts or config.opts.scan_fallback) then
+    if scan_too(use_ts, o_s) then
       o_s, o_e, c_s, c_e = scan.pair(reader, count, row, col, target.open, target.close)
     end
     if o_s and target.kind == "func" then
@@ -129,22 +148,6 @@ function M.find(buf, row, col, char)
     return nil
   end
   return cache_put(c, key, { o_s, o_e, c_s, c_e })
-end
-
---- Quote lookup, treesitter first. A `string` node gives correct multi-line
---- and escape handling for free; the scanner is line-local.
----@return integer|nil os, integer oe, integer cs, integer ce
-function M.raw_quote(buf, reader, count, row, col, q, use_ts)
-  if use_ts then
-    local a, b, d, e = ts.pair(buf, row, col, q, q)
-    if a then
-      return a, b, d, e
-    end
-    if not config.opts.scan_fallback then
-      return nil
-    end
-  end
-  return scan.quote(reader, row, col, q)
 end
 
 return M
