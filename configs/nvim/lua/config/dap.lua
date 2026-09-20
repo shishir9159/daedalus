@@ -1,19 +1,10 @@
 local dap = require('dap')
-local dv = require('dap-view')
 
-dv.setup()
-
--- Inline variable values next to their declarations while stopped.
-require('nvim-dap-virtual-text').setup({
-  virt_text_pos = 'eol',
-  commented = true,
+require('dap-view').setup({
+  auto_toggle = true, -- open/close the drawer with the session
+  -- variable values at the end of their lines while stopped
+  virtual_text = { enabled = true, position = 'eol' },
 })
-
--- open/close the drawer with the session
-dap.listeners.before.launch['dap-view'] = function() dv.open() end
-dap.listeners.before.attach['dap-view'] = function() dv.open() end
-dap.listeners.before.event_terminated['dap-view'] = function() dv.close() end
-dap.listeners.before.event_exited['dap-view'] = function() dv.close() end
 
 vim.fn.sign_define('DapBreakpoint', { text = '●', texthl = 'DiagnosticError' })
 vim.fn.sign_define('DapBreakpointCondition', { text = '◐', texthl = 'DiagnosticError' })
@@ -49,8 +40,6 @@ local function launch_binary(default_dir)
       return vim.fn.input('Executable: ', vim.fn.getcwd() .. default_dir, 'file')
     end,
     cwd = '${workspaceFolder}',
-    stopOnEntry = false,
-    args = {},
   }
 end
 dap.configurations.rust = { launch_binary('/target/debug/') }
@@ -69,11 +58,8 @@ end
 local adapter_python = vim.fn.executable('/usr/bin/python3') == 1 and '/usr/bin/python3' or 'python3'
 dap.adapters.python = function(cb, config)
   if config.request == 'attach' then
-    cb({
-      type = 'server',
-      host = (config.connect or {}).host or '127.0.0.1',
-      port = (config.connect or {}).port or 5678,
-    })
+    local c = config.connect or {}
+    cb({ type = 'server', host = c.host or '127.0.0.1', port = c.port or 5678 })
   else
     cb({ type = 'executable', command = adapter_python, args = { '-m', 'debugpy.adapter' } })
   end

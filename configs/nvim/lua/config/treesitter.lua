@@ -1,7 +1,5 @@
-local ts = require('nvim-treesitter')
-
 -- Parser installer only; highlighting itself is builtin vim.treesitter.
-ts.install({
+require('nvim-treesitter').install({
   'bash', 'c', 'cpp', 'go', 'gomod', 'gosum', 'gowork', 'json', 'lua', 'luadoc',
   'markdown', 'markdown_inline', 'python', 'rust', 'toml', 'yaml', 'zig',
   -- filetype detection for all four is builtin; only the parsers were missing

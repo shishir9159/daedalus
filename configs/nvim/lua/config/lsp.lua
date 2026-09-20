@@ -26,11 +26,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(ev)
     local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
 
-    -- ty owns hover; ruff only lints/formats
-    if client.name == 'ruff' then
-      client.server_capabilities.hoverProvider = false
-    end
-
     if client:supports_method('textDocument/inlayHint') then
       vim.keymap.set('n', '<leader>th', function()
         local enabled = vim.lsp.inlay_hint.is_enabled({ bufnr = ev.buf })
@@ -96,14 +91,10 @@ vim.api.nvim_create_autocmd('BufWritePre', {
       end
     end
 
-    local function formatter(client)
-      return client.name ~= 'ty' -- python formats via ruff
-    end
     -- Without this, saving with the server not installed (or still starting)
     -- warns "Format request failed" on every write.
-    local clients = vim.lsp.get_clients({ bufnr = ev.buf, method = 'textDocument/formatting' })
-    if #vim.tbl_filter(formatter, clients) > 0 then
-      vim.lsp.buf.format({ bufnr = ev.buf, timeout_ms = 2000, filter = formatter })
+    if #vim.lsp.get_clients({ bufnr = ev.buf, method = 'textDocument/formatting' }) > 0 then
+      vim.lsp.buf.format({ bufnr = ev.buf, timeout_ms = 2000 })
     end
   end,
 })

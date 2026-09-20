@@ -1,6 +1,6 @@
 # Minimal Neovim 0.12 config
 
-No plugin framework — only the builtin `vim.pack` manager. 10 plugins from
+No plugin framework — only the builtin `vim.pack` manager. 9 plugins from
 vim.pack plus one that ships in this directory; everything else is Neovim 0.12
 builtins (LSP via `vim.lsp.enable` + `lsp/*.lua`, code lens, treesitter
 highlighting + folding + selection, diagnostics, a floating terminal for
@@ -47,7 +47,7 @@ yazi.nvim 14 needs yazi 26.8.15 or newer; `:checkhealth yazi` compares versions.
 | mini.nvim: mini.ai / mini.pairs | textobjects, autopairs | first file buffer |
 | mini.nvim: mini.diff | git hunk signs + overlay | first file buffer |
 | mini.nvim: mini.clue | mnemonic key-group popup | first file buffer |
-| nvim-dap + dap-view + dap-virtual-text | debugging | first debug keymap |
+| nvim-dap + nvim-dap-view | debugging, inline variable values | first debug keymap |
 | perfanno.nvim | profile annotations | first `:Perf*` command |
 | surround.nvim (`pack/plugins/start/`, not vim.pack) | `ys`/`ds`/`cs`/`S` | keymaps at startup, code on first use |
 
@@ -85,9 +85,9 @@ next start.
 Plugins are pinned by *tag range* in `lua/config/pack.lua`, e.g.
 `version = vim.version.range('0.*')`. The lockfile records both the constraint
 and the resolved commit — `rev` is always a commit hash by design, that is what
-makes the lock reproducible. `perfanno.nvim` and `nvim-dap-virtual-text`
-publish no tags and plenary.nvim's last one (v0.1.4) is years old, so those
-three track their default branch.
+makes the lock reproducible. `perfanno.nvim` publishes no tags
+and plenary.nvim's last one (v0.1.4) is years old, so those two track their
+default branch.
 
 ```
 :Update                  -- treesitter parsers + all plugins, one command

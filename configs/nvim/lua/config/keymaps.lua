@@ -48,7 +48,6 @@ map('n', '<leader>xq', vim.diagnostic.setqflist, { desc = 'Diagnostics to quickf
 local function dap()
   pack.load('nvim-dap', function()
     vim.cmd.packadd('nvim-dap-view')
-    vim.cmd.packadd('nvim-dap-virtual-text')
     require('config.dap')
   end)
   return require('dap')

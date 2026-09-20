@@ -25,10 +25,6 @@
       "src": "https://github.com/igorlfs/nvim-dap-view",
       "version": "1.0.0 - 2.0.0"
     },
-    "nvim-dap-virtual-text": {
-      "rev": "fbdb48c2ed45f4a8293d0d483f7730d24467ccb6",
-      "src": "https://github.com/theHamsta/nvim-dap-virtual-text"
-    },
     "nvim-treesitter": {
       "rev": "4916d6592ede8c07973490d9322f187e07dfefac",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",

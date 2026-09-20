@@ -54,7 +54,6 @@ vim.pack.add({
   { src = 'https://github.com/nvim-lua/plenary.nvim' }, -- for yazi.nvim; its tags stopped at v0.1.4 (2023)
   { src = 'https://github.com/mfussenegger/nvim-dap', version = vim.version.range('0.*') },
   { src = 'https://github.com/igorlfs/nvim-dap-view', version = vim.version.range('1.*') },
-  { src = 'https://github.com/theHamsta/nvim-dap-virtual-text' }, -- untagged
   { src = 'https://github.com/t-troebst/perfanno.nvim' }, -- untagged
   { src = 'https://github.com/nvim-mini/mini.nvim', version = vim.version.range('0.*') },
 }, { load = function() end, confirm = false })
