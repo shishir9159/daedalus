@@ -9,8 +9,9 @@ lazygit).
 This directory is `~/.config/nvim`. From the repo root: `dotter deploy` with
 the `nvim` package (one link for the whole directory, so new files and
 `vim.pack`'s lockfile writes land in the repo), or
-`ln -s "$PWD/configs/nvim" ~/.config/nvim`. Under hyprland-multishell it stays
-shared across profiles; `init.lua` loads the profile's rice-theme colours.
+`ln -s "$PWD/configs/nvim" ~/.config/nvim`. Under hyprland-multishell every
+profile shares it; colours follow the profile's palette unless locked (see
+[Theme](#theme)).
 
 ## Prerequisites
 
@@ -254,26 +255,31 @@ If you ever do need automation, `FocusGained` → `scan_files()` is the right
 hook — not `BufWritePost`, which fires constantly and the watcher already
 covers.
 
-## Cursor shape per mode
+## Theme
 
-`guicursor` (in `options.lua`) gives each mode a distinct shape *and* colour,
-both hinting at what an edit will do. Colours are highlight groups
-(`CursorNormal`, `CursorInsert`, …) reapplied on `ColorScheme` so a
-`:colorscheme` load doesn't wipe them. Needs a terminal that honours DECSCUSR
-(shape) and OSC-12 (colour) — kitty/ghostty/wezterm do; inside tmux/zellij it
-passes through fine.
+`lua/config/theme.lua`. Unlocked, Neovim follows its environment: the rice
+profile's palette as `:colorscheme rice` (re-applied when rice-theme pushes a
+change for *this* profile), and the terminal's light/dark background.
 
-| Mode | Shape | Colour | Why |
-|---|---|---|---|
-| normal | block | lavender | resting on a character, ready to act on it |
-| visual | block, blinking | mauve | selecting; blink + colour set it apart |
-| insert | vertical bar, blinking | green | text lands *between* characters |
-| replace | underline, blinking | red | the char beneath will be overwritten |
-| operator-pending | thick underline | yellow | half-committed: waiting for a motion |
-| command | vertical bar | blue | typing into the cmdline |
+| | |
+|---|---|
+| `:ThemeLock` | freeze the colours on screen into `colors/locked.lua`; rerun to refreeze |
+| `:ThemeUnlock` | delete the freeze and follow the palette and terminal again, immediately |
+| `vim.g.theme_lock = true` | in `init.lua`: lock from Lua (the freeze, else the default scheme) |
+| `vim.g.theme_lock = '<name>'` | lock to that colorscheme; wins over a freeze |
 
-The palette is Catppuccin Mocha hexes; edit the table in `set_cursor_colors()`
-to retheme.
+While locked, palette pushes, terminal theme switches (Neovim 0.12 re-sets
+`'background'` from the terminal even over init.lua's value) and the session's
+environment don't change anything; `termguicolors` is forced so the terminal's
+palette can't leak in. Switch schemes with `:colorscheme`, then `:ThemeLock`.
+
+The freeze is shared by every rice profile (this directory is) and is
+git-ignored; whitelist it in `.gitignore` to lock every machine. Other running
+instances pick up a lock or unlock when they gain focus.
+
+Cursor shape and colour per mode: `guicursor` in `options.lua`, colours in
+`theme.lua` (Catppuccin Mocha hexes). Needs DECSCUSR + OSC-12 support
+(kitty/ghostty/wezterm).
 
 ## Projects (per-project ShaDa)
 

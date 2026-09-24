@@ -45,14 +45,14 @@ o.listchars = 'tab:» ,trail:·,nbsp:␣'
 o.winborder = 'rounded'
 o.clipboard = 'unnamedplus'
 
--- Per-mode cursor shape + colour. Both encode what an edit will do:
---   normal   block,   lavender   resting on a character, ready to act on it
---   visual   block,   mauve      selecting (blink also sets it apart)
---   insert   bar,     green      text lands between characters ("go")
---   replace  underln, red        the char beneath will be overwritten
---   op-pend  thick underln, yellow   half-committed: waiting for a motion
---   command  bar,     blue       typing into the cmdline
--- The trailing name in each segment is a highlight group (defined below).
+-- Per-mode cursor shape; each segment ends in its colour group (Cursor*, set in
+-- config/theme.lua). Shape and colour encode what an edit will do:
+--   normal   block            resting on a character, ready to act on it
+--   visual   block, blinks    selecting
+--   insert   bar              text lands between characters
+--   replace  underline        the char beneath will be overwritten
+--   op-pend  thick underline  half-committed: waiting for a motion
+--   command  bar              typing into the cmdline
 -- Needs a terminal that honours DECSCUSR + OSC-12 (kitty/ghostty/wezterm do).
 o.guicursor = table.concat({
   'n-sm:block-CursorNormal',
@@ -62,26 +62,3 @@ o.guicursor = table.concat({
   'o:hor50-CursorOp',
   'c:ver25-CursorCommand',
 }, ',')
-
--- Cursor colours live in highlight groups so they survive :colorscheme (which
--- would otherwise wipe them) via the ColorScheme autocmd. `bg` is the caret
--- colour; `fg` is the glyph seen through a block cursor, so it's set to the UI
--- background for contrast.
-local function set_cursor_colors()
-  local base = '#1e1e2e'
-  for group, color in pairs({
-    CursorNormal = '#cdd6f4', -- lavender / text
-    CursorVisual = '#cba6f7', -- mauve
-    CursorInsert = '#a6e3a1', -- green
-    CursorReplace = '#f38ba8', -- red
-    CursorOp = '#f9e2af', -- yellow
-    CursorCommand = '#89b4fa', -- blue
-  }) do
-    vim.api.nvim_set_hl(0, group, { fg = base, bg = color })
-  end
-end
-set_cursor_colors()
-vim.api.nvim_create_autocmd('ColorScheme', {
-  group = vim.api.nvim_create_augroup('config.cursor', {}),
-  callback = set_cursor_colors,
-})

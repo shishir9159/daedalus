@@ -11,8 +11,6 @@
 !/LICENSE
 !/README.md
 !/CONTRIBUTING.md
-!/configs/nvim/README.md
-!/configs/nvim/pack/plugins/start/surround.nvim/README.md
 
 !/linux/manjaro-bootstrap.sh
 !/linux/zsh.rc
@@ -27,13 +25,13 @@
 !/configs/Obsidian/Vault/.obsidian/snippets/*.css
 !/configs/Obsidian/Vault/Meta/Obsidian/_datacore/**/*.jsx
 
-!/configs/nvim/init.lua
+!/configs/nvim/**/*.lua
+!/configs/nvim/**/README.md
 !/configs/nvim/nvim-pack-lock.json
-!/configs/nvim/lsp/*.lua
-!/configs/nvim/lua/**/*.lua
 !/configs/nvim/pack/plugins/start/surround.nvim/.gitattributes
 !/configs/nvim/pack/plugins/start/surround.nvim/pkg.json
-!/configs/nvim/pack/plugins/start/surround.nvim/**/*.lua
+# :ThemeLock's freeze stays per machine; drop this line to share the lock
+/configs/nvim/colors/locked.lua
 
 !/hyprland-multishell/**/README.md
 !/hyprland-multishell/*.sh

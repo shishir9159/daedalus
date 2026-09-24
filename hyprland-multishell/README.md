@@ -141,7 +141,7 @@ Outside a rice session add `--profile <p>`.
 |---|---|
 | Ghostty | SIGUSR2, only if ≥ 1.2 (below that it closes every terminal; version checked) |
 | kitty | SIGUSR1 |
-| Neovim | `--remote-expr` (stays in insert mode) |
+| Neovim | `User RiceTheme` via `--remote-expr`; each instance applies its own profile's palette, unless locked with `:ThemeLock` (`../configs/nvim`) |
 | Alacritty | automatic |
 | foot, GTK, btop, fuzzel | none — new windows/launches pick it up |
 
