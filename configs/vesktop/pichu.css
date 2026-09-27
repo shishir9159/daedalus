@@ -48,6 +48,12 @@
   --sp-neon:   #ff5f66;   /* usernames, glowing */
   --sp-gold:   #f0c060;   /* time, structure, unread */
   --sp-glow:   #ffdfa0;
+  /* usernames: a dark outline (readable over the reddest ember), then the glow */
+  --sp-name-glow:
+    0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
+    1px 0 0 #12100f, -1px 0 0 #12100f,
+    0 0 10px rgba(255, 45, 55, 0.75),
+    0 0 22px rgba(255, 0, 4, 0.45);
 
   --sp-line: #382c28;
   --sp-edge: #57433c;
@@ -139,7 +145,7 @@ html.theme-dark.visual-refresh,
   --button-filled-brand-background: var(--sp-red);
   --button-filled-brand-text: #ffffff;
   --mention-foreground: var(--sp-glow);
-  --mention-background: rgba(214, 31, 28, 0.26);
+  --mention-background: color-mix(in srgb, var(--sp-red) 26%, transparent);
   --focus-primary: var(--sp-gold);
 
   --elevation-low: 0 0 0 1px var(--sp-line);
@@ -433,19 +439,14 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
    what keeps them readable where the ember is at its reddest. */
 
 [class*="username"],
-[class*="nameTag"],
-[class*="headerText"] [class*="username"] {
+[class*="nameTag"] {
   font-family: var(--sp-pixel) !important;
   font-size: var(--sp-user) !important;
   font-weight: 400 !important;
   line-height: 1.6 !important;
   letter-spacing: 0 !important;
   color: var(--sp-neon) !important;
-  text-shadow:
-    0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
-    1px 0 0 #12100f, -1px 0 0 #12100f,
-    0 0 10px rgba(255, 45, 55, 0.75),
-    0 0 22px rgba(255, 0, 4, 0.45) !important;
+  text-shadow: var(--sp-name-glow) !important;
 }
 /* hovering a name changes nothing — no color shift, no glow, no underline */
 [class*="username"]:hover,
@@ -453,11 +454,7 @@ code, pre, [class*="inlineCode"], [class*="hljs"] {
   color: var(--sp-neon) !important;
   background: transparent !important;
   text-decoration: none !important;
-  text-shadow:
-    0 0 1px #12100f, 0 1px 0 #12100f, 0 -1px 0 #12100f,
-    1px 0 0 #12100f, -1px 0 0 #12100f,
-    0 0 10px rgba(255, 45, 55, 0.75),
-    0 0 22px rgba(255, 0, 4, 0.45) !important;
+  text-shadow: var(--sp-name-glow) !important;
 }
 [class*="membersWrap"] [class*="username"],
 [class*="memberInner"] [class*="name"],
@@ -492,7 +489,7 @@ li[class*="messageListItem"]:hover { background: rgba(30, 21, 19, 0.92) !importa
 [class*="mentioned_"] { background: var(--sp-tablet) !important; }
 [class*="mentioned_"]::before, [class*="mentioned_"]::after { display: none !important; }
 [class*="mention"][class*="interactive"] {
-  background: rgba(214, 31, 28, 0.34) !important;
+  background: color-mix(in srgb, var(--sp-red) 34%, transparent) !important;
   color: var(--sp-glow) !important;
   border-radius: 0 !important;
   padding: 1px 5px !important;
@@ -515,7 +512,7 @@ li[class*="messageListItem"]:hover { background: rgba(30, 21, 19, 0.92) !importa
 [class*="link_"] [class*="name_"] { color: var(--sp-faint); font-weight: 500; }
 
 [class*="modeUnread"] {
-  background: rgba(214, 31, 28, 0.14) !important;
+  background: color-mix(in srgb, var(--sp-red) 14%, transparent) !important;
   box-shadow: inset var(--sp-bar) 0 0 0 var(--sp-gold) !important;
 }
 [class*="modeUnread"] [class*="name_"] { color: var(--sp-glow) !important; font-weight: 700 !important; }
