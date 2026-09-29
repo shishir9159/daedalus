@@ -1,4 +1,5 @@
-# If the $XDG_DATA_HOME env variable is set, then $XDG_DATA_HOME/pnpm/global
+#!/usr/bin/env bash
+# Fresh Manjaro: packages and toolchains. Run by hand, a step at a time.
 
 # prompt yes with golang automation
 
@@ -7,17 +8,16 @@ sudo pacman-mirrors --geoip
 # :: Repository extra for ghidra
 #    1) jdk-openjdk  2) jdk17-openjdk  3) jdk21-openjdk
 
-# add and configure exa
 sudo pacman -Syyu --needed alacritty base-devel bat btop cairo-dock cairo-dock-plug-ins discord dust duf eza fluent-reader git ghidra gping hyperfine kitty keepassxc meld mcfly neovim nyxt obsidian python-pynvim postman-bin qbittorrent radare2 tldr unzip wezterm wireshark-qt yazi zoxide
 git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
 
 # kernel
-# pacman -syyu strace
+# sudo pacman -S strace
 
 # rustup prompt
 # 1) Proceed with standard installation (default - just press enter)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-sudo pacman -Rsn cups cups-pdf elisa gutenprint gwenview kate kcalc kdeconnect kfind khelpcenter kfind manjaro-hello manjaro-printer nano nano-syntax-highlighting print-manager skanlite system-config-printer vi yakuake
+sudo pacman -Rsn cups cups-pdf elisa gutenprint gwenview kate kcalc kdeconnect kfind khelpcenter manjaro-hello manjaro-printer nano nano-syntax-highlighting print-manager skanlite system-config-printer vi yakuake
 sudo pacman -Rsn $(sudo pacman -Qdtq)
 yay -Syyu anki bruno conan imhex miniconda3 nomacs raindrop swww visual-studio-code-bin
 
@@ -30,7 +30,7 @@ conda config --set auto_activate_base false
 sudo pacman -Syyu jre21-openjdk
 
 # TODO: make conda installation optional
-sudo pacman -Syuu uv
+sudo pacman -S --needed uv
 # uv completions are in zsh.rc. Never `>> ~/.zshrc` here: once dotter links it,
 # that appends to linux/zsh.rc in the repo.
 
@@ -64,19 +64,13 @@ sudo pip3 install patch-ng --break-system-packages
 # From the repo root, with packages = ["zsh", "nvim"] in .dotter/local.toml:
 #   dotter deploy
 
-#
 sudo pacman -S hyprland waybar rofi-wayland dunst xdg-desktop-portal-hyprland qt5-wayland qt6-wayland hyprpaper chromium ttf-font-awesome
 
 ######### tui #########
 sudo pacman -S lazygit
 
-yay -S py-spy # uv tool
+yay -S py-spy
 
-# uv tool install basedpyright
-uv tool install ty@latest ruff@latest
-
-sudo pacman -S --needed gopls delve zls basedpyright ruff python-debugpy lldb py-spy ty
-
-# neovim
+# language servers, debuggers, ruff/ty: configs/nvim/README.md, Prerequisites
 
 # 100% 12:0=41s Nordic Blue https://github.com/prasanthrangan/hyde-themes/tree/Nordic-Blue --skipcaching false

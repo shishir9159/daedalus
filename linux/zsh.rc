@@ -8,10 +8,10 @@
 [[ -r /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
 (( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
 
-# What the uv/bun/pnpm installers add to ~/.zshrc; (N/) drops missing dirs.
+# What the uv/bun/pnpm/fnm installers add to ~/.zshrc; (N/) drops missing dirs.
 typeset -U path
-path=($HOME/.local/bin(N/) $HOME/.bun/bin(N/) $HOME/.local/share/pnpm(N/) $path)
 export PNPM_HOME="$HOME/.local/share/pnpm"
+path=($HOME/.local/share/fnm(N/) $HOME/.local/bin(N/) $HOME/.bun/bin(N/) $PNPM_HOME(N/) $path)
 
 export EDITOR=nvim VISUAL=nvim   # configs/nvim
 alias vi=nvim vim=nvim
@@ -39,13 +39,7 @@ clean() {
 (( $+commands[fzf] )) && source <(fzf --zsh)
 (( $+commands[uv] )) && eval "$(uv generate-shell-completion zsh)"
 (( $+commands[uvx] )) && eval "$(uvx --generate-shell-completion zsh)"
-
-# fnm
-FNM_PATH="$HOME/.local/share/fnm"
-if [[ -d $FNM_PATH ]]; then
-  path=("$FNM_PATH" $path)
-  eval "$(fnm env --use-on-cd --shell zsh)"
-fi
+(( $+commands[fnm] )) && eval "$(fnm env --use-on-cd --shell zsh)"
 
 (( $+commands[mcfly] )) && eval "$(mcfly init zsh)"
 (( $+commands[procs] )) && source <(procs --gen-completion-out zsh)
