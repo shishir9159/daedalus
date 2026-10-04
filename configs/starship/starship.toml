@@ -1,0 +1,218 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+# Starship port of windows/shishir.omp.toml. ~/.config/starship.toml (dotter
+# package `starship`).
+#
+# Glyphs are \u escapes, so nothing that strips the Private Use Area on save
+# can blank them:  E0B6 E0B4 round caps  E0B0 E0B2 arrows  (FantasqueSansM
+# Nerd Font has every icon used here). Colours are names from the palette at
+# the bottom.
+#
+# Chaining: a module can't see its neighbours, so an optional segment can't
+# know which colour to join onto. Each one opens with a notch (an arrow in the
+# terminal's background colour, via `inverted`) and closes with its own arrow,
+# so any subset interlocks with a chevron gap, the way the oh-my-posh theme
+# joins its execution time. Joins between segments that are always there
+# (duration -> status) are seamless.
+
+palette = 'shishir'
+# A blank line before the bar, as `newline = true` in oh-my-posh. Not
+# add_newline: that would also pad every profile render.
+add_newline = false
+command_timeout = 1000
+scan_timeout = 30
+continuation_prompt = '[>>](purple) '
+
+format = """
+$line_break\
+[\uE0B6](fg:path)[ \uEA83  $directory ](bg:path fg:path_fg)[\uE0B0](fg:path)\
+$git_branch\
+$git_state\
+$git_status\
+$c\
+$cpp\
+$rust\
+$golang\
+$lua\
+$nodejs\
+$julia\
+$python\
+$ruby\
+$jobs\
+[\uE0B0](fg:duration inverted)[ \uEBA2 $cmd_duration ](bg:duration fg:duration_fg)\
+$character"""
+
+right_format = '$shell$battery$time'
+
+# ---------------------------------------------------------------- left bar --
+
+# oh-my-posh `folder` style: the current directory's name, ~ at home.
+[directory]
+format = '$path$read_only'
+truncation_length = 1
+truncate_to_repo = false
+truncation_symbol = ''
+home_symbol = '~'
+read_only = " \uF023"
+
+[git_branch]
+format = "[\uE0B0](fg:git inverted)[ \uE0A0 $branch ](bg:git fg:git_fg)[\uE0B0](fg:git)"
+truncation_length = 25
+truncation_symbol = "\u2026"
+
+[git_state]
+format = "[\uE0B0](fg:git_alert inverted)[ $state( $progress_current/$progress_total) ](bg:git_alert fg:light)[\uE0B0](fg:git_alert)"
+
+# oh-my-posh recolours the whole git segment by state; a Starship style is
+# fixed, so the state gets segments of its own in those colours: ahead/behind
+# (purple), diverged (red), and changes (orange), worktree ( ) then index ( ).
+[git_status]
+format = """\
+$ahead_behind\
+([\uE0B0](fg:git_dirty inverted)[\
+( \uF071$conflicted)\
+( \uF044$untracked$worktree_added$worktree_modified$worktree_deleted)\
+( \uF046$index_added$index_modified$index_deleted$renamed)\
+( \uEB4B$stashed) \
+](bg:git_dirty fg:git_status_fg)[\uE0B0](fg:git_dirty))"""
+ahead = "[\uE0B0](fg:git_sync inverted)[ \u2191${count} ](bg:git_sync fg:git_status_fg)[\uE0B0](fg:git_sync)"
+behind = "[\uE0B0](fg:git_sync inverted)[ \u2193${count} ](bg:git_sync fg:git_status_fg)[\uE0B0](fg:git_sync)"
+diverged = "[\uE0B0](fg:git_alert inverted)[ \u2191${ahead_count} \u2193${behind_count} ](bg:git_alert fg:light)[\uE0B0](fg:git_alert)"
+up_to_date = ''
+conflicted = ' ${count}'
+untracked = ' ?${count}'
+worktree_added = ' +${count}'
+worktree_modified = ' ~${count}'
+worktree_deleted = ' -${count}'
+index_added = ' +${count}'
+index_modified = ' ~${count}'
+index_deleted = ' -${count}'
+renamed = ' >${count}'
+stashed = ' ${count}'
+
+[c]
+format = "[\uE0B0](fg:c inverted)[ \uE61E $version ](bg:c fg:dark)[\uE0B0](fg:c)"
+version_format = '${raw}'
+
+[cpp]
+disabled = false
+format = "[\uE0B0](fg:cpp inverted)[ \uE61D $version ](bg:cpp fg:light)[\uE0B0](fg:cpp)"
+version_format = '${raw}'
+
+[rust]
+format = "[\uE0B0](fg:rust inverted)[ \uE7A8 $version ](bg:rust fg:light)[\uE0B0](fg:rust)"
+version_format = '${raw}'
+
+[golang]
+format = "[\uE0B0](fg:golang inverted)[ \uE626 $version ](bg:golang fg:dark)[\uE0B0](fg:golang)"
+version_format = '${raw}'
+
+[lua]
+format = "[\uE0B0](fg:lua inverted)[ \uE620 $version ](bg:lua fg:light)[\uE0B0](fg:lua)"
+version_format = '${raw}'
+
+[nodejs]
+format = "[\uE0B0](fg:nodejs inverted)[ \uE718 $version ](bg:nodejs fg:light)[\uE0B0](fg:nodejs)"
+version_format = '${raw}'
+
+[julia]
+format = "[\uE0B0](fg:julia inverted)[ \uE624 $version ](bg:julia fg:dark)[\uE0B0](fg:julia)"
+version_format = '${raw}'
+
+# Shows in a uv project before anything is activated (.venv, uv.lock); the
+# name in parentheses is the active VIRTUAL_ENV.
+[python]
+format = "[\uE0B0](fg:python inverted)[ \uE235 $version( \\($virtualenv\\)) ](bg:python fg:dark)[\uE0B0](fg:python)"
+version_format = '${raw}'
+python_binary = ['python', 'python3']
+detect_files = ['pyproject.toml', 'uv.lock', '.python-version', 'requirements.txt', 'Pipfile', 'tox.ini', 'setup.py', 'setup.cfg', '__init__.py']
+detect_folders = ['.venv']
+
+[ruby]
+format = "[\uE0B0](fg:ruby inverted)[ \uE791 $version ](bg:ruby fg:light)[\uE0B0](fg:ruby)"
+version_format = '${raw}'
+
+[jobs]
+format = "[\uE0B0](fg:jobs inverted)[ \uF013 $number ](bg:jobs fg:dark)[\uE0B0](fg:jobs)"
+symbol_threshold = 1
+number_threshold = 1
+
+# Every prompt has one, from 0ms, like oh-my-posh's always_enabled.
+[cmd_duration]
+format = '$duration'
+min_time = 0
+show_milliseconds = true
+
+# The status heart, joined onto the duration; final_space is the trailing ' '.
+[character]
+format = '$symbol '
+success_symbol = "[\uE0B0](fg:duration bg:ok)[ \uE23A ](bg:ok fg:ok_fg)[\uE0B4](fg:ok)"
+error_symbol = "[\uE0B0](fg:duration bg:err)[ \uE23A ](bg:err fg:err_fg)[\uE0B4](fg:err)"
+vimcmd_symbol = "[\uE0B0](fg:duration bg:vicmd)[ \uE23A ](bg:vicmd fg:light)[\uE0B4](fg:vicmd)"
+
+# -------------------------------------------------------------- right side --
+
+[shell]
+disabled = false
+format = "[\uE0B6](fg:shell)[ \uF489 $indicator ](bg:shell fg:shell_fg)[\uE0B2](fg:shell inverted)"
+bash_indicator = 'bash'
+zsh_indicator = 'zsh'
+fish_indicator = 'fish'
+nu_indicator = 'nu'
+powershell_indicator = 'pwsh'
+cmd_indicator = 'cmd'
+unknown_indicator = 'sh'
+
+# oh-my-posh colours the battery by charge state; Starship only by charge
+# level, so this keeps one colour and lets the icon show the state.
+[battery]
+format = "[\uE0B2](fg:battery)[ $symbol $percentage ](bg:battery fg:light)[\uE0B2](fg:battery inverted)"
+full_symbol = "\uF240"
+charging_symbol = "\uF0E7"
+discharging_symbol = "\uF242"
+unknown_symbol = "\uF242"
+empty_symbol = "\uF244"
+
+[[battery.display]]
+threshold = 100
+
+[time]
+disabled = false
+format = "[\uE0B2](fg:clock)[ $time ](bg:clock fg:clock_fg)[\uE0B4](fg:clock)"
+time_format = '%H:%M:%S'
+
+# ----------------------------------------------------------------- palette --
+# windows/shishir.omp.toml's colours.
+
+[palettes.shishir]
+path = '#ff479c'
+path_fg = '#ffffff'
+git = '#fffb38'
+git_fg = '#193549'
+git_dirty = '#ff9248'
+git_sync = '#b388ff'
+git_alert = '#ff4500'
+git_status_fg = '#193549'
+duration = '#83769c'
+duration_fg = '#ffffff'
+ok = '#00897b'
+ok_fg = '#ffffff'
+err = '#e91e63'
+err_fg = '#ffffff'
+vicmd = '#6c71c4'
+shell = '#0077c2'
+shell_fg = '#ffffff'
+battery = '#f36943'
+clock = '#2e9599'
+clock_fg = '#111111'
+jobs = '#ffff66'
+dark = '#111111'
+light = '#ffffff'
+c = '#a8b9cc'
+cpp = '#00599c'
+rust = '#f74c00'
+golang = '#8ed1f7'
+lua = '#000080'
+nodejs = '#6ca35e'
+julia = '#4063d8'
+python = '#ffde57'
+ruby = '#ae1401'

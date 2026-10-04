@@ -33,3 +33,7 @@ depends = ["zsh", "nvim"]
 # ~/.config, never $XDG_CONFIG_HOME, which points into a profile in a rice.
 [nvim.files]
 "configs/nvim" = { target = "~/.config/nvim", type = "symbolic", recurse = false }
+
+# Starship, shared by every rice profile like zsh and nvim.
+[starship.files]
+"configs/starship/starship.toml" = "~/.config/starship.toml"

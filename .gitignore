@@ -33,6 +33,8 @@
 # :ThemeLock's freeze stays per machine; drop this line to share the lock
 /configs/nvim/colors/locked.lua
 
+!/configs/starship/starship.toml
+
 !/hyprland-multishell/**/README.md
 !/hyprland-multishell/*.sh
 !/hyprland-multishell/owned.default.txt
