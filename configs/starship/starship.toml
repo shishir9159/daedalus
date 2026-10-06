@@ -1,6 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 # Starship port of windows/shishir.omp.toml. ~/.config/starship.toml (dotter
-# package `starship`).
+# package `starship`); bash also needs starship.bash for the right prompt and
+# the transient prompt.
 #
 # Glyphs are \u escapes, so nothing that strips the Private Use Area on save
 # can blank them:  E0B6 E0B4 round caps  E0B0 E0B2 arrows  (FantasqueSansM
@@ -42,6 +43,17 @@ $jobs\
 $character"""
 
 right_format = '$shell$battery$time'
+
+# For starship.bash: the right prompt (bash has no right_format) and the
+# transient pieces in one render, split on \u001f. Keep the first part in step
+# with right_format.
+[profiles]
+bash = """$shell$battery$time\
+\u001f${env_var.transient_ok}\
+\u001f${env_var.transient_warn}\
+\u001f${env_var.transient_err}\
+\u001f${env_var.transient_at}\
+\u001f${env_var.transient_took}"""
 
 # ---------------------------------------------------------------- left bar --
 
@@ -180,6 +192,32 @@ disabled = false
 format = "[\uE0B2](fg:clock)[ $time ](bg:clock fg:clock_fg)[\uE0B4](fg:clock)"
 time_format = '%H:%M:%S'
 
+# --------------------------------------------------------------- transient --
+# Rendered through the `bash` profile with every variable set. Faces by the
+# state the prompt was in: ok, warn (starship_warn), error.
+
+[env_var.transient_ok]
+variable = 'STARSHIP_TRANSIENT_OK'
+format = "[\uE0B6](fg:transient)[ \\(^-^\\) ](bg:transient fg:transient_fg)[\uE0B4](fg:transient)"
+
+[env_var.transient_warn]
+variable = 'STARSHIP_TRANSIENT_WARN'
+format = "[\uE0B6](fg:warn)[ \\(^_^\\) ](bg:warn fg:warn_fg)[\uE0B4](fg:warn)"
+
+[env_var.transient_err]
+variable = 'STARSHIP_TRANSIENT_ERR'
+format = "[\uE0B6](fg:err)[ >_< ](bg:err fg:err_fg)[\uE0B4](fg:err)"
+
+# When Enter was pressed, until the command finishes...
+[env_var.transient_at]
+variable = 'STARSHIP_TRANSIENT_AT'
+format = "[\uE0B2](fg:clock)[ $env_value ](bg:clock fg:clock_fg)[\uE0B4](fg:clock)"
+
+# ...then how long it took.
+[env_var.transient_took]
+variable = 'STARSHIP_TRANSIENT_TOOK'
+format = "[\uE0B2](fg:duration)[ \uEBA2 $env_value ](bg:duration fg:duration_fg)[\uE0B4](fg:duration)"
+
 # ----------------------------------------------------------------- palette --
 # windows/shishir.omp.toml's colours.
 
@@ -198,7 +236,11 @@ ok = '#00897b'
 ok_fg = '#ffffff'
 err = '#e91e63'
 err_fg = '#ffffff'
+warn = '#ff9248'
+warn_fg = '#193549'
 vicmd = '#6c71c4'
+transient = '#ff479c'
+transient_fg = '#ffffff'
 shell = '#0077c2'
 shell_fg = '#ffffff'
 battery = '#f36943'

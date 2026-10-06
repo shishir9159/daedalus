@@ -34,6 +34,8 @@
 /configs/nvim/colors/locked.lua
 
 !/configs/starship/starship.toml
+!/configs/starship/starship.bash
+!/configs/starship/README.md
 
 !/hyprland-multishell/**/README.md
 !/hyprland-multishell/*.sh
