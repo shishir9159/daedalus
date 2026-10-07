@@ -66,6 +66,14 @@ sudo pip3 install patch-ng --break-system-packages
 
 sudo pacman -S hyprland waybar rofi-wayland dunst xdg-desktop-portal-hyprland qt5-wayland qt6-wayland hyprpaper chromium ttf-font-awesome
 
+######### shells #########
+# nushell, and the starship prompt for bash (configs/starship). Deploy with
+# "starship" in .dotter/local.toml's packages, then hook bash up once; ~/.bashrc
+# isn't dotter's, so appending is safe.
+sudo pacman -S --needed nushell starship ttf-fantasque-nerd
+grep -qF 'starship/starship.bash' ~/.bashrc 2>/dev/null \
+  || echo '[[ -r ~/.config/starship/starship.bash ]] && . ~/.config/starship/starship.bash' >> ~/.bashrc
+
 ######### tui #########
 sudo pacman -S lazygit
 

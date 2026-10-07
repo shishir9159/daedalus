@@ -35,7 +35,7 @@ depends = ["zsh", "nvim"]
 "configs/nvim" = { target = "~/.config/nvim", type = "symbolic", recurse = false }
 
 # Starship, shared by every rice profile like zsh and nvim. ~/.bashrc sources
-# the bash half.
+# the bash half (linux/manjaro-bootstrap.sh adds the line).
 [starship.files]
 "configs/starship/starship.toml" = "~/.config/starship.toml"
 "configs/starship/starship.bash" = "~/.config/starship/starship.bash"

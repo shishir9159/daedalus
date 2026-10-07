@@ -8,8 +8,9 @@ for bash so far.
 | `starship.toml` | `~/.config/starship.toml` |
 | `starship.bash` | `~/.config/starship/starship.bash`, sourced from `~/.bashrc` |
 
-Both are the dotter package `starship`. Trying it in a shell without
-deploying: `. configs/starship/starship.bash`.
+Both are the dotter package `starship`; `linux/manjaro-bootstrap.sh` installs
+starship, nushell and the font, and adds the `~/.bashrc` line. Trying it in a
+shell without deploying: `. configs/starship/starship.bash`.
 
 Needs a Nerd Font (FantasqueSansM Nerd Font has every glyph used). The glyphs
 are written as escapes in `starship.toml`, so an editor that drops Private Use
