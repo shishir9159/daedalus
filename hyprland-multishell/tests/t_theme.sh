@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # rice-theme: profile resolution, locks surviving a wallpaper change, the foot
 # transform, freezing the source format, drift detection, named themes,
-# noctalia-config safety, and the Ghostty version gate.
+# noctalia-config safety, the Ghostty version gate and Starship's palette merge.
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
@@ -93,5 +93,25 @@ section "kitty reloads via SIGUSR1"
 printf 'background %s\n' '#555555' > "$G/kitty.conf"
 rice-theme apply kitty >/dev/null
 expect "pkill -USR1 kitty"                   called 'pkill -USR1 -x kitty'
+
+section "Starship: the profile's palette over the shared config"
+# shellcheck disable=SC2016  # $directory, $all: starship's variables
+{
+printf '%s\n' "palette = 'shishir'" 'format = "$directory"' '' '[palettes.shishir]' \
+    "path = '#ff479c'" "clock = '#2e9599'" '' '[time]' 'disabled = false' > "$HOME/.config/starship.toml"
+printf '[palettes.rice]\npath = "#123456"\n' > "$G/starship.toml"
+rice-theme apply starship >/dev/null
+S="$A/starship.toml"
+expect "selects the profile's palette"       has "$S" 'palette = "rice"'
+expect "keeps the shared config"             has "$S" 'format = "$directory"'
+expect "its colours win"                     grep -qx 'path = "#123456"' "$S"
+expect "the rest are the shared palette's"   grep -qx "clock = '#2e9599'" "$S"
+expect "the shared palette stays"            grep -qx "path = '#ff479c'" "$S"
+echo 'format = "$all"' >> "$HOME/.config/starship.toml"
+rice-theme check > "$SANDBOX/check" || true
+expect "an edit to the shared config shows as drift" has "$SANDBOX/check" $'starship\tauto\tdrifted'
+rice-theme apply starship >/dev/null
+expect "apply takes the edit"                has "$S" 'format = "$all"'
+}
 
 finish

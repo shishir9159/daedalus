@@ -56,3 +56,14 @@ can't redraw them: editing a line can erase the right prompt.
 
 It also sets the terminal title to `bash in <dir>`, as the oh-my-posh theme
 did. Multi-line input, Ctrl-C and blank lines are handled; vi mode too.
+
+## Colours that follow a rice
+
+Under `hyprland-multishell`, `rice-theme` publishes
+`$XDG_CONFIG_HOME/rice-theme/active/starship.toml`: this config with a
+`[palettes.rice]` (`templates/starship.tmpl`: path, git, duration, status,
+shell, clock and the transient faces from the wallpaper's palette; language
+colours stay) selected. `starship.bash` prefers it, so a palette change shows
+at the next prompt; `rice-theme lock starship` keeps the current one. After
+editing `starship.toml`, `rice-theme apply starship` carries the edit into the
+profile.

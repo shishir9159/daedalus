@@ -125,7 +125,7 @@ Setup, once per profile:
 rice-theme hints             # include line for each app's config
 rice-theme noctalia-config   # writes noctalia/templates.toml (backs up a foreign one)
 ```
-**Remove managed tools from Noctalia's `builtin_ids`/`community_ids`** — those templates write straight to the apps and beat any lock (`rice-doctor` warns). Starter templates: ghostty, kitty, foot, gtk, nvim; verify role names against the [template reference](https://docs.noctalia.dev/noctalia/theming/templates/).
+**Remove managed tools from Noctalia's `builtin_ids`/`community_ids`** — those templates write straight to the apps and beat any lock (`rice-doctor` warns). Starter templates: ghostty, kitty, foot, gtk, nvim, starship; verify role names against the [template reference](https://docs.noctalia.dev/noctalia/theming/templates/).
 
 ```bash
 rice-theme lock nvim ghostty                     # keep current colours across wallpaper changes
@@ -142,6 +142,7 @@ Outside a rice session add `--profile <p>`.
 | Ghostty | SIGUSR2, only if ≥ 1.2 (below that it closes every terminal; version checked) |
 | kitty | SIGUSR1 |
 | Neovim | `User RiceTheme` via `--remote-expr`; each instance applies its own profile's palette, unless locked with `:ThemeLock` (`../configs/nvim`) |
+| Starship | next prompt: `starship.bash` reads `active/starship.toml`, the shared config with the profile's palette laid over its own (`../configs/starship`) |
 | Alacritty | automatic |
 | foot, GTK, btop, fuzzel | none — new windows/launches pick it up |
 

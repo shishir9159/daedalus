@@ -14,7 +14,8 @@
 # PS0 (4.4) and EPOCHREALTIME (5.0) carry the timing.
 if (( BASH_VERSINFO[0] < 5 )); then eval "$(starship init bash)"; return 0; fi
 
-# The config next to this file; starship.exe on Git Bash wants a Windows path.
+# This config, or the palette a rice publishes (__ss_config). starship.exe on
+# Git Bash wants a Windows path.
 __ss_base=$(readlink -f "${BASH_SOURCE[0]}") && __ss_base=${__ss_base%/*}/starship.toml
 if [[ $OSTYPE == msys || $OSTYPE == cygwin ]]; then __ss_base=$(cygpath -m "$__ss_base"); fi
 
@@ -42,7 +43,11 @@ starship_warn() { __ss_warn=1; }
 __ss_return() { return "$1"; }
 
 __ss_config() {
-    [[ $__ss_user_config ]] || export STARSHIP_CONFIG=$__ss_base
+    [[ $__ss_user_config ]] && return
+    # rice-theme builds it from ~/.config/starship.toml, so it needs that too
+    local rice=${XDG_CONFIG_HOME:+$XDG_CONFIG_HOME/rice-theme/active/starship.toml}
+    if [[ $rice && -f $rice && -f ~/.config/starship.toml ]]; then export STARSHIP_CONFIG=$rice
+    else export STARSHIP_CONFIG=$__ss_base; fi
 }
 
 # REPLY: $1 as displayed, without \[...\] and escape sequences (__ss_width).
