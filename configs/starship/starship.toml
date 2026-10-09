@@ -1,7 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
-# Starship port of windows/shishir.omp.toml. ~/.config/starship.toml (dotter
-# package `starship`); bash also needs starship.bash for the right prompt and
-# the transient prompt.
+# Starship port of configs/powershell/shishir.omp.toml. ~/.config/starship.toml
+# (dotter package `starship`); bash also needs starship.bash for the right
+# prompt and the transient prompt.
 #
 # Glyphs are \u escapes, so nothing that strips the Private Use Area on save
 # can blank them:  E0B6 E0B4 round caps  E0B0 E0B2 arrows  (FantasqueSansM
@@ -219,9 +219,9 @@ variable = 'STARSHIP_TRANSIENT_TOOK'
 format = "[\uE0B2](fg:duration)[ \uEBA2 $env_value ](bg:duration fg:duration_fg)[\uE0B4](fg:duration)"
 
 # ----------------------------------------------------------------- palette --
-# windows/shishir.omp.toml's colours. hyprland-multishell/templates/
-# starship.tmpl maps the structural ones onto a rice's palette; language
-# colours are brand colours and stay.
+# configs/powershell/shishir.omp.toml's colours. hyprland-multishell/
+# templates/starship.tmpl maps the structural ones onto a rice's palette;
+# language colours are brand colours and stay.
 
 [palettes.shishir]
 path = '#ff479c'

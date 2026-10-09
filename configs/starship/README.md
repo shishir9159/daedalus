@@ -1,7 +1,7 @@
 # Starship
 
-`windows/shishir.omp.toml` (oh-my-posh) ported to [Starship](https://starship.rs),
-for bash so far.
+`configs/powershell/shishir.omp.toml` (oh-my-posh) ported to
+[Starship](https://starship.rs), for bash so far.
 
 | File | Goes to |
 |---|---|

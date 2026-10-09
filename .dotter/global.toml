@@ -26,7 +26,7 @@ depends = ["zsh", "nvim"]
 # zsh and nvim are shared by every rice profile: rc files aren't per profile,
 # and rice-sync links ~/.config/nvim into each one.
 [zsh.files]
-"linux/zsh.rc" = "~/.zshrc"
+"configs/zsh/zsh.rc" = "~/.zshrc"
 
 # One link for the whole directory, not one per file: files created under
 # ~/.config/nvim and vim.pack's lockfile writes land in the repo. Always

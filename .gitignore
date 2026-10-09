@@ -13,12 +13,10 @@
 !/CONTRIBUTING.md
 
 !/linux/manjaro-bootstrap.sh
-!/linux/zsh.rc
 
-!/windows/readme.md
-!/windows/profile.ps1
-!/windows/*.omp.toml
-
+!/configs/zsh/zsh.rc
+!/configs/powershell/*.omp.toml
+!/configs/legacy/profile.ps1
 !/configs/okular/okularrc
 !/configs/okular/okularpartrc
 !/configs/vesktop/*.css

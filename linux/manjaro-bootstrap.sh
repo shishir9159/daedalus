@@ -32,7 +32,7 @@ sudo pacman -Syyu jre21-openjdk
 # TODO: make conda installation optional
 sudo pacman -S --needed uv
 # uv completions are in zsh.rc. Never `>> ~/.zshrc` here: once dotter links it,
-# that appends to linux/zsh.rc in the repo.
+# that appends to configs/zsh/zsh.rc in the repo.
 
 # optional --- yay -S galaxybudsclient-bin
 
