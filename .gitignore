@@ -13,6 +13,7 @@
 !/CONTRIBUTING.md
 
 !/configs/zsh/zsh.rc
+!/configs/zsh/p10k.zsh
 !/configs/powershell/*.omp.toml
 !/configs/legacy/profile.ps1
 !/configs/okular/okularrc

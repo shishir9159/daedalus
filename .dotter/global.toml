@@ -27,6 +27,7 @@ depends = ["zsh", "nvim"]
 # and rice-sync links ~/.config/nvim into each one.
 [zsh.files]
 "configs/zsh/zsh.rc" = "~/.zshrc"
+"configs/zsh/p10k.zsh" = "~/.p10k.zsh"
 
 # One link for the whole directory, not one per file: files created under
 # ~/.config/nvim and vim.pack's lockfile writes land in the repo. Always

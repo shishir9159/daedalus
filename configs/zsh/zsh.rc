@@ -2,11 +2,18 @@
 # profile: rc files aren't per profile, so nothing here may set XDG_*_HOME (a
 # rice session points them into its profile) or start anything rice-specific.
 
-# Manjaro's defaults (history, completion, prompt), which the ~/.zshrc this
-# replaces used to source.
-[[ -r /usr/share/zsh/manjaro-zsh-config ]] && source /usr/share/zsh/manjaro-zsh-config
-[[ -r /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
+# CachyOS's defaults, which its stock ~/.zshrc sources: oh-my-zsh (compinit,
+# history options, aliases), powerlevel10k and its ~/.p10k.zsh (p10k.zsh, next
+# to this file), autosuggestions, highlighting.
+[[ -r /usr/share/cachyos-zsh-config/cachyos-config.zsh ]] && source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 (( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
+
+# All of the history. oh-my-zsh saves only 10000 lines, and zsh has no
+# unlimited (HISTSIZE above SAVEHIST leaves hist_expire_dups_first room).
+# oh-my-zsh's `history` alias lists from the first entry; plain zsh's `history`
+# lists the last 16.
+HISTFILE=${HISTFILE:-$HOME/.zsh_history} HISTSIZE=1200000 SAVEHIST=1000000
+(( $+aliases[history] )) || alias history='fc -l 1'
 
 # Where uv tools and global bun/pnpm packages land; (N/) drops missing dirs.
 typeset -U path
@@ -17,9 +24,12 @@ export EDITOR=nvim VISUAL=nvim   # configs/nvim
 alias vi=nvim vim=nvim
 
 # bun, fnm and pnpm are pacman's (hyprland-multishell/bootstrap-packages.sh):
-# yay updates them, and their self-updaters would fight it.
+# paru updates them, and their self-updaters would fight it. CachyOS aliases
+# update to `sudo pacman -Syu`; while that exists, `update() {` is a parse
+# error that ends this file there, and the alias would beat the function.
+(( $+aliases[update] )) && unalias update
 update() {
-  yay -Syyu
+  paru -Syyu
   rustup update
   uv tool upgrade --all
   herdr update
@@ -27,8 +37,8 @@ update() {
 
 clean() {
   sudo paccache -rk0
-  yay -Rsn $(yay -Qdtq)
-  rm -rf ~/.cache/yay
+  paru -Rsn $(paru -Qdtq)
+  rm -rf ~/.cache/paru
   pnpm store prune --force
   npm cache clean --force
 }

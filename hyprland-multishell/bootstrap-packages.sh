@@ -3,24 +3,34 @@
 # ships. Run by hand, a step at a time, before ./install.sh. Repo packages
 # only, no curl installers: `update` in zsh.rc keeps them all current.
 
+# English everywhere. Calamares sets LANG to the chosen language but the
+# numbers and dates locale (the clock, units, paper: LC_*) to the timezone's
+# region, bn_BD for Asia/Dhaka. Generate en_US.UTF-8 alone and leave LANG the
+# only setting; the next login picks it up.
+sudo sed -i -E 's/^([^#[:space:]])/#\1/; s/^#(en_US\.UTF-8 UTF-8)/\1/' /etc/locale.gen
+sudo locale-gen
+echo 'LANG=en_US.UTF-8' | sudo tee /etc/locale.conf >/dev/null
+
 sudo cachyos-rate-mirrors
 
 # mcfly
 
-sudo pacman -Syyu --needed anki base-devel bat dust eza gping just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
-sudo pacman -S --needed yay   # from CachyOS's repo
+sudo pacman -Syyu --needed anki base-devel bat dust eza ghostty gping just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
+sudo pacman -S --needed paru   # from CachyOS's repo
 
 # kernel
 sudo pacman -Syyu strace
 
 sudo pacman -S --needed rustup
+rustup toolchain install nightly
 rustup default nightly
+rustup toolchain uninstall stable
 
 # Of the extras Manjaro KDE came with, the Hyprland edition ships only nano.
 sudo pacman -Rsn nano nano-syntax-highlighting
 # shellcheck disable=SC2046 # one argument per orphan
 sudo pacman -Rsn $(sudo pacman -Qdtq)
-yay -S --needed fluent-reader imhex jetbrains-toolbox vesktop visual-studio-code-bin
+paru -S --needed fluent-reader imhex jetbrains-toolbox vesktop visual-studio-code-bin zen-browser-bin
 
 # ghidra needs java-environment>=21. jdk25-openjdk: the newest LTS, and the
 # floor of Ghidra's next release (jdk-openjdk jumps a major every six months).

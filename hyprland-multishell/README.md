@@ -17,7 +17,7 @@ each profile gets its own four.
 | `hyprpm` state is shared; plugins are ABI-locked to the Hyprland version | plugins leak across rices; Rivendell's won't build on 0.55+ | `hyprpm` owned per profile; `HYPRLAND_BIN` for an older build |
 | Not covered by XDG: `~/.bashrc`/`.zshrc`, `~/.face`, `~/Pictures/Wallpapers`, systemd unit files | shared by all profiles | `rice-doctor` flags rice lines in rc files |
 
-### The rices
+### Rices
 
 | Rice | Status |
 |---|---|
@@ -52,9 +52,11 @@ each profile gets its own four.
 ## 3. Install
 
 On a fresh CachyOS (Hyprland edition), go through `bootstrap-packages.sh` first,
-by hand, a step at a time: packages and toolchains (nightly Rust, uv, Ghidra).
+by hand, a step at a time: an English-only locale, packages and toolchains
+(nightly Rust, uv, Ghidra).
 
 ```bash
+sudo pacman -Syu --needed git   # -u: never -Sy alone, a partial upgrade
 git clone https://github.com/shishir9159/daedalus.git ~/src/daedalus && cd ~/src/daedalus/hyprland-multishell
 ./install.sh && export PATH="$HOME/.rices/bin:$PATH" && ./bootstrap-profiles.sh
 rice-session noctalia   # per profile
@@ -65,7 +67,7 @@ Upgrade: `git pull && ./install.sh` (profiles and your `owned.txt` untouched). `
 **Or with [dotter](https://github.com/SuperCuber/dotter)**: the `hyprland` package links `bin/ lib/ tools.d/ templates/` into `~/.rices` (`git pull` upgrades them, and your working tree is what the next login runs) and pulls in the shared `zsh` and `nvim` configs; see `../.dotter/global.toml`.
 ```bash
 cd ~/src/daedalus && echo 'packages = ["hyprland"]' > .dotter/local.toml
-mv ~/.zshrc ~/.zshrc.pre-dotter; mv ~/.config/nvim ~/.config/nvim.pre-dotter   # if present; --force would delete them
+mv ~/.zshrc ~/.zshrc.pre-dotter; mv ~/.p10k.zsh ~/.p10k.zsh.pre-dotter; mv ~/.config/nvim ~/.config/nvim.pre-dotter   # if present; --force would delete them
 dotter deploy                    # again after adding a file under hyprland-multishell/
 hyprland-multishell/install.sh   # deps check + greeter stub; leaves dotter's links alone
 ```
