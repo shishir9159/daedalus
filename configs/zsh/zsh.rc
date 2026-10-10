@@ -40,6 +40,9 @@ clean() {
 
 (( $+commands[mcfly] )) && eval "$(mcfly init zsh)"
 (( $+commands[procs] )) && source <(procs --gen-completion-out zsh)
+# pacman's just puts _just where compinit already found it; this is for one
+# from cargo or uv.
+(( $+commands[just] && ! $+functions[_just] )) && source <(just --completions zsh)
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh)"
 
 # Caps <-> Esc. X11 only: under Wayland setxkbmap reaches nothing but XWayland;

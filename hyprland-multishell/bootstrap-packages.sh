@@ -7,7 +7,7 @@ sudo cachyos-rate-mirrors
 
 # mcfly
 
-sudo pacman -Syyu --needed anki base-devel bat dust eza gping keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
+sudo pacman -Syyu --needed anki base-devel bat dust eza gping just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
 sudo pacman -S --needed yay   # from CachyOS's repo
 
 # kernel
@@ -48,6 +48,10 @@ sudo pacman -S --needed chromium qt5-wayland qt6-wayland
 sudo pacman -S --needed nushell starship ttf-fantasque-nerd
 grep -qF 'starship/starship.bash' ~/.bashrc 2>/dev/null \
   || echo '[[ -r ~/.config/starship/starship.bash ]] && . ~/.config/starship/starship.bash' >> ~/.bashrc
+# just's package ships bash and zsh completions but none nushell finds; put
+# upstream's (recipe names from `just --dump`) in its autoload dir.
+# shellcheck disable=SC2016
+nu -c 'let d = ($nu.user-autoload-dirs | last); mkdir $d; just --completions nushell | save -f ($d | path join just.nu)'
 
 ######### tui #########
 sudo pacman -S lazygit
