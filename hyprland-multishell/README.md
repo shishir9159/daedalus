@@ -52,7 +52,7 @@ each profile gets its own four.
 ## 3. Install
 
 On a fresh CachyOS (Hyprland edition), go through `bootstrap-packages.sh` first,
-by hand, a step at a time: packages and toolchains (nightly Rust, uv).
+by hand, a step at a time: packages and toolchains (nightly Rust, uv, Ghidra).
 
 ```bash
 git clone https://github.com/shishir9159/daedalus.git ~/src/daedalus && cd ~/src/daedalus/hyprland-multishell

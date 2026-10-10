@@ -5,12 +5,9 @@
 
 sudo cachyos-rate-mirrors
 
-# :: Repository extra for ghidra
-#    1) jdk-openjdk  2) jdk17-openjdk  3) jdk21-openjdk
-
 # mcfly
 
-sudo pacman -Syyu --needed anki base-devel bat dust eza ghidra gping keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
+sudo pacman -Syyu --needed anki base-devel bat dust eza gping keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
 sudo pacman -S --needed yay   # from CachyOS's repo
 
 # kernel
@@ -25,10 +22,11 @@ sudo pacman -Rsn nano nano-syntax-highlighting
 sudo pacman -Rsn $(sudo pacman -Qdtq)
 yay -S --needed fluent-reader imhex jetbrains-toolbox vesktop visual-studio-code-bin
 
-# java
-# pacman -sS java | grep jdk
-# archlinux-java status
-sudo pacman -Syyu jre21-openjdk
+# ghidra needs java-environment>=21. jdk25-openjdk: the newest LTS, and the
+# floor of Ghidra's next release (jdk-openjdk jumps a major every six months).
+# One transaction, so pacman doesn't ask which java to use.
+sudo pacman -S --needed jdk25-openjdk ghidra
+sudo archlinux-java set java-25-openjdk
 
 sudo pacman -S --needed uv
 uv tool install py-spy   # Python profiles for perfanno (configs/nvim)
