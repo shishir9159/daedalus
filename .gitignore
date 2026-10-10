@@ -12,8 +12,6 @@
 !/README.md
 !/CONTRIBUTING.md
 
-!/linux/manjaro-bootstrap.sh
-
 !/configs/zsh/zsh.rc
 !/configs/powershell/*.omp.toml
 !/configs/legacy/profile.ps1

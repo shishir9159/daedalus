@@ -26,9 +26,9 @@ rustup component add rust-analyzer   # NOT the pacman package, see below
   the shim also shadows a pacman copy.
 - `lldb` supplies `lldb-dap`, which Rust, Zig and C/C++ debugging need.
 - Toolchains (`go`, `rustup`, `zig`, `python`) are assumed. Anything missing
-  from the repos: AUR or `pipx install` (e.g. `py-spy` for Python profiling).
-  `cargo` is only needed if fff.nvim's prebuilt binary falls back to a source
-  build.
+  from the repos: AUR or `uv tool install` (e.g. `py-spy` for Python
+  profiling). `cargo` is only needed if fff.nvim's prebuilt binary falls back
+  to a source build.
 - yazi.nvim 14 needs yazi 26.8.15 or newer; `:checkhealth yazi` compares.
 
 ## Plugins

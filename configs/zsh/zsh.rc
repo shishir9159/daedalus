@@ -8,20 +8,19 @@
 [[ -r /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
 (( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
 
-# What the uv/bun/pnpm/fnm installers add to ~/.zshrc; (N/) drops missing dirs.
+# Where uv tools and global bun/pnpm packages land; (N/) drops missing dirs.
 typeset -U path
 export PNPM_HOME="$HOME/.local/share/pnpm"
-path=($HOME/.local/share/fnm(N/) $HOME/.local/bin(N/) $HOME/.bun/bin(N/) $PNPM_HOME(N/) $path)
+path=($HOME/.local/bin(N/) $HOME/.bun/bin(N/) $PNPM_HOME(N/) $path)
 
 export EDITOR=nvim VISUAL=nvim   # configs/nvim
 alias vi=nvim vim=nvim
 
+# bun, fnm and pnpm are pacman's (hyprland-multishell/bootstrap-packages.sh):
+# yay updates them, and their self-updaters would fight it.
 update() {
   yay -Syyu
   rustup update
-  curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
-  pnpm self-update
-  bun upgrade
   uv tool upgrade --all
   herdr update
 }
@@ -32,8 +31,6 @@ clean() {
   rm -rf ~/.cache/yay
   pnpm store prune --force
   npm cache clean --force
-  npm prune --force
-  bun prune --force
 }
 
 (( $+commands[fzf] )) && source <(fzf --zsh)

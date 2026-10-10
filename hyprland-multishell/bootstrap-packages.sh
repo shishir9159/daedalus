@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Fresh CachyOS, Hyprland edition: packages and toolchains on top of what it
+# ships. Run by hand, a step at a time, before ./install.sh. Repo packages
+# only, no curl installers: `update` in zsh.rc keeps them all current.
+
+sudo cachyos-rate-mirrors
+
+# :: Repository extra for ghidra
+#    1) jdk-openjdk  2) jdk17-openjdk  3) jdk21-openjdk
+
+# mcfly
+
+sudo pacman -Syyu --needed anki base-devel bat dust eza ghidra gping keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt yazi zoxide
+sudo pacman -S --needed yay   # from CachyOS's repo
+
+# kernel
+sudo pacman -Syyu strace
+
+sudo pacman -S --needed rustup
+rustup default nightly
+
+# Of the extras Manjaro KDE came with, the Hyprland edition ships only nano.
+sudo pacman -Rsn nano nano-syntax-highlighting
+# shellcheck disable=SC2046 # one argument per orphan
+sudo pacman -Rsn $(sudo pacman -Qdtq)
+yay -S --needed fluent-reader imhex jetbrains-toolbox vesktop visual-studio-code-bin
+
+# java
+# pacman -sS java | grep jdk
+# archlinux-java status
+sudo pacman -Syyu jre21-openjdk
+
+sudo pacman -S --needed uv
+uv tool install py-spy   # Python profiles for perfanno (configs/nvim)
+# uv completions are in zsh.rc. Never `>> ~/.zshrc` here: once dotter links it,
+# that appends to configs/zsh/zsh.rc in the repo.
+
+sudo pacman -S --needed bun fnm pnpm
+# install the latest version with npm
+fnm use --install-if-missing 22
+
+# Noctalia, which the edition ships, is the bar, launcher, notifications and
+# wallpaper.
+sudo pacman -S --needed chromium qt5-wayland qt6-wayland
+
+######### shells #########
+# nushell, and the starship prompt for bash (configs/starship). Deploy with
+# "starship" in .dotter/local.toml's packages, then hook bash up once; ~/.bashrc
+# isn't dotter's, so appending is safe.
+sudo pacman -S --needed nushell starship ttf-fantasque-nerd
+grep -qF 'starship/starship.bash' ~/.bashrc 2>/dev/null \
+  || echo '[[ -r ~/.config/starship/starship.bash ]] && . ~/.config/starship/starship.bash' >> ~/.bashrc
+
+######### tui #########
+sudo pacman -S lazygit
+
+# language servers, debuggers, ruff/ty: configs/nvim/README.md, Prerequisites
+
+# 100% Nordic Blue https://github.com/prasanthrangan/hyde-themes/tree/Nordic-Blue --skipcaching false
