@@ -57,7 +57,7 @@ sudo rsync -aHAXx --numeric-ids /mnt/backup/snapshots/<stamp>/ /mnt/newroot/
 ```
 fix `/etc/fstab` UUIDs and reinstall the bootloader via [cachy-chroot](https://wiki.cachyos.org/features/cachy_chroot/). **Test a restore once, now.**
 
-`~/.rices` lives in `/home`: both backups cover it; keep it in if you narrow excludes. Profile repos are versioned, not backed up.
+`~/.config/rice-theme` (your locks and saved themes) lives in `/home`: both backups cover it; keep it in if you narrow excludes.
 
 Sources: [Timeshift](https://github.com/teejee2008/timeshift) ([btrfs mode is same-disk](https://github.com/teejee2008/timeshift/issues/832)) ·
 [restic](https://restic.net/) · [CachyOS filesystems](https://wiki.cachyos.org/installation/filesystem/)

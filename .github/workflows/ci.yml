@@ -1,11 +1,12 @@
 name: ci
 
-# Only hyprland-multishell has scripts to check; dotfile edits don't need a run.
+# Only the scripts are checked: hyprland-multishell, the root bootstrap.sh,
+# configs/sh and its copy in zsh.rc. Other dotfile edits don't need a run.
 on:
   push:
-    paths: [hyprland-multishell/**, .shellcheckrc, .github/workflows/ci.yml]
+    paths: [hyprland-multishell/**, bootstrap.sh, configs/sh/**, configs/zsh/zsh.rc, .dotter/post_deploy.sh, .shellcheckrc, .github/workflows/ci.yml]
   pull_request:
-    paths: [hyprland-multishell/**, .shellcheckrc, .github/workflows/ci.yml]
+    paths: [hyprland-multishell/**, bootstrap.sh, configs/sh/**, configs/zsh/zsh.rc, .dotter/post_deploy.sh, .shellcheckrc, .github/workflows/ci.yml]
 
 jobs:
   check:

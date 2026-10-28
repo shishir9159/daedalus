@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # Test helpers, sourced by every tests/t_*.sh. Each test file gets its own
-# throwaway HOME with the toolkit installed into it (--user-only), and stub
-# commands for anything that needs root or a desktop. Stubs append their
+# throwaway HOME with rice-theme installed into it, and stub commands for
+# anything that needs root or a desktop. Stubs append their
 # argv to $CALLS so tests can assert on what would have run.
 set -uo pipefail
 
@@ -23,7 +23,7 @@ setup() {
     export HOME="$SANDBOX/home"
     export RICE_ROOT="$HOME/.rices"
     mkdir -p "$HOME/.config" "$HOME/.local/share" "$HOME/.local/state" "$HOME/.cache"
-    unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME RICE_PROFILE RICE_HOME
+    unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 
     STUBS="$SANDBOX/stubs"
     mkdir -p "$STUBS"
@@ -32,13 +32,8 @@ setup() {
     export PATH="$STUBS:$PATH"
     stub sudo 'exec "$@"'
     stub systemctl 'case "$*" in *is-active*) exit 3 ;; esac'   # no user units running
-    stub dbus-update-activation-environment
 
-    export RICE_SESSIONS_DIR="$SANDBOX/wayland-sessions"
-    export RICE_STUB="$SANDBOX/usr-local-bin-hypr-profile"
-    export RICE_SUDO=""
-
-    "$REPO/install.sh" --user-only >/dev/null || { echo "install.sh --user-only failed"; exit 1; }
+    "$REPO/install.sh" >/dev/null || { echo "install.sh failed"; exit 1; }
     export PATH="$RICE_ROOT/bin:$PATH"
 }
 
@@ -51,10 +46,6 @@ stub() {
     } > "$STUBS/$1"
     chmod +x "$STUBS/$1"
 }
-
-# mkprofile <name>  -- a fresh profile; PD is its directory
-# shellcheck disable=SC2034  # PD is for the calling test
-mkprofile() { rice-new "$1" >/dev/null; PD="$RICE_ROOT/profiles/$1"; }
 
 pass() { T_COUNT=$((T_COUNT + 1)); printf '  ok    %s\n' "$1"; }
 fail() {

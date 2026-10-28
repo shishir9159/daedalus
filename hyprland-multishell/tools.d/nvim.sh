@@ -1,8 +1,7 @@
 # shellcheck shell=bash disable=SC2034  # EXT/DESC/INCLUDE are read by rice-theme
-# Shared config, so the include is env-relative: one init.lua, per-profile colours.
 # reload() only announces the change (User RiceTheme, palette path as data) to
-# every Neovim; each one applies its own profile's palette, or ignores it when
-# locked (configs/nvim/lua/config/theme.lua). --remote-expr sends no keystrokes
+# every Neovim; each one applies the palette if it is its own, or ignores it
+# when locked (configs/nvim/lua/config/theme.lua). --remote-expr sends no keystrokes
 # (you stay in insert mode); timeout guards a blocked instance.
 DESC="Neovim" EXT=".lua"
 # shellcheck disable=SC2016  # literal: nvim expands it

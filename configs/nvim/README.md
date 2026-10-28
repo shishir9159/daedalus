@@ -8,9 +8,8 @@ lazygit).
 
 This directory is `~/.config/nvim`: `dotter deploy` with the `nvim` package
 (one link for the whole directory, so new files and `vim.pack`'s lockfile
-writes land in the repo), or `ln -s "$PWD/configs/nvim" ~/.config/nvim`. Under
-hyprland-multishell every profile shares it; colours follow the profile's
-palette unless locked (see [Theme](#theme)).
+writes land in the repo), or `ln -s "$PWD/configs/nvim" ~/.config/nvim`.
+Colours follow the wallpaper's palette unless locked (see [Theme](#theme)).
 
 ## Prerequisites
 
@@ -26,9 +25,9 @@ rustup component add rust-analyzer   # NOT the pacman package, see below
   the shim also shadows a pacman copy.
 - `lldb` supplies `lldb-dap`, which Rust, Zig and C/C++ debugging need.
 - Toolchains (`go`, `rustup`, `zig`, `python`) are assumed. Anything missing
-  from the repos: AUR or `pipx install` (e.g. `py-spy` for Python profiling).
-  `cargo` is only needed if fff.nvim's prebuilt binary falls back to a source
-  build.
+  from the repos: AUR or `uv tool install` (e.g. `py-spy` for Python
+  profiling). `cargo` is only needed if fff.nvim's prebuilt binary falls back
+  to a source build.
 - yazi.nvim 14 needs yazi 26.8.15 or newer; `:checkhealth yazi` compares.
 
 ## Plugins
@@ -164,9 +163,9 @@ beats anything in-editor.
 
 ## Theme
 
-`lua/config/theme.lua`. Unlocked, Neovim follows its environment: the rice
-profile's palette as `:colorscheme rice` (re-applied when rice-theme pushes a
-change for *this* profile), and the terminal's light/dark background.
+`lua/config/theme.lua`. Unlocked, Neovim follows its environment: the
+wallpaper's palette as `:colorscheme rice` (re-applied when rice-theme pushes
+a change), and the terminal's light/dark background.
 
 | | |
 |---|---|
@@ -180,8 +179,7 @@ While locked, palette pushes, terminal theme switches (Neovim 0.12 re-sets
 environment don't change anything; `termguicolors` is forced so the terminal's
 palette can't leak in. Switch schemes with `:colorscheme`, then `:ThemeLock`.
 
-The freeze is shared by every rice profile (this directory is) and is
-git-ignored; whitelist it in `.gitignore` to lock every machine. Other running
+The freeze is git-ignored; whitelist it in `.gitignore` to lock every machine. Other running
 instances pick up a lock or unlock when they gain focus.
 
 Cursor shape and colour per mode: `guicursor` in `options.lua`, colours in

@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# rice-theme: profile resolution, locks surviving a wallpaper change, the foot
-# transform, freezing the source format, drift detection, named themes,
-# noctalia-config safety, and the Ghostty version gate.
+# rice-theme: where its state lives, locks surviving a wallpaper change, the
+# foot transform, freezing the source format, drift detection, named themes,
+# noctalia-config safety, `include` writing each app's config, the Ghostty
+# version gate and Starship's palette merge.
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 setup
-mkprofile th
-TH="$PD/config/rice-theme"
+C="$HOME/.config"
+TH="$C/rice-theme"
 G="$TH/generated"; A="$TH/active"
 stub pkill 'exit 1'     # nothing running, unless a test says otherwise
 stub pgrep 'exit 1'
 
-section "profile resolution"
-refute "outside a profile session it refuses" rice-theme status
-expect "--profile works"                     rice-theme --profile th status
-expect "\$RICE_PROFILE works"                env RICE_PROFILE=th rice-theme status
-refute "nothing created in ~/.config"        test -e "$HOME/.config/rice-theme"
-export RICE_PROFILE=th
+section "where the state lives"
+expect "runs with no setup"                  rice-theme status
+expect "...in ~/.config/rice-theme"          test -d "$A"
+expect "\$XDG_CONFIG_HOME moves it"          env XDG_CONFIG_HOME="$SANDBOX/xdg" rice-theme status
+expect "...there"                            test -d "$SANDBOX/xdg/rice-theme/active"
+refute "--profile is gone"                   rice-theme --profile th status
 
 wallpaper() { # simulate Noctalia re-rendering every template
     printf 'background = %s\n' "$1" > "$G/ghostty.conf"
@@ -64,16 +65,38 @@ expect "colours are the saved ones"          has "$A/ghostty.conf" '#111111'
 refute "theme name traversal refused"        rice-theme save ../../x ghostty
 refute "tool name traversal refused"         rice-theme lock ../../x
 
+section "templates"
+# Noctalia renders comments too: a spelled-out {{ colors.<role> }} fails the whole file
+refute "none carries a placeholder token"    grep -l '{{[^}]*<' "$REPO"/templates/*.tmpl
+
 section "noctalia-config"
-mkdir -p "$RICE_ROOT/profiles/th/config/noctalia"
-NT="$RICE_ROOT/profiles/th/config/noctalia/templates.toml"
+mkdir -p "$C/noctalia"
+NT="$C/noctalia/templates.toml"
 echo '[theme.templates.user.mine]' > "$NT"
 expect "runs"                                rice-theme noctalia-config
 expect "foreign file backed up, not clobbered" compgen -G "$NT.bak.*"
-expect "post_hook names the profile"         has "$NT" 'rice-theme --profile th apply ghostty'
-expect "output goes to generated/"           has "$NT" 'rice-theme/generated/ghostty.conf'
+expect "post_hook applies the tool"          has "$NT" "post_hook   = \"$RICE_ROOT/bin/rice-theme apply ghostty\""
+expect "the template is the installed one"   has "$NT" "input_path  = \"$RICE_ROOT/templates/ghostty.tmpl\""
+expect "output goes to generated/"           has "$NT" "output_path = \"$G/ghostty.conf\""
 rice-theme noctalia-config >/dev/null
 expect "our own file is not backed up again" test "$(compgen -G "$NT.bak.*" | wc -l)" -eq 1
+
+section "include"
+mkdir -p "$C/foot" "$SANDBOX/dots/kitty"
+printf '[main]\nfont=monospace\n' > "$C/foot/foot.ini"
+echo 'font_size 12' > "$SANDBOX/dots/kitty/kitty.conf"
+ln -s "$SANDBOX/dots/kitty" "$C/kitty"                  # a config dir dotter links
+expect "runs"                                rice-theme include
+expect "kitty gets its line"                 has "$C/kitty/kitty.conf" "include $A/kitty.conf"
+expect "...through the link, after its own"  test "$(head -1 "$SANDBOX/dots/kitty/kitty.conf")" = 'font_size 12'
+expect "ghostty's goes in config.ghostty"    has "$C/ghostty/config.ghostty" "config-file = ?$A/ghostty.conf"
+expect "foot's goes above the first section" test "$(head -1 "$C/foot/foot.ini")" = "include=$A/foot.ini"
+expect "...keeping what was there"           has "$C/foot/foot.ini" 'font=monospace'
+expect "gtk gets it for 3 and 4"             has "$C/gtk-4.0/gtk.css" "@import url(\"$A/gtk.css\");"
+expect "the file it points at exists by then" test -e "$A/kitty.conf"
+rice-theme include >/dev/null
+expect "a second run adds nothing"           test "$(grep -c . "$C/kitty/kitty.conf")" -eq 2
+expect "the locks above still hold"          rice-theme check
 
 section "Ghostty is never sent SIGUSR2 below 1.2 (it would close every terminal)"
 stub pgrep 'exit 0'
@@ -93,5 +116,25 @@ section "kitty reloads via SIGUSR1"
 printf 'background %s\n' '#555555' > "$G/kitty.conf"
 rice-theme apply kitty >/dev/null
 expect "pkill -USR1 kitty"                   called 'pkill -USR1 -x kitty'
+
+section "Starship: the generated palette over your config"
+# shellcheck disable=SC2016  # $directory, $all: starship's variables
+{
+printf '%s\n' "palette = 'shishir'" 'format = "$directory"' '' '[palettes.shishir]' \
+    "path = '#ff479c'" "clock = '#2e9599'" '' '[time]' 'disabled = false' > "$HOME/.config/starship.toml"
+printf '[palettes.rice]\npath = "#123456"\n' > "$G/starship.toml"
+rice-theme apply starship >/dev/null
+S="$A/starship.toml"
+expect "selects the generated palette"       has "$S" 'palette = "rice"'
+expect "keeps your config"                   has "$S" 'format = "$directory"'
+expect "its colours win"                     grep -qx 'path = "#123456"' "$S"
+expect "the rest are your palette's"         grep -qx "clock = '#2e9599'" "$S"
+expect "your palette stays"                  grep -qx "path = '#ff479c'" "$S"
+echo 'format = "$all"' >> "$HOME/.config/starship.toml"
+rice-theme check > "$SANDBOX/check" || true
+expect "an edit to your config shows as drift" has "$SANDBOX/check" $'starship\tauto\tdrifted'
+rice-theme apply starship >/dev/null
+expect "apply takes the edit"                has "$S" 'format = "$all"'
+}
 
 finish

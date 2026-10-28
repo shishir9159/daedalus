@@ -1,16 +1,17 @@
--- Colours. Unlocked, Neovim follows its environment: this rice profile's
--- palette (`:colorscheme rice`, re-applied when rice-theme pushes a change)
+-- Colours. Unlocked, Neovim follows its environment: the wallpaper's palette
+-- (`:colorscheme rice`, re-applied when rice-theme pushes a change)
 -- and the terminal's light/dark background. Locked, none of that reaches it:
 --   :ThemeLock     freeze what's on screen into colors/locked.lua (rerun: refreeze)
 --   :ThemeUnlock   delete the freeze and follow the environment again, now
 --   vim.g.theme_lock = true | '<colorscheme>'   in init.lua: a name wins over
 --                  the freeze; true uses the freeze, or the default scheme
--- The freeze lives in the config dir, which every rice profile shares; the
--- .gitignore whitelist leaves it untracked unless you add it.
+-- The freeze lives in the config dir; the .gitignore whitelist leaves it
+-- untracked unless you add it.
 
 local M = {}
 
-M.rice = vim.fn.expand('$XDG_CONFIG_HOME/rice-theme/active/nvim.lua')
+-- next to this config dir: ~/.config, or $XDG_CONFIG_HOME where that is set
+M.rice = vim.fs.joinpath(vim.fs.dirname(vim.fn.stdpath('config')), 'rice-theme', 'active', 'nvim.lua')
 local frozen = vim.fs.joinpath(vim.fn.stdpath('config'), 'colors', 'locked.lua')
 
 local held -- { name, background } a lock holds; nil while unlocked
@@ -105,8 +106,8 @@ function M.setup()
 
   au('ColorScheme', { callback = set_cursor_colors })
 
-  -- rice-theme's nvim adapter fires this at every Neovim, with the palette
-  -- path of the profile that changed: follow only our own. These handlers
+  -- rice-theme's nvim adapter fires this at every Neovim, with the path of
+  -- the palette that changed: follow only our own. These handlers
   -- load schemes, so they're nested: the ColorScheme hooks must still run.
   au('User', {
     pattern = 'RiceTheme',

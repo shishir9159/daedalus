@@ -1,8 +1,10 @@
 # shellcheck shell=bash disable=SC2034  # DESC/INCLUDE are read by rice-theme
 # SIGUSR2 reloads config only from 1.2; below that it TERMINATES Ghostty
 # (every terminal closes). So: check the version, and when unsure, don't.
+# config.ghostty: the only default config file Ghostty 1.3 documents.
 DESC="Ghostty"
-INCLUDE="in ghostty/config:  config-file = ?$TH/active/ghostty.conf"
+INC_FILE="ghostty/config.ghostty" INC_LINE="config-file = ?$TH/active/ghostty.conf"
+INCLUDE="in ghostty/config.ghostty:  $INC_LINE"
 
 reload() {
     command -v ghostty >/dev/null && pgrep -x ghostty >/dev/null || return 1
