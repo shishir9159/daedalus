@@ -12,14 +12,13 @@
 //                     and rays thrown up the wall behind the title
 //    "deco marquee"   the same study's marquee, stepped gold over a black box
 //
-//  The last two come from shelf="art deco", but nothing ties them to it — any
-//  sign goes with any shelf, which is the point of them being one argument.
+//  The last two come from shelf="art deco", but any sign goes with any shelf.
 //
 //  Pull the chain at the right to cut the sign; the case drops to an
 //  after-hours glow. The chain is skipped for "painted", which was never lit.
 //
 //  NEON COLOURS
-//    The study ships four, and its default is the ice blue #4fd8ff:
+//    Four presets; the default is ice blue:
 //      #4fd8ff  ice blue   (design default)
 //      #ff5fa2  hot pink
 //      #7bff8f  acid green
@@ -27,9 +26,8 @@
 //    Any hex works — pass neon="#rrggbb". The colour drives the tube glow, the
 //    text halo and the wash the sign throws onto the wall behind the case.
 //
-//  Monoton is what makes the steel sign read as neon. It is pulled from Google
-//  Fonts below; delete that @import if you would rather stay offline, and the
-//  sign falls back to the theme's interface font.
+//  The steel sign's neon face is Monoton, @imported from Google Fonts below;
+//  delete the @import to stay offline and it falls back to the interface font.
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
@@ -93,7 +91,10 @@ function PaintedSign({ sign, subtitle }) {
 }
 
 function FlapSign({ sign, subtitle, lit }) {
-  const chars = String(sign ?? "").toUpperCase().split("");
+  // at least 12 tiles, the word centred among blanks
+  const word = String(sign ?? "").toUpperCase();
+  const pad = Math.max(0, 12 - word.length);
+  const chars = (" ".repeat(pad >> 1) + word + " ".repeat(pad - (pad >> 1))).split("");
   return (
     <div class="hcb-flap">
       <div class="hcb-flap-row">
@@ -115,13 +116,10 @@ function FlapSign({ sign, subtitle, lit }) {
 }
 
 /**
- * The art deco fascia: a sunburst thrown up the wall, the fan at the crown,
- * stepped gilt rules above and below, and chevrons flanking the title.
- *
- * Two rules of three above and three below is the whole trick — thick, thinner,
- * hairline, mirrored — and it is what makes a plain word read as a cinema. The
- * fan and the rays are masked gradients, so the sheen runs through the metal
- * and the letters from the same angle.
+ * The art deco fascia: a sunburst up the wall, the fan at the crown, chevrons
+ * flanking the title, and gilt rules stepped thick, thinner, hairline above and
+ * mirrored below. The fan and rays are masked gradients, so one sheen runs
+ * through the metal and the letters.
  */
 function DecoSunburstSign({ sign, subtitle, lit }) {
   return (
@@ -185,41 +183,41 @@ function Banner({
   const on = canSwitch ? lit : true;
   const isDeco = DECO.has(name);
 
-  // Each sign washes the wall in its own light: the marquee amber whatever the
-  // neon colour, the flap barely at all, the deco pair in their own gold unless
-  // you have asked for one of the deco palette's other three.
+  // Each sign washes the wall in its own light: the marquee amber, the flap
+  // barely, the deco pair gold unless you picked another deco colour.
   const wash =
-      name === "marquee" ? "#ffc078"
-    : name === "flap"    ? "#9fb4c4"
-    : isDeco             ? (NEON_COLORS.includes(neon) ? DECO_COLORS[0] : neon)
-    :                      neon;
+    name === "marquee" ? "#ffc078"
+      : name === "flap" ? "#9fb4c4"
+        : isDeco ? (NEON_COLORS.includes(neon) ? DECO_COLORS[0] : neon)
+          : neon;
   const washA =
-      name === "flap" ? 0.18
-    : name === "deco sunburst" ? 0.28
-    : name === "deco marquee" ? 0.34
-    : name === "marquee" ? 0.38
-    : 0.5;
+    name === "flap" ? 0.18
+      : name === "deco sunburst" ? 0.28
+        : name === "deco marquee" ? 0.34
+          : name === "marquee" ? 0.38
+            : 0.5;
 
   return (
     <div class="hcb" style={{ "--neon": neon, "--deco": wash }}>
       <div
         class="hcb-wash"
-        style={{ background: `radial-gradient(closest-side, ${wash}, transparent)`,
-                 opacity: on ? washA : 0 }}
+        style={{
+          background: `radial-gradient(closest-side, ${wash}, transparent)`,
+          opacity: on ? washA : 0
+        }}
         aria-hidden="true"
       />
 
-      {/* the mount is only as wide as the sign, so the chain hangs beside it
-          rather than out at the edge of the case */}
+      {/* the mount is only as wide as the sign, so the chain hangs beside it */}
       <div class="hcb-mount">
         {name !== "painted" && !isDeco && <><i class="hcb-post is-l" /><i class="hcb-post is-r" /></>}
 
-        {name === "steel"   && <SteelSign   sign={sign} subtitle={subtitle} lit={on} />}
+        {name === "steel" && <SteelSign sign={sign} subtitle={subtitle} lit={on} />}
         {name === "marquee" && <MarqueeSign sign={sign} subtitle={subtitle} lit={on} />}
         {name === "painted" && <PaintedSign sign={sign} subtitle={subtitle} />}
-        {name === "flap"    && <FlapSign    sign={sign} subtitle={subtitle} lit={on} />}
+        {name === "flap" && <FlapSign sign={sign} subtitle={subtitle} lit={on} />}
         {name === "deco sunburst" && <DecoSunburstSign sign={sign} subtitle={subtitle} lit={on} />}
-        {name === "deco marquee"  && <DecoMarqueeSign  sign={sign} subtitle={subtitle} lit={on} />}
+        {name === "deco marquee" && <DecoMarqueeSign sign={sign} subtitle={subtitle} lit={on} />}
 
         {canSwitch && onToggle && (
           <div
@@ -258,9 +256,14 @@ const BANNER_CSS = `@import url('https://fonts.googleapis.com/css2?family=Monoto
   mix-blend-mode: screen; filter: blur(46px); border-radius: 50%;
   transition: opacity .6s ease;
 }
-/* only as wide as the sign it holds, so anything hung off its edge lands
-   beside the sign rather than at the far side of the case */
+/* only as wide as its sign, so anything hung off its edge lands beside it */
 .hcb-mount { position: relative; display: inline-block; }
+/* A sign is one line, at least 12 characters wide. The boxes around it size
+   to it: a percentage width inside the shrink-wrapped mount resolves to less
+   than the text, which pushed long words onto a second line. */
+.hcb-neon, .hcb-marquee-text, .hcb-painted-text, .hcb-deco-title, .hcb-decomq-text {
+  white-space: nowrap; min-width: 12ch; text-align: center;
+}
 
 /* the two posts the sign hangs from */
 .hcb-post {
@@ -347,7 +350,7 @@ const BANNER_CSS = `@import url('https://fonts.googleapis.com/css2?family=Monoto
 .hcb-sub i { width: 56px; height: 1px; background: rgba(255,255,255,.22); }
 
 /* ── 02 · marquee bulbs ───────────────────────────────────────────────── */
-.hcb-marquee { position: relative; width: min(600px, 92%); }
+.hcb-marquee { position: relative; }
 .hcb-marquee-hood {
   height: 24px; margin: 0 -20px;
   clip-path: polygon(3.4% 0, 96.6% 0, 100% 100%, 0 100%);
@@ -391,7 +394,7 @@ const BANNER_CSS = `@import url('https://fonts.googleapis.com/css2?family=Monoto
 }
 
 /* ── 03 · painted ghost sign ──────────────────────────────────────────── */
-.hcb-painted { position: relative; width: min(720px, 94%); padding: 8px 0 20px; text-align: center; }
+.hcb-painted { position: relative; padding: 8px 0 20px; text-align: center; }
 .hcb-painted-text {
   font-weight: 600; font-size: clamp(46px, 8vw, 90px); line-height: .95;
   letter-spacing: .12em; text-transform: uppercase;
@@ -447,19 +450,15 @@ const BANNER_CSS = `@import url('https://fonts.googleapis.com/css2?family=Monoto
 
 
 /* ── 05 · art deco sunburst ───────────────────────────────────────────── */
-/*
- * One gradient does all the metal — --sheen — so every gilt edge and the
- * letters themselves catch the light from the same 150deg. The rays are a
- * repeating conic gradient masked to a soft disc, which is a fan of light
- * rather than a fan of hard wedges.
- */
-/* The fan is declared here, not borrowed from the deco SHELF: either sign goes
-   with either shelf, so a deco banner over an oak case must still have one. */
+/* One gradient, --sheen, does all the metal, so every edge and letter catches
+   the light at 150deg. The rays are a repeating conic gradient masked to a soft
+   disc. The fan is declared here, not borrowed from the deco shelf, so a deco
+   banner has one over any case. */
 .hcb-deco {
   --sheen: linear-gradient(150deg, #e3c24a 0%, #e8c953 26%, #eedc8f 45%, #f7efc9 51%, #e5c65b 80%);
   --sheen-deep: linear-gradient(150deg, #a2822a, #e3c24a 50%, #a2822a);
   --fan: url("data:image/svg+xml,%3Csvg width='13.533353mm' height='13.665177mm' viewBox='0 0 13.533353 13.665177' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CclipPath clipPathUnits='userSpaceOnUse' id='c'%3E%3Crect style='fill:%23ffffff;stroke:none' width='13.533353' height='13.665177' x='86.292633' y='113.41824' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg transform='translate(-86.292633,-113.41824)'%3E%3Cg clip-path='url(%23c)' style='fill:none;stroke:%23000000;stroke-width:0.264999'%3E%3Cpath d='m 93.059653,127.08343 a 6.766336,6.766336 0 0 1 6.766336,-6.76634' /%3E%3Cpath d='m 86.293106,120.31709 a 6.766336,6.766336 0 0 1 6.766336,6.76634' /%3E%3Cpath d='m 86.29772,120.31709 a 6.766336,6.766336 0 0 1 6.766336,-6.76633 6.766336,6.766336 0 0 1 6.766336,6.76633' /%3E%3Cpath d='m 93.059874,127.1504 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 93.059133,127.15011 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 93.059678,127.12677 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='m 93.05944,127.14092 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 93.060181,127.14063 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 93.059636,127.11729 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 93.059651,127.08342 V 113.55076' /%3E%3Cpath d='m 86.292873,120.39394 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 86.292132,120.39365 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 86.292677,120.37031 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='M 86.29265,120.32696 V 106.7943' /%3E%3Cpath d='m 99.82532,120.38446 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 99.826061,120.38417 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 99.825516,120.36083 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 99.825531,120.32696 V 106.7943' /%3E%3Cpath d='m 86.293329,133.91673 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 86.292588,133.91644 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 86.293133,133.8931 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='M 86.293106,133.84975 V 120.31709' /%3E%3Cpath d='m 99.825778,133.90725 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 99.826519,133.90696 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 99.825974,133.88362 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 99.825989,133.84975 V 120.31709' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  position: relative; width: min(820px, 96%); padding: 22px 0 10px;
+  position: relative; padding: 22px 0 10px;
   display: flex; flex-direction: column; align-items: center;
   font-family: 'Federo', var(--font-interface), sans-serif;
 }
@@ -533,7 +532,7 @@ const BANNER_CSS = `@import url('https://fonts.googleapis.com/css2?family=Monoto
 .hcb-decomq {
   --sheen: linear-gradient(150deg, #e3c24a 0%, #e8c953 26%, #eedc8f 45%, #f7efc9 51%, #e5c65b 80%);
   --sheen-deep: linear-gradient(150deg, #8f7326, #e3c24a 50%, #8f7326);
-  position: relative; width: min(790px, 97%);
+  position: relative;
   font-family: 'Federo', var(--font-interface), sans-serif;
 }
 .hcb-decomq-step { display: flex; flex-direction: column; align-items: center; gap: 3px; }

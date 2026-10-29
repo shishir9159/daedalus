@@ -2,21 +2,20 @@
 //  pdf.jsx  —  the shared PDF engine
 //  Location: Meta/Obsidian/_datacore/pdf/pdf.jsx
 //
-//  Everything that touches a PDF lives here: loading pdf.js, caching documents,
-//  reading annotations, rasterising pages. Both the paper infobox and the book
-//  views require this rather than each carrying their own copy.
+//  Everything that touches a PDF, for the paper infobox and the book views
+//  alike: loading pdf.js, caching documents, reading annotations, rasterising
+//  pages.
+//
+//  It is also the one way out to the network (netGet / netJson) and the one
+//  way a PDF comes in (fetchPdf / fetchArxivPdf), shared by the infoboxes and
+//  the populate blocks, so a paper downloads the same whether it is new or an
+//  update.
 //
 //  ── HIGHLIGHT COLOURS ─────────────────────────────────────────────────────
-//  Hardcoded, matched exactly. No hue bands, no saturation floor, no nearest
-//  neighbour: a highlight is one of these six RGB values or it is not one of
-//  them at all. pdf.js round-trips the stored float triple through
-//  Math.round(c * 255), so 255/193/0 comes back as exactly 255,193,0 and an
-//  exact lookup is reliable.
-//
-//  Anything else classifies as null. It still counts toward the highlight
-//  total — you made the mark — but it is not filed under a colour, so an
-//  unexpected pen shows up as unaccounted rather than being quietly folded
-//  into whichever swatch happened to be nearest.
+//  Hardcoded and matched exactly — pdf.js round-trips the stored floats
+//  through Math.round(c * 255), so an exact lookup is reliable. Any other
+//  colour classifies as null: it counts toward the highlight total but is not
+//  filed under a colour.
 //
 //    yellow   RGB(255,193,0)     information
 //    green    RGB(6,138,28)      term or analogy
@@ -25,7 +24,7 @@
 //    explore  RGB(204,204,204)   reference, already looked at
 //    visited  RGB(170,170,170)   reference, still to read
 //
-//  Underline is not a colour — it is the "I do not follow this" mark, counted
+//  Underline is not a colour: it is the "I do not follow this" mark, counted
 //  separately and written to frontmatter as `underlines`.
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
@@ -44,8 +43,7 @@ const VENDOR = "Meta/Obsidian/_datacore/vendor";
 //    3. failing both, keep watching: the moment a PDF is opened anywhere the
 //       global appears and every mounted infobox renders itself (usePdfjsReady)
 //
-//  Nothing here ever blocks a render. The preview is a bonus; the click-through
-//  to the PDF works whether or not pdf.js is around.
+//  Nothing here blocks a render; the click-through to the PDF works without pdf.js.
 let _pdfjs = null;
 let _vendorTry = null;
 
@@ -66,10 +64,8 @@ async function importVendored() {
       const mod = await import(/* webpackIgnore: true */ ad.getResourcePath(p));
       const lib = mod?.getDocument ? mod : mod?.default?.getDocument ? mod.default : null;
       if (!lib) continue;
-      // Point it at its own worker if one was dropped alongside. Without this
-      // pdf.js falls back to a "fake worker" on the main thread, which still
-      // renders but locks the UI while it does — fine for one cover, not for a
-      // 400-page annotation scan.
+      // Its own worker, if one was dropped alongside: the main-thread fallback locks
+      // the UI through a long annotation scan.
       if (lib.GlobalWorkerOptions && !lib.GlobalWorkerOptions.workerSrc) {
         for (const w of WORKER_NAMES) {
           const wp = `${VENDOR}/${w}`;
@@ -95,10 +91,8 @@ async function loadPdfjs() {
 }
 
 /**
- * True once pdf.js can be had. Re-checks on a slow timer while it cannot, so a
- * note that was opened before any PDF renders its preview the moment one is
- * opened elsewhere — no reload, no reopening the note. Gives up after two
- * minutes rather than leaving a timer running for the session.
+ * True once pdf.js can be had. Re-checks on a slow timer, so a preview appears
+ * once any PDF opens elsewhere; gives up after two minutes.
  */
 function usePdfjsReady() {
   const [ready, setReady] = dc.useState(() => !!(_pdfjs || pdfjsGlobal()));
@@ -112,7 +106,7 @@ function usePdfjsReady() {
       if (++tries > 120) window.clearInterval(id);
     }, 1000);
     // the vendored build is worth one attempt even before anything asks to render
-    loadPdfjs().then(() => alive && setReady(true)).catch(() => {});
+    loadPdfjs().then(() => alive && setReady(true)).catch(() => { });
     return () => { alive = false; window.clearInterval(id); };
   }, [ready]);
 
@@ -130,22 +124,17 @@ const HIGHLIGHTS = [
 ];
 
 /**
- * What a highlight looks like ON SCREEN, as opposed to in the PDF.
- *
- * The RGB values above are what the pen actually wrote and are used only for
- * matching. Painting those same values into the infobox means a highlighter
- * yellow chosen for white paper landing on a dark panel, which is harsh in
- * some themes and invisible in others. Display goes through Obsidian's own
- * palette instead, so it is legible in whatever theme is running.
+ * What a highlight looks like on screen: the pen's RGB is only for matching,
+ * and display goes through Obsidian's palette, legible in any theme.
  */
 const HL_SWATCH = {
-  yellow:  "var(--color-yellow)",
-  orange:  "var(--color-orange)",
-  red:     "var(--color-red)",
-  green:   "var(--color-green)",
+  yellow: "var(--color-yellow)",
+  orange: "var(--color-orange)",
+  red: "var(--color-red)",
+  green: "var(--color-green)",
   visited: "var(--text-muted)",
   explore: "var(--text-faint)",
-  other:   "var(--text-faint)",
+  other: "var(--text-faint)",
 };
 
 const swatchFor = (key) => HL_SWATCH[key] ?? HL_SWATCH.other;
@@ -216,9 +205,7 @@ async function getDoc(file) {
 const STATS = new Map();
 
 /**
- * Every highlight counts on its own. A reader that writes one annotation per
- * visual line therefore reports one per line, which is what you asked for:
- * a highlight that wraps is two marks, because you dragged over two lines.
+ * Every highlight counts on its own, so one that wraps onto two lines is two marks.
  */
 async function readPdfStats(file) {
   const key = `${file.path}:${file.stat.mtime}`;
@@ -380,12 +367,8 @@ const firstPageThumb = (file, width = 360) =>
   renderPage(file, 1, width).catch(() => null);
 
 /**
- * Drop every cached read of one PDF.
- *
- * All three caches are keyed on path:mtime, so an edited file normally
- * invalidates itself. Replacing a file from arXiv is the one case where the
- * new bytes land while the old entries are still the ones a mounted component
- * is holding, so that path clears them by hand.
+ * Drop every cached read of one PDF. The caches are keyed on path:mtime, but a
+ * mounted component still holds the old entries when arXiv replaces a file.
  */
 function forgetPdf(path) {
   if (!path) return;
@@ -404,9 +387,8 @@ function forgetPdf(path) {
 }
 
 // ── frontmatter ─────────────────────────────────────────────────────────────
-// Writes only keys whose value actually changed, and reports whether it wrote.
-// That check is what keeps an auto-updating infobox out of a
-// write -> reindex -> rerender -> write loop.
+// Writes only keys whose value changed, and reports whether it wrote, which
+// keeps an auto-updating infobox out of a write -> reindex -> write loop.
 async function writeFields(path, patch) {
   const f = app.vault.getAbstractFileByPath(path);
   if (!f) return false;
@@ -425,39 +407,24 @@ async function writeFields(path, patch) {
 
 // ── talking to the network ──────────────────────────────────────────────────
 /**
- * Getting bytes from a host that has never heard of us.
+ * Getting bytes cross-origin from app://obsidian.md, where `fetch` needs the
+ * host's CORS header (Semantic Scholar sends one; arXiv does not). Three
+ * transports, best first:
  *
- * The page runs on app://obsidian.md, so anything cross-origin needs the server
- * to opt in with Access-Control-Allow-Origin. Semantic Scholar does. arXiv's
- * export API does not, and neither does a random publisher's book page — plain
- * `fetch` there fails at the browser, before a request is ever made.
+ *   requestUrl   Obsidian's own, no CORS. "obsidian" only resolves inside a
+ *                plugin bundle, so it is borrowed off a loaded plugin's exports.
+ *   node http(s) window.require is Electron's; a Node request has no origin
+ *                and no preflight. Desktop only.
+ *   fetch        the fallback, fine for hosts that send the header.
  *
- * Three transports, best first:
- *
- *   requestUrl   Obsidian's own, no CORS at all. `require("obsidian")` inside a
- *                plugin is NOT window.require — it is a loader-local function
- *                Obsidian passes into the plugin bundle, and "obsidian" is not
- *                a resolvable module anywhere else. So this is only reachable
- *                by borrowing it off a loaded plugin's exports; when that works
- *                it is the cleanest option.
- *   node http(s) window.require IS Electron's require, and builtins always
- *                resolve. A Node request is not a browser request, so there is
- *                no origin and no preflight. Desktop only.
- *   fetch        the fallback, and fine for hosts that send the header.
- *
- * On mobile only the last one exists, which is why cross-origin callers below
- * ask `netCanCrossOrigin()` first and simply do nothing rather than firing a
- * request the console will paint red.
+ * On mobile only fetch exists, so cross-origin callers ask
+ * `netCanCrossOrigin()` first and do nothing if it says no.
  */
 let NET = null;
 
 /**
- * arxiv.org turns away a request whose User-Agent looks like a script — that
- * is the whole of "Update to v7 failed with nothing in the console". The old
- * header said "Obsidian", arXiv answered 403 with a short HTML page, and the
- * only test on the way back was `byteLength < 1024`, which a 403 page passes.
- * The page runs inside Electron, so a desktop browser string is what this
- * actually is rather than a disguise.
+ * arxiv.org answers 403 to a User-Agent that looks like a script. This runs in
+ * Electron, so a desktop browser string is accurate.
  */
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -497,11 +464,8 @@ function obsidianRequest() {
 }
 
 /**
- * One GET over Node, following redirects by hand — arxiv.org/pdf/… bounces at
- * least once, and Node, unlike fetch, does not chase it for you.
- *
- * Bytes only. Decoding a 3MB PDF into a string on the way past cost a copy and
- * bought nothing, so the caller decides whether it wanted text.
+ * One GET over Node, following redirects by hand (arxiv.org/pdf/… bounces at
+ * least once). Bytes only; the caller decides whether it wanted text.
  */
 function nodeGet(url, { headers = {}, hops = 5 } = {}) {
   return new Promise((resolve, reject) => {
@@ -519,9 +483,7 @@ function nodeGet(url, { headers = {}, hops = 5 } = {}) {
             .then(resolve, reject);
           return;
         }
-        // Collected as bytes and joined by hand rather than through Buffer:
-        // a PDF must survive the trip intact, and string concatenation would
-        // mangle it. One copy at the end.
+        // Collected as bytes and joined once at the end, so the PDF survives intact.
         const chunks = [];
         let size = 0;
         res.on("data", (c) => { const u = new Uint8Array(c); chunks.push(u); size += u.length; });
@@ -543,32 +505,49 @@ function nodeGet(url, { headers = {}, hops = 5 } = {}) {
  * GET a URL through whichever transport is available.
  *
  * Returns { status, text, arrayBuffer } or null. `crossOrigin: true` means the
- * host is known not to send CORS headers: if no transport can bypass that,
- * return null instead of asking fetch to fail loudly. `binary: true` asks for
- * the bytes and skips the text decode; on the fetch path (mobile) it is the
- * only way to get an arrayBuffer at all.
+ * host sends no CORS headers: if no transport can bypass that, return null
+ * rather than let fetch fail loudly. `binary: true` asks for the bytes and
+ * skips the text decode (on the fetch path, the only way to an arrayBuffer).
  *
- * The status is always handed back. Callers are expected to look at it: arXiv
- * says 403 with a perfectly well-formed body, and a body is not a yes.
+ * Callers must check the status: arXiv says 403 with a well-formed body.
+ *
+ * `timeout` (ms, 0 = none) gives up on a host that never answers; `retries`
+ * goes again on 429 / 5xx / no answer, backing off 0.6 s, 2.4 s, 5.4 s.
  */
-async function netGet(url, { crossOrigin = false, binary = false, headers } = {}) {
+async function netGet(url, { crossOrigin = false, binary = false, headers, timeout = 0, retries = 0 } = {}) {
+  if (crossOrigin && !netCanCrossOrigin()) return null;    // would only be a CORS error
+  let res = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt) await new Promise((r) => window.setTimeout(r, 600 * attempt * attempt));
+    res = await netOnce(url, { crossOrigin, binary, headers, timeout });
+    if (res && res.status !== 429 && res.status < 500) return res;
+  }
+  return res;
+}
+
+const withTimeout = (promise, ms) => !ms ? promise : Promise.race([
+  promise,
+  new Promise((_, reject) => window.setTimeout(() => reject(new Error(`no answer in ${ms} ms`)), ms)),
+]);
+
+async function netOnce(url, { crossOrigin, binary, headers, timeout }) {
   const n = netProbe();
   const decode = (buf) => (buf ? new TextDecoder("utf-8").decode(new Uint8Array(buf)) : "");
   try {
     if (n.requestUrl) {
-      const res = await n.requestUrl({ url, throw: false, headers });
+      const res = await withTimeout(n.requestUrl({ url, throw: false, headers }), timeout);
       return { status: res.status, text: binary ? "" : res.text, arrayBuffer: res.arrayBuffer };
     }
     if (n.node) {
-      const res = await nodeGet(url, { headers });
+      const res = await withTimeout(nodeGet(url, { headers }), timeout);
       return {
         status: res.status,
         text: binary ? "" : decode(res.bytes.buffer),
         arrayBuffer: res.bytes.buffer,
       };
     }
-    if (crossOrigin) return null;                          // would only be a CORS error
-    const res = await fetch(url, headers ? { headers } : undefined);
+    if (crossOrigin) return null;
+    const res = await withTimeout(fetch(url, headers ? { headers } : undefined), timeout);
     return {
       status: res.status,
       text: binary ? "" : await res.text(),
@@ -580,13 +559,18 @@ async function netGet(url, { crossOrigin = false, binary = false, headers } = {}
   }
 }
 
+/** netGet, parsed. null for no answer, an error status or a body that is not JSON. */
+async function netJson(url, opts = {}) {
+  const res = await netGet(url, opts);
+  if (!res || res.status >= 400 || !res.text) return null;
+  try { return JSON.parse(res.text); } catch { return null; }
+}
+
 /**
  * Latest version number on arXiv, or null.
  *
- * The Atom feed's own <id> is the query URL and carries no /abs/, so matching
- * on /abs/…v(\d+) picks the entry rather than the feed. Cheap: one request,
- * no parsing beyond a regex, and only ever called when both `arxiv` and
- * `arxiv-version` are already set.
+ * Matching /abs/…v(\d+) picks the entry, not the feed's own <id>. One request
+ * and a regex, only when both `arxiv` and `arxiv-version` are set.
  */
 async function arxivLatestVersion(arxivId) {
   const id = String(arxivId ?? "").replace(/^arxiv:\s*/i, "").replace(/v\d+$/i, "").trim();
@@ -615,15 +599,9 @@ function looksLikePdf(buf) {
 }
 
 /**
- * Keep the copy that is about to be replaced.
- *
- * COPIED rather than renamed, deliberately. A rename through fileManager
- * rewrites every link that points at the file, so the note's own `paper:`
- * would follow the old version out of the way and the infobox would end up
- * reading the backup. This leaves the paper exactly where the note expects it
- * and parks the previous bytes beside it as `Name.v6.pdf.bk` — an extension
- * Obsidian does not index, so it stays out of the file list and out of search
- * while still being one rename away from usable.
+ * Keep the copy that is about to be replaced, as `Name.v6.pdf.bk` beside it.
+ * Copied, not renamed: a rename rewrites links, so `paper:` would follow the
+ * backup. Obsidian does not index .bk, so it stays out of the file list.
  */
 async function keepOldCopy(file, tag) {
   const dir = file.parent?.path && file.parent.path !== "/" ? `${file.parent.path}/` : "";
@@ -637,11 +615,46 @@ async function keepOldCopy(file, tag) {
 }
 
 /**
+ * A PDF off the web, checked to be one. `crossOrigin` as for netGet: true
+ * unless the host is known to send CORS headers.
+ *
+ * Returns { ok, buf, url, reason }.
+ */
+async function fetchPdf(url, { crossOrigin = true, timeout = 90000 } = {}) {
+  if (!url) return { ok: false, buf: null, url, reason: "no URL" };
+  if (crossOrigin && !netCanCrossOrigin()) {
+    return { ok: false, buf: null, url, reason: "no transport can reach that host from here (mobile?)" };
+  }
+  const res = await netGet(url, {
+    crossOrigin, binary: true, timeout, retries: 1, headers: { Accept: "application/pdf,*/*" },
+  });
+  const host = String(url).replace(/^https?:\/\/([^/]+).*$/, "$1");
+  if (!res) return { ok: false, buf: null, url, reason: `${host} did not answer` };
+  if (res.status >= 400) return { ok: false, buf: null, url, reason: `${host} answered ${res.status} — it may be rate-limiting` };
+  const buf = res.arrayBuffer;
+  if (!buf) return { ok: false, buf: null, url, reason: "the response carried no bytes" };
+  if (!looksLikePdf(buf)) {
+    return { ok: false, buf: null, url, reason: `what came back is not a PDF (${buf.byteLength} bytes) — probably a holding page` };
+  }
+  return { ok: true, buf, url, reason: null };
+}
+
+/**
+ * vN of a paper, straight from arxiv.org; no version means the latest. The one
+ * way a paper is fetched, whether it is new (paper/populate.jsx) or moving on
+ * (replaceArxivPdf, behind the infobox's Update button).
+ */
+async function fetchArxivPdf(arxivId, version = null) {
+  const id = String(arxivId ?? "").replace(/^arxiv:\s*/i, "").replace(/v\d+$/i, "").trim();
+  if (!id) return { ok: false, buf: null, url: null, reason: "no arXiv id on this note" };
+  return fetchPdf(`https://arxiv.org/pdf/${id}${version ? `v${version}` : ""}`, { crossOrigin: true });
+}
+
+/**
  * Pull vN of a paper down and write it over the file already in the vault.
  *
- * Returns { ok, reason, backup } rather than a bare boolean. Every way this can
- * fail says which one it was, to the caller (so the button can show it) and
- * to the console.
+ * Returns { ok, reason, backup }: every failure says which it was, to the
+ * caller (for the button) and to the console.
  */
 async function replaceArxivPdf(file, arxivId, version, { haveVersion = null } = {}) {
   const fail = (reason) => {
@@ -649,30 +662,16 @@ async function replaceArxivPdf(file, arxivId, version, { haveVersion = null } = 
     return { ok: false, reason, backup: null };
   };
 
-  const id = String(arxivId ?? "").replace(/^arxiv:\s*/i, "").replace(/v\d+$/i, "").trim();
   if (!file) return fail("no PDF resolved from this note");
-  if (!id) return fail("no arXiv id on this note");
-  if (!netCanCrossOrigin()) return fail("no transport can reach arxiv.org from here (mobile?)");
-
-  const url = `https://arxiv.org/pdf/${id}v${version}`;
-  const res = await netGet(url, {
-    crossOrigin: true, binary: true, headers: { Accept: "application/pdf,*/*" },
-  });
-
-  if (!res) return fail("arxiv.org did not answer");
-  if (res.status >= 400) return fail(`arXiv answered ${res.status} — it may be rate-limiting`);
-  const buf = res.arrayBuffer;
-  if (!buf) return fail("the response carried no bytes");
-  if (!looksLikePdf(buf)) {
-    return fail(`what came back is not a PDF (${buf.byteLength} bytes) — probably a holding page`);
-  }
+  const got = await fetchArxivPdf(arxivId, version);
+  if (!got.ok) return fail(got.reason);
+  const buf = got.buf;
 
   let backup = null;
   try {
     backup = await keepOldCopy(file, haveVersion ? `v${haveVersion}` : null);
   } catch (e) {
-    // Not fatal on its own, but it does mean the old copy is about to go, so
-    // say so rather than losing it quietly.
+    // not fatal, but the old copy is about to go, so say so
     console.warn("[pdf] could not keep a backup of", file.path, e);
   }
 
@@ -683,17 +682,14 @@ async function replaceArxivPdf(file, arxivId, version, { haveVersion = null } = 
     return { ok: false, reason: "the vault refused the write", backup };
   }
 
-  // Every cache is keyed on path:mtime and the new bytes carry a new one, but
-  // a mounted component is still holding the old entries — drop them here so
-  // no caller has to remember to.
+  // a mounted component still holds the old cache entries
   forgetPdf(file.path);
   return { ok: true, reason: null, backup };
 }
 
 /**
  * Has the paper moved on? Runs once, after paint, and only when the note
- * already knows which version it holds — there is nothing to compare against
- * otherwise.
+ * knows which version it holds.
  */
 function useArxivUpdate(arxivId, haveVersion, enabled = true) {
   const [latest, setLatest] = dc.useState(null);
@@ -714,14 +710,10 @@ function useArxivUpdate(arxivId, haveVersion, enabled = true) {
 
 // ── a tiny fingerprint of a web page, for rolling-release books ─────────────
 /**
- * TEN CHARACTERS, always — `[0-9a-z]{10}`, zero-padded so the width never
- * moves. It goes into frontmatter you have to look at, and the old
- * "length.hash" form ran to twelve and changed width from book to book.
- *
- * Two independent 32-bit rolls, each truncated to 25 bits and packed into one
- * 50-bit integer — comfortably inside the 53 bits a JS number carries exactly,
- * and 36^10 is 3.6e15, so 50 bits can never need an eleventh digit. Collisions
- * at 2^50 are not a concern for "did this one page change".
+ * Ten characters, always — `[0-9a-z]{10}`, zero-padded so the width in
+ * frontmatter never moves. Two independent 32-bit rolls, each truncated to 25
+ * bits and packed into one 50-bit integer: exact in a JS number, and never an
+ * eleventh base-36 digit.
  */
 const HASH_LEN = 10;
 const HASH_SHAPE = /^[0-9a-z]{10}$/;
@@ -741,14 +733,10 @@ function shortHash(s) {
 }
 
 /**
- * Not a checksum of the bytes — a page with a rotating ad or a build id would
- * never settle. The markup is stripped of everything that moves on its own and
- * then rolled up, which is stable enough that a real edition change moves it
- * and a page reload does not.
- *
- * Nothing here touches the vault or the DOM: it is one request and some string
- * work, called off a timer after paint (see useSiteHash), so opening a book
- * never waits on a web server.
+ * Not a checksum of the bytes, which a rotating ad or build id would never let
+ * settle: the markup is stripped of everything that moves on its own, then
+ * rolled up. One request and some string work, off a timer after paint (see
+ * useSiteHash).
  */
 async function pageHash(url) {
   if (!url) return null;
@@ -776,15 +764,11 @@ async function pageHash(url) {
  * For a book with `rolling-release: true`: compare a fingerprint of `site`
  * against the one stored in `hash`. Different means the edition moved.
  *
- * It only ever reports. Nothing is downloaded and nothing is replaced — the
- * book is a file you keep, so the most this can do is put a word on screen.
+ * It only reports; nothing is downloaded or replaced.
  */
 function useSiteHash(url, stored, enabled) {
   const [now, setNow] = dc.useState(null);
-  // A hash written by an older version was a different shape entirely, so it
-  // can only ever disagree with a new one. Treat it as no hash at all: the
-  // first run quietly records today's, instead of crying "new release" once
-  // for every book in the vault.
+  // An older-shaped hash counts as none, so the first run quietly records today's.
   const known = HASH_SHAPE.test(String(stored ?? "")) ? String(stored) : null;
 
   dc.useEffect(() => {
@@ -807,9 +791,7 @@ function useSiteHash(url, stored, enabled) {
 
 // ── citations, from Semantic Scholar ────────────────────────────────────────
 /**
- * Looked up by arXiv id and cached into `citations:`. Only fetched when the
- * field is empty, so a note that already knows its count never hits the
- * network — and the number survives going offline.
+ * Looked up by arXiv id and cached into `citations:`, only when that is empty.
  */
 async function fetchCitations(arxivId) {
   const id = String(arxivId ?? "").replace(/^arxiv:\s*/i, "").replace(/v\d+$/i, "").trim();
@@ -894,8 +876,8 @@ return {
   loadPdfjs, usePdfjsReady, getDoc, forgetPdf,
   HIGHLIGHTS, HL_BY_KEY, HL_BY_HEX, COLOR_ORDER, classifyColor, toHex,
   HL_SWATCH, swatchFor,
-  obsidianRequest, netGet, netCanCrossOrigin, looksLikePdf,
-  arxivLatestVersion, replaceArxivPdf, useArxivUpdate,
+  obsidianRequest, netGet, netJson, netCanCrossOrigin, looksLikePdf,
+  fetchPdf, fetchArxivPdf, arxivLatestVersion, replaceArxivPdf, useArxivUpdate,
   pageHash, shortHash, HASH_LEN, useSiteHash,
   parseLink, resolvePdf,
   readPdfStats, annotationProfile, renderPage, firstPageThumb, writeFields,

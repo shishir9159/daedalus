@@ -120,14 +120,10 @@ function onColor(c) {
 /* ==========================================================================
    HOST INTEGRATION · FULL WIDTH
    --------------------------------------------------------------------------
-   Datacore blocks sit inside the note’s content column, which Obsidian caps
-   at --file-line-width.  A CSS width can never beat that, so measure the pane
-   and pull the report out over the margins.  When readable line length is
-   already off the two widths match and nothing is applied.
-
-   The last measurement is kept module-side and used to seed the next mount:
-   a recycled section then starts at the right width instead of painting one
-   narrow (and therefore taller) frame that shoves the scroll position. */
+   Obsidian caps the note's content column at --file-line-width, so the pane
+   is measured and the report pulled out over the margins (a no-op when
+   readable line length is off). The last measurement seeds the next mount,
+   so a recycled section does not paint one narrow, taller frame first. */
 let LAST_WIDE = null;
 
 function useFullWidth(enabled) {
@@ -152,8 +148,10 @@ function useFullWidth(enabled) {
         const avail = Math.max(0, host.clientWidth - gut * 2);
         const own = box.clientWidth;
         const next = (avail > own + 8)
-          ? { width: avail + "px", marginLeft: Math.round((own - avail) / 2) + "px",
-              marginRight: Math.round((own - avail) / 2) + "px" }
+          ? {
+            width: avail + "px", marginLeft: Math.round((own - avail) / 2) + "px",
+            marginRight: Math.round((own - avail) / 2) + "px"
+          }
           : null;
         const key = next ? next.width + "|" + next.marginLeft : "";
         if (key === last.current) return;      // guard against a resize loop
@@ -180,18 +178,10 @@ function useFullWidth(enabled) {
 /* ==========================================================================
    HOST INTEGRATION · READING-MODE CODE BLOCKS
    --------------------------------------------------------------------------
-   In reading mode the crunched payload should not be on screen.  It lives in
-   a fenced code block, so that is the only thing we hide: one positive rule
-   against <pre>, nothing else touched.
-
-   The earlier version hid every sizer child that was not the report, which
-   meant a stylesheet in a permanent argument with Obsidian's reading view —
-   it rebuilds those children as they scroll, so the report kept losing its
-   exemption and the note went blank.  Hiding <pre> has no such problem:
-   Datacore blocks render as div.block-language-datacorejsx, never <pre>, so
-   the rule cannot reach the dashboard however often the view rebuilds it.
-   A class left behind on a recycled leaf hides code blocks in the next note
-   at worst — cosmetic, and the reference count clears it anyway. */
+   In reading mode the crunched payload, a fenced code block, is hidden by one
+   rule against <pre>. Datacore blocks are never <pre>, so the rule cannot
+   reach the dashboard however often the view rebuilds. A class left behind on
+   a recycled leaf at worst hides the next note's code blocks. */
 const CODE_CSS_ID = "tk-hidecode-css";
 const CODE_CSS =
   ".markdown-preview-view.tk-hidecode pre{ display:none !important; }";
@@ -289,8 +279,10 @@ function Corner(props) {
   const kind = props.kind || "med";
   const deco = kind === "deco";
   const box = deco ? 60 : 44;
-  const st = { top: "auto", bottom: "auto", left: "auto", right: "auto",
-    width: (deco ? 58 : 44) + "px", height: (deco ? 58 : 44) + "px", opacity: deco ? .9 : .8 };
+  const st = {
+    top: "auto", bottom: "auto", left: "auto", right: "auto",
+    width: (deco ? 58 : 44) + "px", height: (deco ? 58 : 44) + "px", opacity: deco ? .9 : .8
+  };
   st[props.v] = "9px"; st[props.hz] = "9px";
   const sx = props.hz === "right" ? -1 : 1, sy = props.v === "bottom" ? -1 : 1;
   const flip = "translate(" + (sx < 0 ? box : 0) + "," + (sy < 0 ? box : 0) + ") scale(" + sx + "," + sy + ")";
@@ -506,10 +498,8 @@ function habitRows(d, min) {
   return d.habits.filter(function (x) { return x.marked || x.habitSection || x.dayCount >= min; });
 }
 
-/* Column widths for the streak grid.  Auto table layout lets the nowrap task
-   titles claim the whole width and shoves every other column out past the
-   scroll container, so the layout is fixed and the task column simply takes
-   whatever is left.  Font sizes are untouched — only the geometry. */
+/* Column widths for the streak grid. Fixed layout, so the nowrap task titles
+   take what is left instead of shoving the other columns out of view. */
 const HB_DAY = 32, HB_DONE = 56, HB_RATE = 84, HB_STREAK = 60, HB_TIME = 64, HB_TASK = 168;
 
 function Habits(props) {
@@ -707,7 +697,7 @@ function Ledger(props) {
             <summary>
               {props.mark
                 ? <span class="swatch mark"
-                    style={{ color: g.color, fontSize: props.ornate ? "16px" : "13px" }}>{props.mark}</span>
+                  style={{ color: g.color, fontSize: props.ornate ? "16px" : "13px" }}>{props.mark}</span>
                 : <span class="swatch" style={{ background: g.color }} />}
               <h4>{g.title}</h4>
               <span class="meta">{g.meta}</span>
@@ -752,17 +742,13 @@ function Ledger(props) {
    One week, read either from the compact payload in this note or from the
    daily notes beside it.
 
-   The cache is not a micro-optimisation, it is what keeps the scroll steady.
-   Obsidian recycles reading-view sections while you scroll, which unmounts
-   and remounts this component; a cold remount starts at loading -> the body
-   renders empty for one paint -> the note collapses to the height of the
-   hero -> the browser clamps scrollTop and you are back at the top.  Seeding
-   the first paint from the last good read keeps the height identical across
-   a recycle, so there is nothing to jump to.
+   The cache keeps the scroll steady: Obsidian remounts this component as it
+   recycles sections, and a cold remount paints empty for a frame, collapsing
+   the note so scrollTop snaps to the top. Seeding from the last good read
+   keeps the height across a recycle.
 
-   The signature guard is the other half: Datacore's index ticks for any file
-   in the vault, and re-reading is cheap but re-rendering the whole dashboard
-   is not.  Identical data means no setState at all.
+   The signature guard skips setState when Datacore's index ticks for another
+   file and the data is identical.
    ========================================================================== */
 const WEEK_CACHE = new Map();
 const WEEK_CACHE_MAX = 8;
@@ -816,8 +802,10 @@ function useWeekData(explicitFolder) {
       } catch (e) {
         if (dead) return;
         sig.current = "";
-        setSt({ loading: false, days: [], payload: null, source: "",
-                error: String((e && e.message) || e) });
+        setSt({
+          loading: false, days: [], payload: null, source: "",
+          error: String((e && e.message) || e)
+        });
       }
     })();
     return function () { dead = true; };

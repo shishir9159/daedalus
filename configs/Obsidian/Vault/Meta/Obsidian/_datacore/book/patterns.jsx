@@ -29,7 +29,7 @@
 //                                       rail idles low, and hovering lights
 //                                       that book alone while the rest darken
 //
-//  Cobwebs and the spider live in critters.jsx.
+//  Cobwebs and the spider live in critters.jsx; cobweb.jsx draws the webs.
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
@@ -43,29 +43,24 @@ const LAMP_MODES = ["pointer", "rail"];
 // ════════════════════════════════════════════════════════════════════════════
 //  Spotlight — the lamp warms up as you read
 //
-//  Four shades of amber differing only in brightness was too subtle to read.
-//  This is a real colour-temperature sweep instead, the range an actual set of
-//  bulbs covers, and it runs cold-to-warm:
+//  A real colour-temperature sweep, cold to warm, with hue and brightness
+//  moving together; every value is one a real bulb can produce.
 //
 //    unread      6500K   the clinical blue-white of a lamp you never switched on
 //    begun       4000K   neutral office white
 //    underway    3000K   soft warm, the reading-lamp default
-//    nearly done 2200K   deep amber, the light you actually want to sit under
-//
-//  Hue and brightness move together, so an untouched book and a nearly-finished
-//  one are unmistakable at a glance — and every value is a colour a real lamp
-//  can produce, so the shelf still reads as lit rather than gelled.
+//    nearly done 2200K   deep amber
 // ════════════════════════════════════════════════════════════════════════════
 const SPOT_BANDS = [
-  { upto: 0,   rgb: "166, 197, 236", i: 0.30, k: "6500K", name: "cold"        },
-  { upto: 34,  rgb: "224, 231, 236", i: 0.54, k: "4000K", name: "neutral"     },
-  { upto: 75,  rgb: "255, 214, 158", i: 0.80, k: "3000K", name: "soft warm"   },
-  { upto: 100, rgb: "255, 176,  92", i: 1.00, k: "2200K", name: "amber"       },
+  { upto: 0, rgb: "166, 197, 236", i: 0.30, k: "6500K", name: "cold" },
+  { upto: 34, rgb: "224, 231, 236", i: 0.54, k: "4000K", name: "neutral" },
+  { upto: 75, rgb: "255, 214, 158", i: 0.80, k: "3000K", name: "soft warm" },
+  { upto: 100, rgb: "255, 176,  92", i: 1.00, k: "2200K", name: "amber" },
 ];
 
 /** The reading-lamp default, and the same bulb turned right down. */
 const LAMP_NEUTRAL = { rgb: "255, 214, 158", i: 0.80, name: "3000K" };
-const LAMP_IDLE    = { rgb: "236, 208, 168", i: 0.26, name: "standby" };
+const LAMP_IDLE = { rgb: "236, 208, 168", i: 0.26, name: "standby" };
 
 const spotBand = (pct) =>
   SPOT_BANDS.find((b) => pct <= b.upto) ?? SPOT_BANDS[SPOT_BANDS.length - 1];
@@ -82,23 +77,20 @@ const brighter = (b, by = 0.2) => ({ rgb: b.rgb, i: Math.min(1, b.i + by) });
 const beamVars = (book, mode) => {
   const band = spotBand(book.pct);
   const [rest, hover] =
-      mode === "progress" ? [band, brighter(band)]
-    : mode === "reveal"   ? [LAMP_NEUTRAL, band]
-    :                       [LAMP_IDLE, LAMP_NEUTRAL];
+    mode === "progress" ? [band, brighter(band)]
+      : mode === "reveal" ? [LAMP_NEUTRAL, band]
+        : [LAMP_IDLE, LAMP_NEUTRAL];
 
   return {
-    "--beam-rgb": rest.rgb,    "--beam-i": rest.i.toFixed(2),
+    "--beam-rgb": rest.rgb, "--beam-i": rest.i.toFixed(2),
     "--beam-rgb-h": hover.rgb, "--beam-i-h": hover.i.toFixed(2),
   };
 };
 
 /**
- * One lamp over one book: the fixture head, its cone, and the pool it casts.
- *
- * The head is the study's spotlight fixture — stem, shade, and an LED that
- * takes the book's reading colour — but there is one per book hanging from a
- * shared rail rather than a single fixture pinned to the shelf. Two cones,
- * resting and hover, cross-fade by opacity.
+ * One lamp over one book, hung from the shared rail: the fixture (stem, shade
+ * and an LED in the book's reading colour), its cone and the pool it casts.
+ * The resting and hover cones cross-fade by opacity.
  */
 function Beam() {
   return (
@@ -113,11 +105,7 @@ function Beam() {
   );
 }
 
-/**
- * The wash that puts the lamp's colour ON the artwork rather than in front of
- * it. soft-light keeps the cover's own values and shifts only its temperature,
- * which is what makes a cold book look unlit and a warm one look inviting.
- */
+/** The lamp's colour on the artwork: soft-light shifts only its temperature. */
 function Tint() { return <div class="hcs-tint" aria-hidden="true" />; }
 
 function Rail() { return <div class="hcs-rail" aria-hidden="true" />; }
@@ -173,11 +161,7 @@ function Bar({ book }) {
   return <div class="hcs-mini"><i style={{ width: `${book.pct}%` }} /></div>;
 }
 
-/**
- * A slip of paper tipped in at your page — it travels along the top edge as
- * you advance, and carries the page number. More legible than a ribbon and
- * more physical than a bar.
- */
+/** A paper slip tipped in at your page: it travels along the top edge and carries the page number. */
 function Slip({ book }) {
   return (
     <div class="hcs-slip" style={{ "--p": book.pct.toFixed(1) }}>
@@ -216,9 +200,8 @@ function Progress({ book, pattern, layer = "board" }) {
 // ════════════════════════════════════════════════════════════════════════════
 //  Pointer lamp — one warm light for the whole row
 //
-//  A single pair of overlays spanning the row, rather than a light per book:
-//  the falloff is then physically consistent across neighbours, and only one
-//  element changes per frame. Colours are tungsten, roughly 2700K.
+//  One pair of overlays spanning the row, so the falloff is consistent across
+//  neighbours and only one element changes per frame. Tungsten, about 2700K.
 // ════════════════════════════════════════════════════════════════════════════
 function Lamp() {
   return (
@@ -253,11 +236,11 @@ const lampHandlers = (enabled) => enabled ? {
 //  Time of day — the room the case is standing in
 // ════════════════════════════════════════════════════════════════════════════
 const tintForHour = (hr) =>
-    hr < 6  ? { rgb: "64, 88, 140",   a: 0.22, label: "night"   }
-  : hr < 10 ? { rgb: "196, 212, 236", a: 0.13, label: "morning" }
-  : hr < 17 ? { rgb: "255, 252, 244", a: 0.05, label: "midday"  }
-  : hr < 21 ? { rgb: "255, 172,  92", a: 0.15, label: "evening" }
-  :           { rgb: "64, 88, 140",   a: 0.22, label: "night"   };
+  hr < 6 ? { rgb: "64, 88, 140", a: 0.22, label: "night" }
+    : hr < 10 ? { rgb: "196, 212, 236", a: 0.13, label: "morning" }
+      : hr < 17 ? { rgb: "255, 252, 244", a: 0.05, label: "midday" }
+        : hr < 21 ? { rgb: "255, 172,  92", a: 0.15, label: "evening" }
+          : { rgb: "64, 88, 140", a: 0.22, label: "night" };
 
 /** Re-checked every ten minutes, so the library drifts through the day. */
 function useDaylight(enabled) {

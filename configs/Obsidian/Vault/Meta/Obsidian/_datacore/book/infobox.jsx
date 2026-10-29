@@ -2,9 +2,8 @@
 //  infobox.jsx  —  the book infobox
 //  Location: Meta/Obsidian/_datacore/book/infobox.jsx
 //
-//  Usage, in any book note. Passing `path` is what makes this reliable:
-//  `dc.useCurrentPath()` resolves correctly inside the code block, but not
-//  inside this module.
+//  Usage, in any book note. Pass `path`: `dc.useCurrentPath()` resolves inside
+//  the code block, not inside this module.
 //
 //    ```datacorejsx
 //    const { Infobox } = await dc.require("Meta/Obsidian/_datacore/book/infobox.jsx");
@@ -13,11 +12,14 @@
 //
 //  Options
 //    autoProgress  true   advance `progress` from the furthest PDF annotation,
-//                         and keep `underlines` current in frontmatter. The
-//                         underline count is written but never shown here —
-//                         the fore-edge is about how far you got.
+//                         and keep `underlines` current in frontmatter (written,
+//                         never shown here)
 //    heatmap       true   shade the fore-edge by annotation density
 //    ticks         34     fore-edge resolution
+//
+//  Links, in this order, each only when set:
+//    site · code · solution · errata
+//  Any of them may be a URL or a PDF in the vault ("[[Solutions.pdf]]").
 // ════════════════════════════════════════════════════════════════════════════
 
 const core = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
@@ -26,6 +28,23 @@ const {
   writeProgress, writeFields, useSiteHash, parseLink, fmtDate, tint,
   TIER_COLOR, STATUS_COLOR,
 } = core;
+
+/**
+ * Where a link property points: { href } for the web, { internal } for the
+ * vault. A wikilink or bare path opens inside Obsidian, so a PDF lands in its
+ * viewer; anything with a scheme goes to the browser.
+ */
+function linkTarget(v) {
+  if (v == null || v === "") return null;
+  const l = parseLink(v);
+  if (l) return { internal: l.path + (l.subpath ? `#${l.subpath}` : "") };
+  const s = String(v).trim();
+  const md = s.match(/^\[[^\]]*\]\(([^)\s]+)\)$/);
+  if (md) return /^[a-z][a-z0-9+.-]*:/i.test(md[1]) ? { href: md[1] } : { internal: md[1].replace(/%20/g, " ") };
+  if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return { href: s };
+  if (/^www\./i.test(s)) return { href: `https://${s}` };
+  return s ? { internal: s } : null;
+}
 
 function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field = "progress" }) {
   const notePath = useNotePath(path);
@@ -76,20 +95,15 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
       await navigator.clipboard.writeText(String(isbn));
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
-    } catch {}
+    } catch { }
   };
 
   const val = (v) =>
     v == null || v === "" ? null
       : parseLink(v) ? <NoteLink link={v} sourcePath={notePath} />
-      : String(v);
+        : String(v);
 
-  /**
-   * Render a frontmatter list as "a · b · c", dropping the blanks.
-   *
-   * A YAML list written out but not yet filled in comes through as [""];
-   * without the filter that renders a lone separator.
-   */
+  // A frontmatter list as "a · b · c", dropping blanks: an unfilled YAML list comes through as [""].
   const joined = (items, sep = " · ") => {
     const parts = [].concat(items ?? []).map(val).filter(Boolean);
     return parts.length ? parts.flatMap((el, i) => (i ? [sep, el] : [el])) : null;
@@ -103,35 +117,46 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
       </div>
     );
 
-  const links = [["Website", get("site")], ["Source code", get("code")]].filter(([, u]) => !!u);
+  const links = [
+    ["Website", get("site")],
+    ["Source code", get("code")],
+    ["Solutions", get("solutions")],
+    ["Errata", get("errata")],
+  ].map(([label, v]) => [label, linkTarget(v)]).filter(([, t]) => !!t);
+
+  const LinkOut = ({ label, target }) =>
+    target.href
+      ? <a href={target.href} target="_blank" rel="noopener">{label}</a>
+      : (
+        <a
+          href="#"
+          title={target.internal}
+          onClick={(e) => {
+            e.preventDefault();
+            app.workspace.openLinkText(target.internal, notePath ?? "", e.ctrlKey || e.metaKey);
+          }}
+        >{label}</a>
+      );
 
   // ── rolling releases ─────────────────────────────────────────────────────
-  // A book that is really a living document — a draft posted as a PDF, a text
-  // that gets a new printing every term — has no edition number to watch, so
-  // what gets watched is the page it lives on. With `rolling-release: true`,
-  // a fingerprint of the open-access `site` is compared against the one stored
-  // in `hash`.
+  // A living document (a draft posted as a PDF, a text reprinted every term)
+  // has no edition to watch, so with `rolling-release: true` a fingerprint of
+  // the open-access `site` is compared against the one stored in `hash`:
   //
   //   no `hash` yet  →  quietly record what the page looks like today
   //   hash matches   →  nothing to say
   //   hash differs   →  a red word beside the links
   //
-  // `hash` is exactly ten characters of base-36 and never grows: it is a
-  // fingerprint you have to live with in frontmatter, not a checksum anyone
-  // verifies. See shortHash in pdf.jsx.
-  //
-  // The whole thing is off the render path — one request, fired on a timer
-  // after paint, and the render never waits on it. And a warning is ALL it is:
-  // clicking is you saying "I have taken the new copy", so the notice goes and
-  // the stored hash moves to today's. Nothing is ever downloaded. The book is a
-  // file you keep, not a feed.
+  // `hash` is ten base-36 characters (shortHash in pdf.jsx). The check is one
+  // request on a timer after paint. Clicking the warning accepts the new copy:
+  // the notice goes and `hash` moves to today's. Nothing is downloaded.
   const rolling = get("rolling-release") === true;
   const siteUrl = get("site");
   const { now: siteNow, changed: siteChanged, firstRun } =
     useSiteHash(siteUrl, get("hash"), rolling && !!siteUrl);
 
   dc.useEffect(() => {
-    if (firstRun && siteNow && book.path) writeFields(book.path, { hash: siteNow }).catch(() => {});
+    if (firstRun && siteNow && book.path) writeFields(book.path, { hash: siteNow }).catch(() => { });
   }, [firstRun, siteNow, book.path]);
 
   const acceptRelease = async (e) => {
@@ -144,13 +169,8 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
     <>
       <Styles />
       <div class="hcx">
-        {/* FlatCover is BookCover with effects="plain": the drop shadow the
-            book casts, and NOTHING painted over the artwork — no spine
-            gradient, no corner sheen, no tint, no filter. Those belong to a
-            book standing on a shelf under a lamp; here they were only ever
-            softening the one place the cover is meant to be read.
-            540 is the raster width, twice the 270 it is drawn at, so a HiDPI
-            screen has real pixels to show rather than an upscale. */}
+        {/* BookCover with effects="plain": the drop shadow and nothing
+            painted over the artwork. 540 is twice the drawn width, for HiDPI. */}
         <FlatCover book={book} width={540} />
 
         {book.pages > 0 && (
@@ -165,11 +185,9 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
               {Array.from({ length: ticks }).map((_, i) => {
                 const read = i < readTicks;
                 const cursor = hoverPage != null && !read && i < cursorTicks;
-                // NB: never name a local `h` in this file — it is the JSX
-                // pragma, and shadowing it breaks every tag in scope.
+                // NB: never name a local `h` here — it is the JSX pragma
                 const dens = heat?.[i] ?? 0;
-                // density drives height and opacity inside the read region, so
-                // the fore-edge thickens where you actually left ink
+                // the read region thickens where you left ink
                 const style = read
                   ? { height: `${8 + 6 * (dens || 0.34)}px`, opacity: 0.55 + 0.45 * (dens || 0.55) }
                   : dens > 0
@@ -235,9 +253,7 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
 
           {(links.length > 0 || siteChanged) && (
             <div class="hcx-links">
-              {links.map(([label, url]) => (
-                <a key={label} href={url} target="_blank" rel="noopener">{label}</a>
-              ))}
+              {links.map(([label, target]) => <LinkOut key={label} label={label} target={target} />)}
               {siteChanged && (
                 <a
                   href="#"

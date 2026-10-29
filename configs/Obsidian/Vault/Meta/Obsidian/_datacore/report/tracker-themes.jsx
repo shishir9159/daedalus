@@ -442,10 +442,9 @@ ORDER.forEach(function (id) { PALETTES[id] = SKINS[id].pal; });
      · Fancy-a-Story is the active Obsidian theme AND its Art Deco or Medieval
        skin is on -> take that skin, matched to light / dark mode.
      · anything else -> Industry.
-   The matching is deliberately loose (it looks at the theme name, the classes
-   Style Settings writes onto <body>, and the Style Settings blob itself) so a
-   rename on the theme's side degrades to the Industry default rather than
-   breaking.  Adjust the two patterns below if FAS changes its class names. */
+   The match is loose (theme name, Style Settings' <body> classes and its blob),
+   so a rename degrades to Industry. Adjust the two patterns below if FAS
+   changes its class names. */
 
 const FAS_THEME = /fancy/i;               /* "Fancy a Story" in appearance settings */
 const FAS_DECO = /art[-_\s]?deco/i;
@@ -744,11 +743,9 @@ table.tk-t tr:hover td{ background:var(--tk-hover); }
 
 /* ==========================================================================
    HOST RESET
-   The report renders inside a note, so Obsidian's own table / details / form
-   styling reaches it and wins on specificity — that is where the stray zebra
-   rows and washed-out cell text came from.  These rules are deliberately
-   heavier than the ones above and carry !important on the properties the skin
-   must own; they are still scoped, so nothing leaks back into your notes.
+   Obsidian's table / details / form styling reaches the report and wins on
+   specificity, so these scoped rules are heavier and carry !important on the
+   properties the skin must own.
    ========================================================================== */
 .tk table.tk-t{ background:transparent !important; margin:0; box-shadow:none; }
 .tk table.tk-t thead,.tk table.tk-t tbody,.tk table.tk-t tr{ background:transparent !important; }
@@ -809,7 +806,7 @@ function scopeCss(css, scope) {
   return out.join("");
 }
 
-const LEGACY = { "fancy-a-story": "fancy" };
+const LEGACY = { medieval: "medieval", "fancy-a-story": "fancy" };
 function normalise(id) {
   if (SKINS[id]) return id;
   if (LEGACY[id] && SKINS[LEGACY[id]]) return LEGACY[id];
@@ -840,8 +837,10 @@ function skinCss(id, scope, opts) {
 function palette(id) { return SKINS[normalise(id)].pal; }
 function flags(id) {
   const s = SKINS[normalise(id)];
-  return { id: normalise(id), ornate: !!s.ornate, med: !!s.med, deco: !!s.deco, ind: !!s.ind,
-    riso: normalise(id) === "riso" };
+  return {
+    id: normalise(id), ornate: !!s.ornate, med: !!s.med, deco: !!s.deco, ind: !!s.ind,
+    riso: normalise(id) === "riso"
+  };
 }
 /* kept for callers written against the old two-skin world */
 function isFancy(id) { return flags(id).ornate; }

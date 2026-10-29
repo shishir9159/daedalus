@@ -9,52 +9,44 @@
 //    return function View() {
 //      return <Drawers
 //        design="medieval"
-//        tag={["paper"]}
 //      />;
 //    };
 //    ```
 //
 //  REQUIRED          design "medieval" | "art deco"
-//  WHAT TO COLLECT   tag "paper" (or a list) · folder null
+//  WHAT TO COLLECT   tag (one or a list, all required; #paper implied) · folder null
 //  THE DRAWERS       drawerContents "leaves"|"rows" · dropDepth 22 ·
 //                    leaf "scroll"|"sheet" · groupBy · order · sort · perRow ·
 //                    collapsed
 //  THE LEAVES        readingStain "auto" | true | false
 //  OTHER             queueSize (refill size only) · motion · full · webfonts
 //
-//  `design` is mandatory. Everything else has an answer already.
+//  `design` is mandatory; everything else has a default.
 //
-//  `tag` behaves exactly as it does on <Shelves>: one tag or a list, OR'd, a
-//  leading # optional. Collect on a subject rather than on #paper and the
-//  drawers regroup around whatever is left —
+//  #paper is always collected; `tag` adds one tag or a list, a leading #
+//  optional, and a paper must carry every one (AND, unlike <Shelves>). Collect
+//  on a subject and the drawers regroup around what is left, since the
+//  collected tags are dropped from every paper's topics (usePapers in core.jsx):
 //
 //    <Drawers design="art deco" tag={["transformer", "attention"]} />
-//    <Drawers design="medieval" tag="paper" folder="Papers/NLP" />
-//
-//  — because the tag you searched for is dropped from every paper's topics.
-//  See usePapers in core.jsx.
+//    <Drawers design="medieval" folder="Papers/NLP" />
 //
 //  ── HOW IT BEHAVES ────────────────────────────────────────────────────────
-//  A drawer is shut until you pull it. Pulling one pushes it towards you by
-//  `dropDepth` and drops its front down on a hinge. To shut it again, push any
-//  part of it that is not paper: the head above the tray, or the front lying
-//  flat below it. Right-clicking anywhere in the drawer does the same, and so
-//  does Escape. One drawer is open at a time — a chest with every drawer out is
-//  not a chest, it is a pile.
+//  A drawer is shut until you pull it. Pulling one brings it towards you by
+//  `dropDepth` and drops its front on a hinge. To shut it, push any part that
+//  is not paper (the head above the tray, or the front lying flat below it),
+//  right-click anywhere in it, or press Escape. One drawer is open at a time.
 //
 //  Inside, a paper is a leaf. Click it and it joins the reading queue in the
-//  bottom-left corner, immediately — the flight across the screen is what
-//  happens next, not what has to finish first. A double-click queues it and
-//  opens it. Right-click — or alt-click, for when something else has taken the
-//  context menu — dissolves it into the pile beside the queue, which is not a
-//  delete: click the pile and the dissolved papers fan out to be picked back up.
+//  bottom-left corner at once; double-click queues and opens it. Right-click
+//  (or alt-click) dissolves it into the pile beside the queue — not a delete:
+//  click the pile and the dissolved papers fan out to be picked back up.
 //
-//  A leaf with a ring on it is one you are in the middle of: it has a PDF and
-//  the PDF has marks in it. Nothing to set — see `active` in core.jsx.
+//  A leaf with a ring is one you are in the middle of: it has a PDF with marks
+//  in it (`active` in core.jsx).
 //
-//  THE QUEUE STARTS EMPTY. It is a list you build by clicking, not a query;
-//  the button under an empty queue fills it from unread if that is what you
-//  wanted. Nothing here writes to your vault — queue and pile are the session's.
+//  The queue starts empty; the button under an empty queue fills it from
+//  unread. Nothing here writes to your vault — queue and pile are the session's.
 //
 //  Escape closes whatever is on top, innermost first.
 //
@@ -64,24 +56,16 @@
 //                  denser, sortable by eye, no picture of anything.
 //  dropDepth       how far an open drawer comes towards you, in px. 0 is a flat
 //                  accordion; past ~50 the perspective starts to shear.
-//  leaf            scriptorium only, and it names a FACE rather than toggling
-//                  one: "scroll" is the sheet with the rolled top, "sheet" is
-//                  the flat one torn on all four edges. Both are the study's
-//                  own photographed paper, so both are exactly what it drew.
-//                  Ignored by art deco, which has no torn edges in it at all.
-//                  `rolledTop={false}` is the older spelling of leaf="sheet"
-//                  and still works; `leaf` wins when both are given.
-//  readingStain    the coffee ring on a LEAF. "auto" is the default and means
-//                  what a ring has always meant: this paper is being read —
-//                  there is a PDF and it has marks in it. true and false give
-//                  you a uniformly foxed or uniformly clean tray. The reading
-//                  panel has no ring; it printed over the abstract.
+//  leaf            scriptorium only, naming the face: "scroll" is the sheet
+//                  with the rolled top, "sheet" the flat one torn on all four
+//                  edges. Ignored by art deco. `rolledTop={false}` is the
+//                  older spelling of leaf="sheet"; `leaf` wins over it.
+//  readingStain    the coffee ring on a leaf. "auto" (the default) rings the
+//                  papers being read — a PDF with marks in it; true and false
+//                  give a uniformly foxed or clean tray.
 //
-//  ── ONE THING WORTH KNOWING ───────────────────────────────────────────────
-//  A full-bleed view is as tall as its pane and scrolls inside itself. Not a
-//  style choice: a note that grows to a few thousand pixels defeats Obsidian's
-//  section recycling and the scroll snaps back to the top. useFitHeight in
-//  book/core.jsx has the details.
+//  `full` makes the view as tall as its pane, scrolling inside itself
+//  (useFitHeight in book/core.jsx).
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
@@ -89,7 +73,7 @@
 const core = await dc.require("Meta/Obsidian/_datacore/paper/core.jsx");
 
 const {
-  designClass, DesignError, usePapers, indexBy, useDrawers, unreadOf, relatedTo,
+  designClass, DesignError, usePapers, paperTags, indexBy, useDrawers, unreadOf, relatedTo,
   Pip, ReadingPanel, Styles, useFitHeight, useEscape, footOf, clamp,
 } = core;
 
@@ -104,18 +88,13 @@ const ROW_STEP = { medieval: 268, deco: 216 };
 const FLY_MS = 460;
 
 /**
- * The two leaf faces the scriptorium draws, by name.
- *
- * These are the study's own photographed sheets, not a shape generated in CSS
- * — see --pv-leaf-scroll / --pv-leaf-sheet in core.jsx. There is no third one
- * to choose from because the study does not have a third one; if it grows one,
- * it goes here and in that variable block, and nowhere else.
+ * The two leaf faces the scriptorium draws, by name: photographed sheets
+ * (--pv-leaf-scroll / --pv-leaf-sheet in core.jsx).
  *
  *   scroll   a sheet whose top is rolled. The study's default.
  *   sheet    a flat sheet, torn on all four edges.
  *
- * `rolledTop` is the older boolean spelling of the same choice and still
- * works; the name wins when both are given.
+ * `rolledTop` is the older boolean spelling; the name wins over it.
  */
 const LEAF_FACES = ["scroll", "sheet"];
 
@@ -148,9 +127,7 @@ function Leaf({ paper, index, queued, flying, flat, stained, onQueue, onDissolve
         onContextMenu={onDissolve}
       >
         <span class="pvd-leaf-paper" aria-hidden="true" />
-        {/* A ring means this one is open on your desk right now — it has a PDF
-            and the PDF has marks in it. Not every leaf gets one; a tray where
-            everything is stained says nothing about anything. */}
+        {/* a ring: being read right now — a PDF with marks in it */}
         {stained && <span class="pvd-leaf-stain" aria-hidden="true" />}
         <span class="pvd-leaf-fanlet" aria-hidden="true" />
         <span class="pvd-leaf-rubric" aria-hidden="true" />
@@ -232,20 +209,9 @@ function Drawer({
   };
 
   /**
-   * A click queues, NOW. Nothing is deferred and nothing is conditional.
-   *
-   * The previous version held the click for 230ms so it could tell a single
-   * click from a double, and cancelled it if a second click arrived. That is
-   * the standard trick and it was the bug: a timer set inside an event handler
-   * survives only as long as the closure that owns it, the tray re-renders
-   * whenever the index ticks, and any of half a dozen ordinary things — the
-   * leaf flying, the drawer re-sorting, the effect cleanup on a re-key — ate
-   * the callback before it fired. The visible result is a click that does
-   * nothing, which is exactly what was reported, twice.
-   *
-   * So: click queues, on the spot. A double-click queues on the first click and
-   * opens on the second, which is additive and cannot race with itself. There
-   * is no case where a click does nothing at all.
+   * A click queues at once; a double-click queues on the first click and opens
+   * on the second. No timer tells them apart: re-renders ate the deferred
+   * callback and left clicks doing nothing.
    */
   const handlers = (paper, i) => ({
     onQueue: (e) => {
@@ -286,14 +252,8 @@ function Drawer({
   }
 
   /**
-   * Shutting a drawer, three ways.
-   *
-   * It was right-click only, which is one gesture and a fragile one: it is the
-   * gesture Obsidian itself wants for its own menu, a leaf inside the drawer
-   * takes it first for dissolving, and there is nothing on screen to say it
-   * exists. The two visible parts of an open drawer that are NOT paper — the
-   * head above the tray and the front lying flat below it — are what you would
-   * push to close a real one, so pushing them closes this one.
+   * Shutting a drawer: right-click, or push a part that is not paper — the head
+   * above the tray or the front lying flat below it — as you would a real one.
    */
   const shut = (e) => { e.preventDefault(); e.stopPropagation(); onShut(); };
 
@@ -343,9 +303,8 @@ function Drawer({
         )}
       </div>
 
-      {/* The drawer front, on its hinge — folded by the perspective on the
-          drawer itself, not a 3D context shared with the well (that one eats
-          the clicks on the leaves). */}
+      {/* The drawer front, on its hinge, folded by the drawer's own perspective:
+          a 3D context shared with the well eats the clicks on the leaves. */}
       <div class="pvd-flap" onClick={shut} title="shut the drawer">
         <span class="pv-lozenge" />
         <span class="pvd-flap-idx">{drawer.idx}</span>
@@ -361,12 +320,8 @@ function Drawer({
 //  The view
 // ════════════════════════════════════════════════════════════════════════════
 /**
- * `design` is checked here, before a single hook runs.
- *
- * Not fussiness: the check can fail, and a component that renders an error on
- * one pass and a chest full of hooks on the next is a "rendered fewer hooks
- * than expected" crash waiting for the first typo. The guard has no state of
- * its own, so both branches are legal.
+ * `design` is checked here, before any hook runs, so an error on one pass and
+ * a chest full of hooks on the next cannot change the hook count.
  */
 function Drawers(props) {
   let skin;
@@ -377,7 +332,7 @@ function Drawers(props) {
 
 function Chest({
   skin,
-  tag = "paper",
+  tag = [],
   folder = null,
   // the four tweaks
   drawerContents = "leaves",
@@ -406,27 +361,19 @@ function Chest({
   const flat = skin === "medieval" && faceOf(leaf, rolledTop) === "sheet";
   const step = ROW_STEP[skin];
   /**
-   * Which leaves carry a ring.
-   *
-   * "auto" asks the paper: is there a PDF, and does it have marks in it. true
-   * and false override, for a tray you want uniformly foxed or uniformly
-   * clean. The reading panel has no ring at all any more — it sat over the
-   * abstract, and a stain you have to read through is not a flourish.
+   * Which leaves carry a ring: "auto" asks the paper (a PDF with marks in it);
+   * true and false override.
    */
   const stainOf = (p) =>
     readingStain === true ? true : readingStain === false ? false : !!p.active;
 
   // ── session state ────────────────────────────────────────────────────────
-  // Nothing below is written to the vault. The queue is what you mean to read
-  // next, the pile is what you have pushed aside, and both are answers to
-  // "what am I doing right now" rather than facts about the papers.
+  // Nothing below is written to the vault: the queue is what you mean to read
+  // next, the pile what you have pushed aside.
   const [open, setOpen] = dc.useState(null);
   /**
-   * The queue starts EMPTY.
-   *
-   * Seeded with everything unread, clicking a paper changes nothing you can
-   * see: it is already queued. It is a list you are building, not a query;
-   * REFILL under an empty queue fills it from unread.
+   * The queue starts empty — seeded with everything unread, a click would
+   * change nothing visible. REFILL under an empty queue fills it from unread.
    */
   const [queue, setQueue] = dc.useState([]);
   const [qi, setQi] = dc.useState(0);
@@ -443,10 +390,8 @@ function Chest({
   const later = (fn, ms) => { timers.current.push(window.setTimeout(fn, ms)); };
 
   /**
-   * The top drawer opens ONCE, when the papers first arrive.
-   *
-   * Not "whenever nothing is open": closing sets open to null, so that would
-   * pull drawer one straight back out and the chest could never be shut.
+   * The top drawer opens once, when the papers first arrive — not whenever
+   * nothing is open, or no drawer could be shut.
    */
   const opened = dc.useRef(false);
   dc.useEffect(() => {
@@ -469,26 +414,16 @@ function Chest({
 
   // ── the three gestures ───────────────────────────────────────────────────
   /**
-   * `fly` is a LIST of papers in flight, not one.
-   *
-   * It was one, guarded by "if something is already flying, ignore this" — so
-   * clicking four papers in a row queued the first and silently dropped the
-   * other three, which is indistinguishable from a broken click handler. Each
-   * flight now clears only its own entry, and a second click on a paper that
-   * is already on its way is the only thing still ignored.
+   * `fly` is a list of papers in flight, so quick clicks all land. Each flight
+   * clears only its own entry; a second click on a paper already on its way is
+   * ignored.
    */
   const inFlight = (id) => fly.some((f) => f.id === id);
   const land = (id) => setFly((prev) => prev.filter((f) => f.id !== id));
 
   /**
-   * The queue moves on the click; the flight is decoration.
-   *
-   * It was the other way round — the paper flew for 460ms and joined the queue
-   * when it landed — which meant every click had almost half a second where
-   * nothing had happened yet, and a click whose flight was interrupted by a
-   * re-render never arrived at all. State first, animation after: the QUEUE
-   * count in the corner moves under your finger, and if the animation is cut
-   * short the paper is still in the queue.
+   * The queue moves on the click; the flight is decoration, so a flight cut
+   * short by a re-render still leaves the paper queued.
    */
   const toQueue = (id) => {
     setQueue((prev) => [id].concat(prev.filter((x) => x !== id)));
@@ -527,8 +462,8 @@ function Chest({
   };
 
   // ── the queue stack ──────────────────────────────────────────────────────
-  // Five cards deep at most: past that the stack is a texture, not a list, and
-  // every extra card is another shadow to composite.
+  // Five cards deep at most: past that the stack is a texture, and every card
+  // is another shadow to composite.
   const stack = dc.useMemo(() => {
     if (!live.length) return [];
     const rotated = live.slice(qi).concat(live.slice(0, qi));
@@ -572,7 +507,7 @@ function Chest({
           <div class="pvd-stack">
             {drawers.length === 0 && (
               <div class="pv-empty">
-                nothing tagged #{[].concat(tag).join(" / #")}
+                nothing tagged {paperTags(tag).map((t) => "#" + t).join(" and ")}
               </div>
             )}
             {drawers.map((d) => (
@@ -689,11 +624,7 @@ function Chest({
                         onClick={() => read(id)}
                         onContextMenu={(e) => { e.preventDefault(); toPile(id, "queue"); }}
                       >
-                        {/* No page image here. A card put a rasterised page in
-                            a 520px box, which is a thumbnail of a thumbnail,
-                            and it pushed the pip and the venue out of line to
-                            make room. The card is a card; the page is what you
-                            get when you open it. */}
+                        {/* no page image: the page is what you get when you open it */}
                         <div class="pvd-qtop">
                           <span class="pvd-qvenue">
                             {[paper.venue, paper.year].filter(Boolean).join(" · ")}
@@ -764,19 +695,11 @@ const CSS = `
   padding: 24px 30px 104px; display: flex; flex-direction: column; gap: 12px;
   perspective: 1700px; perspective-origin: 50% 26%;
 }
-/* THE DRAWER IS NOT A preserve-3d CONTEXT, and this is the reason clicking a
-   leaf did nothing for three rounds.
-   Inside a preserve-3d subtree Chromium hit-tests against the flattening
-   plane, and every descendant that gets its own composited layer — a leaf has
-   a transform, a filter and a running animation, so it gets three reasons —
-   drops out of the hit test. elementFromPoint over the whole face of a leaf
-   returned .pvd-row, its grandparent, which has no handler on it: the click
-   was landing on the tray behind the paper. elementsFromPoint still listed the
-   leaf, which is what made this look impossible; that call penetrates, and a
-   real pointer does not.
-   The 3D is kept where it is actually wanted — perspective here so the flap
-   folds on a hinge, translateZ from the stack's perspective so an open drawer
-   comes forward — and neither of those needs the children flattened together. */
+/* The drawer is NOT a preserve-3d context: inside one, Chromium hit-tests
+   against the flattening plane and composited descendants (every leaf) drop
+   out, so clicks land on the tray behind the paper. Perspective here folds the
+   flap on its hinge and translateZ brings an open drawer forward; neither
+   needs the children flattened together. */
 .pvd-drawer {
   perspective: 1400px; transform: translateZ(0); filter: brightness(.96);
 }
@@ -948,10 +871,9 @@ const CSS = `
 }
 .pvd-grow { flex: 1; }
 .pvd-tiny { width: 7px !important; height: 7px !important; }
-/* Anything printed on paper inherits the paper's own inks. The pip reads
-   --pv-gold and --pv-track, and #d9b96e on cream is a ring you cannot see; the
-   values below are the ones the study used on its cream cards. Re-pointing the
-   variables beats writing the pip four more times. */
+/* Anything printed on paper takes the paper's own inks: the pip's --pv-gold
+   is invisible on cream, so the variables are re-pointed to the cream cards'
+   values. */
 .pv.medieval .pvd-leaf, .pv.medieval .pvd-line,
 .pv.medieval .pvd-qcard, .pv.medieval .pvd-fan-card {
   --pv-gold: #a9832f; --pv-track: rgba(42,29,16,.2); --pv-line: rgba(42,29,16,.28);
@@ -966,11 +888,9 @@ const CSS = `
   transform: translateY(-14px) rotate(0deg);
   filter: drop-shadow(0 16px 20px rgba(0,0,0,.6)) brightness(1.03);
 }
-/* The leaf face IS the mask: the same photographed sheet supplies the paper's
-   fibre and its torn outline, which is why the two agree. --pv-leaf is set per
-   leaf style, so a whole tray changes face by swapping one variable.
-   Alternate leaves are mirrored, exactly as the study does it, so five sheets
-   in a row are not five prints of the same tear. */
+/* The leaf face is also the mask, so fibre and torn outline agree. --pv-leaf
+   is set per leaf style; alternate leaves are mirrored so a row is not five
+   prints of the same tear. */
 .pv.medieval .pvd-leaf-paper {
   position: absolute; inset: 0; pointer-events: none;
   background:
@@ -1072,9 +992,8 @@ const CSS = `
 .pv.deco .pvd-year { font-weight: 400; letter-spacing: .2em; color: var(--pv-gold); }
 .pvd-leaf-hr { flex: none; height: 9px; }
 
-/* Three lines of title, one of affiliation. A leaf is 250px of paper and the
-   things on it are in priority order — clamping is what keeps a paper with a
-   long title and six labs from pushing its own venue off the bottom. */
+/* Three lines of title, one of affiliation, clamped so a long title and six
+   labs cannot push the venue off a 250px leaf. */
 .pvd-leaf-title {
   font-size: 15px; line-height: 1.42; font-weight: 500; text-wrap: pretty;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;

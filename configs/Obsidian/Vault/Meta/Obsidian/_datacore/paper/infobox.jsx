@@ -7,12 +7,10 @@
 //    return function View() { return <Infobox path={dc.useCurrentPath()} />; };
 //    ```
 //
-//  The book infobox's sibling, and it borrows that one's palette: pills are
-//  theme colours tinted at 12%, not hardcoded hex, so it follows whatever
-//  theme you are running. Two things differ, because a paper is not a book —
-//  the cover is a rasterised page rather than a jpg, and reading progress is a
-//  poor summary of a document you read out of order, so what you get instead
-//  is what you marked and where.
+//  The book infobox's sibling, on its palette: pills are theme colours tinted
+//  at 12%, so it follows the theme. The cover is a rasterised page, and since
+//  a paper is read out of order, it shows what you marked and where rather
+//  than reading progress.
 //
 //  Options
 //    width       600   render width of the page image, px
@@ -24,38 +22,36 @@
 //  Frontmatter it reads
 //    paper / pdf        link to the PDF          (title: is accepted too)
 //    arxiv              id, with or without the "arXiv:" prefix
-//    arxiv-version      which version you hold — set this and the box will
-//                       check arXiv once, quietly, and offer an Update button
-//                       top right if a newer one exists. Without it, no check
-//                       is made at all.
+//    arxiv-version      which version you hold — set it and the box checks
+//                       arXiv once, quietly, offering an Update button top
+//                       right if a newer one exists. Without it, no check.
 //    subtitle           overrides the part of the filename after the colon
+//    investigation      what kind of paper (architecture, empirical, theory,
+//                       survey, …), shown beside the title
+//    claim              the paper's one sentence, in green; blurb / abstract
+//                       stand in for it in body colour
 //
 //  Relations — every one of these is a LIST of links:
 //    builds-on · extends · compare-with · refutes · superseded-by · prereq
 //    related            the unqualified one: papers that belong with this one
-//                       without you having to say how.
 //
 //        related:
 //          - "[[Layer Normalization]]"
 //          - "[[The Annotated Transformer]]"
 //
-//  A relation left in place but not filled in comes through as [""], and is
-//  treated as absent — no key, no empty row.
+//  A relation left unfilled comes through as [""] and counts as absent.
 //
-//  There is no `topics:` property: topics are the note's TAGS, minus the ones
-//  that say what kind of note it is (#paper and friends). One place to write
-//  them, and they stay clickable everywhere else in the vault.
+//  There is no `topics:` property: topics are the note's tags, minus the ones
+//  that say what kind of note it is (#paper and friends).
 //
-//  The page preview needs pdf.js. Obsidian only publishes it once its own PDF
-//  view has been built, so a fresh session may have no picture at first — the
-//  panel is clickable regardless, and the preview appears by itself the moment
-//  a PDF is opened anywhere. Drop a pdf.js ES build in
-//  Meta/Obsidian/_datacore/vendor/ to skip the wait entirely.
+//  The page preview needs pdf.js, which Obsidian publishes only once its own
+//  PDF view is built: in a fresh session the panel is clickable regardless and
+//  the preview appears once any PDF opens. Drop a pdf.js ES build in
+//  Meta/Obsidian/_datacore/vendor/ to skip the wait.
 //
-//  There is no need for `title:` either. The filename is the title, and text
-//  after a colon — or " - ", or an em dash, since Obsidian will not put a colon
-//  in a filename on Windows — is read as the subtitle. Keep `title:` only if it
-//  is doing its other job, pointing at the PDF.
+//  There is no need for `title:` either: the filename is the title, and text
+//  after a colon, " - " or an em dash is the subtitle. Keep `title:` only to
+//  point at the PDF.
 //
 //  All PDF work lives in Meta/Obsidian/_datacore/pdf/pdf.jsx.
 //
@@ -69,8 +65,8 @@ const {
 } = pdf;
 
 // ── palette ─────────────────────────────────────────────────────────────────
-// Theme colour NAMES, resolved through Obsidian's own --color-* variables, the
-// same way the book infobox does it. Nothing here is a literal hex.
+// Theme colour names, resolved through Obsidian's --color-* variables as in
+// the book infobox.
 const TIER_COLOR = {
   "S+++": "red", "S++": "red", "S+": "red", S: "orange",
   "A+": "orange", A: "yellow", "B+": "yellow", B: "green",
@@ -94,27 +90,18 @@ const KIND_LABEL = {
 };
 
 /**
- * Highlight colours come from the THEME, via pdf.jsx's swatchFor().
- *
- * The pen colours in the PDF are chosen to sit on white paper under a reader's
- * backlight. Repainting those literal values into a panel means a highlighter
- * yellow burning a hole in a dark theme and a pale grey vanishing into a light
- * one. What the bar needs to carry is "which colour was this", not "what
- * wavelength" — so the identity is matched exactly against the pen (that is
- * what HL_BY_HEX in pdf.jsx does) and only the display goes through
- * --color-yellow and friends.
+ * Highlight colours come from the theme, via pdf.jsx's swatchFor(): the pen is
+ * matched exactly (HL_BY_HEX) and only displayed through --color-yellow and
+ * friends, since the PDF's literal colours are chosen for white paper.
  */
 
 /** Tags that describe the note's type rather than its subject. */
 const NON_TOPIC_TAGS = new Set(["paper", "papers", "book", "note", "literature"]);
 
 /**
- * The filename is the title; anything after a colon is the subtitle.
- *
- * Obsidian will not let a filename contain ":" on Windows, so a real vault
- * writes the break as " - " or an em dash instead — all three are accepted.
- * An explicit `subtitle:` still wins, and so does an explicit `title:` for the
- * odd case where the file is named something shorter than the paper is.
+ * The filename is the title; anything after a colon, " - " or an em dash (a
+ * Windows filename cannot hold ":") is the subtitle. An explicit `subtitle:`
+ * or `title:` wins.
  */
 function splitTitle(name) {
   const m = String(name ?? "").match(/^(.*?)\s*(?::|\s[—–-]\s)\s*(.+)$/);
@@ -127,8 +114,8 @@ const num = (v) =>
 const compact = (n) =>
   n == null ? null
     : n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M"
-    : n >= 1e3 ? (n / 1e3).toFixed(1).replace(/\.0$/, "") + "k"
-    : String(n);
+      : n >= 1e3 ? (n / 1e3).toFixed(1).replace(/\.0$/, "") + "k"
+        : String(n);
 
 /** "this year", "last year", "7 years ago" — a date tells you less than a gap. */
 function yearsAgo(published, yearField) {
@@ -227,10 +214,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
   const cites = useCitations(arxiv, get("citations"), notePath);
 
   // ── has the paper moved on? ──────────────────────────────────────────────
-  // Deliberately cheap and deliberately conditional: one request, a regex, and
-  // only when the note already records which version it holds. Without
-  // `arxiv-version` there is nothing to compare against, so nothing is asked —
-  // opening a paper should not quietly become a network event.
+  // One request and a regex, and only when `arxiv-version` gives something to
+  // compare against.
   const { latest, have, stale } =
     useArxivUpdate(arxiv, get("arxiv-version"), !!arxiv && !!file);
   const [updating, setUpdating] = dc.useState(null);   // null | "busy" | "done" | "failed"
@@ -243,21 +228,15 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
     setUpdating("busy");
     setWhy(null);
 
-    // The previous PDF is copied aside as `Name.v6.pdf.bk` before the new bytes
-    // land, so a replacement that turns out to be worse than what it replaced
-    // is one rename away from being undone.
+    // The previous PDF is kept as `Name.v6.pdf.bk`, one rename from undoing.
     const res = await replaceArxivPdf(file, arxiv, latest, { haveVersion: have });
 
     if (res.ok) {
-      // Written back in the shape you wrote it in: a note that says `v7` gets
-      // `v8`, one that says `7` gets `8`. Round-tripping "v7" into the number 7
-      // would quietly rewrite your frontmatter the first time this ran.
+      // Written back in your shape: `v7` becomes `v8`, `7` becomes `8`.
       const marked = /^\s*v/i.test(String(get("arxiv-version") ?? ""));
       await writeFields(notePath, { "arxiv-version": marked ? `v${latest}` : latest })
-        .catch(() => {});
-      // replaceArxivPdf already dropped the cached document, stats and page
-      // image; this is the mounted component's own copy of the same call, kept
-      // so the panel re-reads the file it is looking at right now.
+        .catch(() => { });
+      // replaceArxivPdf dropped the caches; this makes the mounted panel re-read.
       forgetPdf(file.path);
       setWhy(res.backup ? `previous copy kept as ${res.backup.split("/").pop()}` : null);
       setUpdating("done");
@@ -271,9 +250,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
   };
 
   // ── write the derived numbers back ───────────────────────────────────────
-  // Counts only: how much you marked, how far you got, how much of the paper
-  // you touched. No per-colour keys — the colours are a reading signature, not
-  // something to query on.
+  // Counts only: how much you marked, how far you got, how much you touched.
+  // No per-colour keys.
   dc.useEffect(() => {
     if (!autoStats || !data || !notePath || !file) return;
     const sig = `${file.path}:${file.stat?.mtime}:${data.total}:${data.underlines}`;
@@ -293,14 +271,11 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
     for (const k of Object.keys(note.fm)) if (k.startsWith("hl-")) patch[k] = null;
     if ("annotated" in note.fm) patch.annotated = null;
     if ("highlight-legend" in note.fm) patch["highlight-legend"] = null;
-    writeFields(notePath, patch).catch(() => {});
+    writeFields(notePath, patch).catch(() => { });
   }, [notePath, file?.path, file?.stat?.mtime, data?.total, autoStats]);
 
   // ── the marked pages worth showing ───────────────────────────────────────
-  // A 40-page paper cannot fit one tick per page in a 460px box and stay
-  // legible, and a tick per page is not what you want to know anyway. Take the
-  // busiest `topPages`, then put them back in page order so the strip still
-  // reads left to right through the paper.
+  // The busiest `topPages`, back in page order so the strip reads left to right.
   const strip = dc.useMemo(() => {
     if (!data?.byPage) return null;
     const marked = data.byPage.filter((p) => p.n > 0);
@@ -323,7 +298,7 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
       await navigator.clipboard.writeText(String(text));
       setCopied(tag);
       setTimeout(() => setCopied(null), 1400);
-    } catch {}
+    } catch { }
   };
 
   const val = (v) =>
@@ -333,13 +308,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
         : String(v);
 
   /**
-   * Render a frontmatter list as "a · b · c", dropping the blanks.
-   *
-   * This is why `related:` looked broken. A relation written out in the
-   * template but not yet filled in arrives as [""] — a one-item array, so the
-   * old code declared the relation present and then rendered a separator with
-   * nothing on either side. Emptiness is decided AFTER the items are resolved,
-   * so a list of blanks is the same as no list at all.
+   * A frontmatter list as "a · b · c", dropping blanks. Emptiness is decided
+   * after resolving, so an unfilled [""] is no list at all.
    */
   const joined = (items, sep = " · ") => {
     const parts = [].concat(items ?? []).map(val).filter(Boolean);
@@ -366,16 +336,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
     ["Reviews", get("reviews") ?? get("openreview")],
   ].filter((l) => !!l[1]);
 
-  // `related` is the unqualified one: a list of papers that belong together
-  // without you having to say how. It sits last, after the relations that make
-  // a claim. Every one of these is a LIST in frontmatter:
-  //
-  //   related:
-  //     - "[[Layer Normalization]]"
-  //     - "[[The Annotated Transformer]]"
-  //
-  // Resolved here rather than at render time, so a relation whose items are all
-  // blank counts as absent and the whole block disappears when nothing is set.
+  // Every one is a list; `related`, the unqualified one, sits last. Resolved
+  // here, so an all-blank relation is absent and the block goes when none is set.
   const RELATIONS = [
     ["builds on", "builds-on"], ["extends", "extends"], ["compare", "compare-with"],
     ["refutes", "refutes"], ["superseded by", "superseded-by"], ["prereq", "prereq"],
@@ -385,9 +347,7 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
     .map(([label, key]) => ({ label, key, items: joined(get(key)) }))
     .filter((r) => r.items);
 
-  // Topics are tags, not a parallel `topics:` list — one place to write them,
-  // and they stay clickable everywhere else in the vault. The tag that says
-  // "this note is a paper" is not a topic, so it and its kin are dropped.
+  // Topics are tags, minus the ones that say "this note is a paper".
   const heading = splitTitle(note.name);
   const topics = note.tags.filter((t) => !NON_TOPIC_TAGS.has(t.toLowerCase()));
   const openTag = (t) => (e) => {
@@ -400,9 +360,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
       <Styles />
       <div class="pcx">
         <div class="pcx-sheet">
-          {/* Top right, and only when there is something to say. Theme colours
-              throughout — accent while it is worth pressing, green once the new
-              copy is down, error red if arXiv would not hand it over. */}
+          {/* Top right, only when there is something to say: accent to press,
+              green once the new copy is down, error red if arXiv refused. */}
           {(stale || updating) && (
             <a
               href="#"
@@ -410,14 +369,14 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
               title={
                 updating === "done" ? `Now holding v${latest}${why ? ` · ${why}` : ""}`
                   : updating === "failed" ? `Could not update: ${why ?? "unknown"}`
-                  : `You have v${have}, arXiv is at v${latest} — click to replace the PDF. The copy you have is kept as .pdf.bk`
+                    : `You have v${have}, arXiv is at v${latest} — click to replace the PDF. The copy you have is kept as .pdf.bk`
               }
               onClick={doUpdate}
             >
               {updating === "busy" ? "Updating…"
                 : updating === "done" ? `v${latest}`
-                : updating === "failed" ? "Failed — hover"
-                : `Update to v${latest}`}
+                  : updating === "failed" ? "Failed — hover"
+                    : `Update to v${latest}`}
             </a>
           )}
 
@@ -430,11 +389,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
               onClick={(e) => openAt(file, figure ?? 1, notePath, e)}
             />
           ) : (
-            /* The preview is a bonus; the way in is not. Whether pdf.js has
-               turned up or not, if there is a PDF behind this note the panel
-               opens it, placeholder or not. `ready` is false until pdf.js
-               exists, which it does from the moment any PDF is opened
-               anywhere; then the image appears on its own. */
+            /* The panel opens the PDF whether or not pdf.js has turned up;
+               `ready` is false until it does (once any PDF opens). */
             <div
               class={"pcx-page pcx-empty" + (file ? " is-openable" : "")}
               style={{ width: width + "px", maxHeight: maxHeight + "px" }}
@@ -448,8 +404,8 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
             >
               {!file ? "no `paper:` link"
                 : error ? "preview unavailable — click to open the PDF"
-                : !img.ready ? "waiting for pdf.js — click to open the PDF"
-                : "rendering…"}
+                  : !img.ready ? "waiting for pdf.js — click to open the PDF"
+                    : "rendering…"}
             </div>
           )}
         </div>
@@ -490,7 +446,11 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
         <div class="pcx-body">
           {/* The filename is the title. `title:` stays useful as the pointer to
               the PDF, so it is not read as a heading unless it is plain text. */}
-          <h3 class="pcx-title">{heading.title}</h3>
+          {/* what kind of paper it is, in the author line's type, beside the title */}
+          <div class="pcx-head">
+            <h3 class="pcx-title">{heading.title}</h3>
+            {joined(get("investigation")) && <span class="pcx-inv">{joined(get("investigation"))}</span>}
+          </div>
           {(get("subtitle") ?? heading.sub) && (
             <div class="pcx-sub">{get("subtitle") ?? heading.sub}</div>
           )}
@@ -558,7 +518,9 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
           </div>
 
           {(get("claim") || get("blurb") || get("abstract")) && (
-            <div class="pcx-blurb">{get("claim") ?? get("blurb") ?? get("abstract")}</div>
+            <div class={"pcx-blurb" + (get("claim") ? " is-claim" : "")}>
+              {get("claim") ?? get("blurb") ?? get("abstract")}
+            </div>
           )}
         </div>
       </div>
@@ -586,9 +548,8 @@ const CSS = `
   box-shadow: 0 2px 10px rgba(0,0,0,.28), 0 0 0 1px var(--background-modifier-border);
   transition: transform .12s ease, box-shadow .12s ease;
 }
-/* A whole-pixel translate, not translateY inside transform: a transform on an
-   <img> puts it on its own composited layer, which rasterises the page once at
-   the layer's scale and leaves it soft for as long as the pointer is on it. */
+/* A whole-pixel translate, not a transform, which would composite the <img>
+   and leave the page soft while hovered. */
 .pcx-page:hover {
   translate: 0 -1px;
   box-shadow: 0 6px 18px rgba(0,0,0,.34), 0 0 0 1px var(--background-modifier-border);
@@ -609,9 +570,7 @@ const CSS = `
 .pcx-dim { color: var(--text-faint); }
 
 /* ── the arXiv update button ──────────────────────────────────────────── */
-/* Top right of the page image, floating over the sheet. Every colour is a
-   theme variable, so it reads as a control in whatever theme is running
-   rather than as a coloured rectangle someone pasted in. */
+/* Top right of the page image, in theme colours. */
 .pcx-update {
   position: absolute; top: 10px; right: 10px; z-index: 3;
   padding: 3px 10px; border-radius: 6px;
@@ -664,6 +623,10 @@ const CSS = `
 }
 .pcx-title a { color: inherit; text-decoration: none; }
 .pcx-title a:hover { text-decoration: underline; }
+.pcx-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; margin: 0 0 2px; }
+.pcx-head .pcx-title { margin: 0; }
+/* investigation: the author line's colour and size */
+.pcx-inv { color: var(--text-muted); font-size: .92em; }
 .pcx-sub { color: var(--text-muted); margin-bottom: 4px; font-style: italic; }
 .pcx-authors { color: var(--text-muted); font-size: .92em; margin-bottom: 10px; line-height: 1.5; }
 
@@ -706,6 +669,8 @@ const CSS = `
   color: var(--text-normal); font-size: 1.02em; line-height: 1.6;
   border-top: 1px dashed var(--background-modifier-border);
 }
+/* A claim, as opposed to a blurb or abstract, in the theme's green. */
+.pcx-blurb.is-claim { color: var(--color-green); }
 .pcx-loading { color: var(--text-faint); font-size: .88em; margin-bottom: 8px; }
 .pcx-err { color: var(--text-error); font-size: .85em; margin-bottom: 8px; line-height: 1.45; }
 `;
