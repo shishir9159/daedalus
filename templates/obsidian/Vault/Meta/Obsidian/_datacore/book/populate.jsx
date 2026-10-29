@@ -18,7 +18,8 @@
 //       ASIN (B0…) carries no ISBN, so the Amazon page is read for one first
 //    2. the title loses its edition and any "(… series)", and its subtitle —
 //       the source's own field, or what follows the first ": " — goes to
-//       `subtitle`; a note still called "Untitled" is renamed after the title
+//       `subtitle`, or, when there is none, the empty `subtitle:` key goes;
+//       a note still called "Untitled" is renamed after the title
 //    3. the book's PDF, if you keep one — "<title>.pdf" anywhere, or the only
 //       PDF in the note's own folder — is renamed after the note and `title`
 //       links to it
@@ -400,8 +401,12 @@ async function populateBook(path, input, step = () => { }) {
 
     step("writing properties");
     // the id the run started from is the note's, and a YAML-mangled isbn is
-    // rewritten as a quoted string
-    const patch = await core.patchFrontmatter(file, values, { force: force.filter(Boolean) });
+    // rewritten as a quoted string; a title known to have no subtitle leaves
+    // no empty `subtitle:` behind
+    const patch = await core.patchFrontmatter(file, values, {
+      force: force.filter(Boolean),
+      drop: meta.title && !meta.subtitle ? ["subtitle"] : [],
+    });
 
     const coverMissing = CONFIG.book.downloadCover && core.isBlank(fm.cover) && !cover?.file;
     const complete = !!meta.title && !coverMissing;

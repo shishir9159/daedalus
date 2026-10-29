@@ -65,7 +65,7 @@ tags:
   - nlp
 ---
 
-request a free api key from https://www.semanticscholar.org/product/api#api-key-form
+request a free api key from https://www.semanticscholar.org/product/api#api-key-form and store in keychain with id "semantic-scholar".
 
 investigation for nlp can be: architecture | empirical | theory | survey | position | dataset
 
@@ -75,3 +75,5 @@ return function View() { return <Infobox path={dc.useCurrentPath()} />; };
 ```
 
 if you need to check the diff between new updates, use https://github.com/shishir9159/fenrir
+
+translators to scrape info: https://www.zotero.org/support/translators

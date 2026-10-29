@@ -13,6 +13,11 @@
 //    <ContactSheet/>    every first page at once. The one view where you find
 //                       a paper by recognising it rather than by reading it.
 //
+//  In all three a click on a paper opens its preview — the drawers' reading
+//  panel (ReadingPanel in core.jsx). On the constellation the paper stays
+//  selected behind it, its edges lit, for when you close it; on the pinboard
+//  a drag is not a click.
+//
 //  Each takes over its own note:
 //
 //    ```datacorejsx
@@ -131,6 +136,9 @@ function ConstellationBody({
   const [reading, setReading] = dc.useState(null);
   useEscape(() => setReading(null));
 
+  /** A paper picked anywhere here: selected under the preview, and previewed. */
+  const show = (id) => { setSel(id); setReading(id); };
+
   const current = (reading && byId[reading]) || null;
   const chosen = (sel && byId[sel]) || papers[0] || null;
 
@@ -214,10 +222,8 @@ function ConstellationBody({
                       "--topic": topics.color[p.topic],
                       zIndex: on ? 10 : 2,
                     }}
-                    title={`${p.title}\nclick · select   double-click · read`}
-                    /* one handler, clicks counted off MouseEvent.detail —
-                       onDoubleClick is a React name Preact never binds */
-                    onClick={(e) => (e.detail >= 2 ? setReading(p.id) : setSel(p.id))}
+                    title={`${p.title}\nclick · preview`}
+                    onClick={() => show(p.id)}
                   >
                     <span class="pvv-dot" />
                     <span class="pvv-label">{p.title}</span>
@@ -243,11 +249,11 @@ function ConstellationBody({
                     <span>SELECTED</span>
                     <i class="pv-rule" />
                   </div>
-                  {/* The title opens the reading panel; the page opens the PDF. */}
+                  {/* The title opens the preview; the page opens the PDF. */}
                   <span
                     class="pvv-side-title"
-                    title="read"
-                    onClick={() => setReading(chosen.id)}
+                    title="preview"
+                    onClick={() => show(chosen.id)}
                   >{chosen.title}</span>
                   <span class="pvv-side-authors">{chosen.authorsFull}</span>
                   {chosen.affiliationLine && (
@@ -266,7 +272,7 @@ function ConstellationBody({
                       <span class="pv-caps">Cites · cited by</span>
                       <div class="pv-cards">
                         {touching.map((x) => (
-                          <div class="pv-mini" key={x.paper.id} onClick={() => setSel(x.paper.id)}>
+                          <div class="pv-mini" key={x.paper.id} onClick={() => show(x.paper.id)}>
                             <span class="pv-mini-t">{x.paper.title}</span>
                             <span class="pv-mini-f">{`${x.why} · ${footOf(x.paper)}`}</span>
                           </div>
@@ -285,7 +291,7 @@ function ConstellationBody({
               paper={current}
               related={relatedTo(current, papers, byId)}
               onClose={() => setReading(null)}
-              onPick={(id) => setReading(id)}
+              onPick={show}
             />
           )}
         </div>

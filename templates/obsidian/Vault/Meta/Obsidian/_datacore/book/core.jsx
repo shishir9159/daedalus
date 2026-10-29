@@ -212,10 +212,12 @@ function useBook(notePath) {
 // shared drag latch, so a drop never fires the cover's click handler
 let lastDragEnd = 0;
 const markDragEnd = () => { lastDragEnd = Date.now(); };
+/** Did a drag just end? Then the click that follows it is not a click. */
+const justDragged = () => Date.now() - lastDragEnd < 250;
 
 /** Open the book's PDF at `progress`, through Obsidian's `#page=N` subpath. */
 const openBook = (book, evt, { atPage, force } = {}) => {
-  if (!force && Date.now() - lastDragEnd < 250) return;   // a drag isn't a click
+  if (!force && justDragged()) return;   // a drag isn't a click
   const target = parseLink(book.title)?.path ?? parseLink(book.cover)?.path;
   if (!target) return;
   evt?.preventDefault?.();
@@ -224,6 +226,19 @@ const openBook = (book, evt, { atPage, force } = {}) => {
   const p = atPage ?? book.progress;
   const link = /\.pdf$/i.test(target) && p > 0 ? `${target}#page=${p}` : target;
   app.workspace.openLinkText(link, book.path ?? "", newTab);
+};
+
+/**
+ * Open the note itself, a book's or a paper's — anything with a `path`.
+ * Ctrl/Cmd or the middle button for a new tab. The previews' picture does
+ * this; their title opens the PDF.
+ */
+const openNote = (note, evt) => {
+  if (!note?.path) return;
+  evt?.preventDefault?.();
+  evt?.stopPropagation?.();
+  const newTab = !!(evt && (evt.ctrlKey || evt.metaKey || evt.button === 1));
+  app.workspace.openLinkText(note.path, note.path, newTab);
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -532,7 +547,9 @@ function BlankCover({ book }) {
   );
 }
 
-function BookCover({ book, className = "", width = 360, effects = "plain", lift = false, onClick, alt }) {
+/* `label` names what a click does, for a cover whose `onClick` is not the
+   default (opening the book). */
+function BookCover({ book, className = "", width = 360, effects = "plain", lift = false, onClick, alt, label }) {
   const fx = COVER_FX.has(effects) ? effects : "plain";
   const [thumb, setThumb] = dc.useState(null);
   const [failed, setFailed] = dc.useState(false);
@@ -555,7 +572,7 @@ function BookCover({ book, className = "", width = 360, effects = "plain", lift 
       class={`hc-cover hc-fx-${fx}${lift ? " hc-lift" : ""} ${className} ${src ? "" : "is-blank"}`}
       role="button"
       tabIndex={0}
-      aria-label={book.progress > 0 ? `Open at page ${book.progress}` : "Open PDF"}
+      aria-label={label ?? (book.progress > 0 ? `Open at page ${book.progress}` : "Open PDF")}
       onClick={handle}
       /* auxclick fires for the right button too, so only take the middle one */
       onAuxClick={(e) => { if (e.button === 1) handle(e); }}
@@ -673,6 +690,46 @@ function useEdgeScroll(enabled = true, { zone = 96, speed = 24 } = {}) {
   }, [enabled, zone, speed]);
 
   return ref;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Previews
+//
+//  Both previews — a paper's (ReadingPanel in paper/core.jsx) and a book's
+//  (book/preview.jsx) — are a picture beside a column, laid over the view.
+//  They close and scroll the same way, so the behaviour lives here, once; the
+//  look is each design's own.
+// ════════════════════════════════════════════════════════════════════════════
+/** Escape closes whatever is on top. Every view wants it; none should re-write it. */
+function useEscape(handler) {
+  const ref = dc.useRef(handler);
+  ref.current = handler;
+  dc.useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") ref.current?.(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+}
+
+/**
+ * The wheel drives a preview's column from anywhere over the preview; one
+ * already over the column is left to the browser. → [ref for the column,
+ * onWheel for the overlay].
+ *
+ * `hold` keeps the wheel from ever reaching what is under the overlay, even
+ * when the column has nowhere to go: the shelf scrolls with its note, and
+ * would slide away under the book preview.
+ */
+function useWheelInto({ hold = false } = {}) {
+  const ref = dc.useRef(null);
+  const onWheel = (e) => {
+    const el = ref.current;
+    if (!el || el.contains(e.target)) return;
+    if (el.scrollHeight > el.clientHeight) el.scrollTop += e.deltaY;
+    else if (!hold) return;
+    e.preventDefault();
+  };
+  return [ref, onWheel];
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -809,7 +866,15 @@ const CSS = `
 .hcx .hc-cover { width: var(--hcx-cover, 270px); max-width: 100%; margin: 0 auto; }
 
 /* ── fore-edge progress + annotation heat ─────────────────────────────── */
+/* ForeEdge in book/infobox.jsx. Its inks are variables, in the theme's
+   colours here; the book preview (book/preview.jsx) re-points them to the
+   shelf design's. */
 .hcx-edge {
+  --hcx-track: var(--background-modifier-border);
+  --hcx-ink: var(--text-accent);
+  --hcx-label: var(--text-faint);
+  --hcx-figure: var(--text-muted);
+  --hcx-auto-ink: var(--color-green);
   width: calc(var(--hcx-cover, 270px) * .87);
   margin: 15px auto 0; cursor: ew-resize;
 }
@@ -818,23 +883,23 @@ const CSS = `
   padding: 3px 0; margin: -3px 0;
 }
 .hcx-tick {
-  flex: 1; border-radius: .5px; background: var(--background-modifier-border);
+  flex: 1; border-radius: .5px; background: var(--hcx-track);
   height: 6px; opacity: 1;
   transition: height .16s cubic-bezier(.22,1,.36,1), background-color .16s ease-out, opacity .16s;
 }
-.hcx-tick.is-read { background: var(--text-accent); }
-.hcx-tick.is-cursor { height: 14px !important; background: var(--text-accent); opacity: .45; }
-.hcx-tick.has-heat { background: var(--text-accent); }
+.hcx-tick.is-read { background: var(--hcx-ink); }
+.hcx-tick.is-cursor { height: 14px !important; background: var(--hcx-ink); opacity: .45; }
+.hcx-tick.has-heat { background: var(--hcx-ink); }
 .hcx-edge:hover .hcx-tick:not(.is-read):not(.is-cursor):not(.has-heat) { height: 14px; opacity: .5; }
 
 .hcx-plabel {
   display: flex; justify-content: space-between; margin-top: 7px;
-  font-size: var(--font-ui-smaller); color: var(--text-faint);
+  font-size: var(--font-ui-smaller); color: var(--hcx-label);
   font-variant-numeric: tabular-nums;
 }
-.hcx-plabel b { color: var(--text-muted); font-weight: var(--font-medium); }
-.hcx-ghost { color: var(--text-accent); }
-.hcx-auto { color: var(--color-green); }
+.hcx-plabel b { color: var(--hcx-figure); font-weight: var(--font-medium); }
+.hcx-ghost { color: var(--hcx-ink); }
+.hcx-auto { color: var(--hcx-auto-ink); }
 
 /* ── text block ───────────────────────────────────────────────────────── */
 .hcx-body { margin-top: 1.15em; }
@@ -2076,9 +2141,9 @@ return {
   // helpers
   clamp, tint, fmtDate, hashOf, tiltFor, baseName, parseLink, resolveFile,
   // model
-  useNotePath, useFrontmatter, useBook, openBook,
+  useNotePath, useFrontmatter, useBook, openBook, openNote,
   // writes
-  writeFields, writeProgress, markDragEnd,
+  writeFields, writeProgress, markDragEnd, justDragged,
   // pdf
   firstPageThumb, annotationProfile, useAnnotations,
   // rolling releases
@@ -2087,7 +2152,9 @@ return {
   coverSrc, useCoverSrc, findSpineImage, useSpineImage, dominantColor, useCoverColor,
   BLANK_RATIO, useCoverRatio,
   // layout
-  useFitHeight, useEdgeScroll,
+  SCROLLERS, useFitHeight, useEdgeScroll,
+  // previews
+  useEscape, useWheelInto,
   // components
   BookCover, ShelfCover, PanelCover, FlatCover, BlankCover, NoteLink, Styles,
 };

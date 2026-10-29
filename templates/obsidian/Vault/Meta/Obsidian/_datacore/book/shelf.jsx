@@ -50,6 +50,13 @@
 //  from the artwork, useCoverRatio), and clicking it turns the book out on its
 //  spine to face the room.
 //
+//  Clicking a book — face out, lying finished in a pile, or heaped on top of
+//  the case — opens its preview (book/preview.jsx): the cover beside its
+//  particulars and your progress. There the title opens the book's PDF at
+//  your page, and the cover opens its note. Ctrl/Cmd-click or the middle
+//  button on the shelf skip the preview and open the PDF in a new tab, as
+//  before.
+//
 //  Size is not an argument: it comes from the page count (sizeOf), floored at
 //  FACE_MIN. Shelf height, headroom, gaps, cones, the spider and its thread
 //  are all fractions of the books (the metrics memo), so moving FACE_MIN
@@ -68,11 +75,12 @@ const core = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
 const pat = await dc.require("Meta/Obsidian/_datacore/book/patterns.jsx");
 const bug = await dc.require("Meta/Obsidian/_datacore/book/critters.jsx");
 const sgn = await dc.require("Meta/Obsidian/_datacore/book/banner.jsx");
+const pvw = await dc.require("Meta/Obsidian/_datacore/book/preview.jsx");
 
 const {
   Styles, ShelfCover, useBook, useCoverColor, useCoverSrc, useCoverRatio, useSpineImage,
   useEdgeScroll, styleClass, woodFor, tiltFor, hashOf, clamp,
-  baseName, openBook, writeFields, markDragEnd, isIgnored,
+  baseName, openBook, writeFields, markDragEnd, justDragged, isIgnored,
   READING, UPCOMING, DONE, TIER_RANK,
 } = core;
 const {
@@ -84,8 +92,21 @@ const {
   WEB_BREATH, SPIDER_SWING,
 } = bug;
 const { BannerStyles, Banner, NEON_COLORS } = sgn;
+const { BookPreview, PreviewStyles } = pvw;
 
 const DRAG_MIME = "application/x-obsidian-book";
+
+/**
+ * A click on a book: its preview. Ctrl/Cmd and the middle button open the
+ * book itself in a new tab instead, and the end of a drag is no click at all.
+ */
+function pickBook(book, e, onPreview) {
+  if (!onPreview || e.ctrlKey || e.metaKey || e.button === 1) { openBook(book, e); return; }
+  e.preventDefault();
+  e.stopPropagation();
+  if (justDragged()) return;
+  onPreview(book.path);
+}
 
 /** How long a book takes to turn out from its spine; --turn in the styles. */
 const TURN_MS = 600;
@@ -159,7 +180,7 @@ function SpineFace({ book, art }) {
  */
 function FaceBook({
   notePath, pattern, webs, wear, dogears, spider, motion, breathe, swing, beamMode,
-  draggable, leaning, spine, turning, onTurn, onHush, lean,
+  draggable, leaning, spine, turning, onTurn, onHush, onPreview, lean,
 }) {
   const book = useBook(notePath);
   const [dragging, setDragging] = dc.useState(false);
@@ -263,8 +284,12 @@ function FaceBook({
             </div>
           )}
           {/* BookCover with effects="lit": the board, graded by the lamps. The
-              raster is 2.2x the display width, for HiDPI. */}
-          <ShelfCover book={book} width={Math.round(dim.face * 2.2)} />
+              raster is 2.2x the display width, for HiDPI. A click previews. */}
+          <ShelfCover
+            book={book}
+            width={Math.round(dim.face * 2.2)}
+            onClick={(e) => pickBook(book, e, onPreview)}
+          />
           {beamMode && <Tint />}
           {webs && neglect > 0 && (
             <Cobweb level={neglect} seed={book.path} width={dim.face} height={tall} sway={breath} />
@@ -294,7 +319,7 @@ function FaceBook({
  * A book lying flat, spine out: a band of cloth with the title along it.
  * Draggable, so a finished title can go back on a working shelf.
  */
-function Slab({ notePath, draggable }) {
+function Slab({ notePath, draggable, onPreview }) {
   const book = useBook(notePath);
   const cloth = useCoverColor(book);
   const [dragging, setDragging] = dc.useState(false);
@@ -322,21 +347,21 @@ function Slab({ notePath, draggable }) {
         setDragging(true);
       }}
       onDragEnd={() => { setDragging(false); markDragEnd(); }}
-      onClick={(e) => openBook(book, e)}
+      onClick={(e) => pickBook(book, e, onPreview)}
     >
       <span class="hcs-slab-title">{book.name}</span>
     </div>
   );
 }
 
-function Piles({ books, draggable, perPile = 6 }) {
+function Piles({ books, draggable, onPreview, perPile = 6 }) {
   const piles = [];
   for (let i = 0; i < books.length; i += perPile) piles.push(books.slice(i, i + perPile));
   return (
     <div class="hcs-piles">
       {piles.map((pile, i) => (
         <div class="hcs-pile" key={i}>
-          {pile.map((p) => <Slab key={p} notePath={p} draggable={draggable} />)}
+          {pile.map((p) => <Slab key={p} notePath={p} draggable={draggable} onPreview={onPreview} />)}
         </div>
       ))}
     </div>
@@ -344,7 +369,7 @@ function Piles({ books, draggable, perPile = 6 }) {
 }
 
 /** Books that did not fit, lying in heaps on top of the case. */
-function TopSlab({ notePath }) {
+function TopSlab({ notePath, onPreview }) {
   const book = useBook(notePath);
   const dim = sizeOf(book.pages);
   const src = useCoverSrc(book);
@@ -359,7 +384,7 @@ function TopSlab({ notePath }) {
         "--blank-hue": hashOf(book.path) % 360,
       }}
       title={book.name}
-      onClick={(e) => openBook(book, e)}
+      onClick={(e) => pickBook(book, e, onPreview)}
     >
       {src ? <img src={src} alt="" draggable={false} decoding="async" />
         : <div class="hcs-topslab-blank" />}
@@ -367,7 +392,7 @@ function TopSlab({ notePath }) {
   );
 }
 
-function TopPile({ books, perStack = 5 }) {
+function TopPile({ books, onPreview, perStack = 5 }) {
   if (!books.length) return null;
   const stacks = [];
   for (let i = 0; i < books.length; i += perStack) stacks.push(books.slice(i, i + perStack));
@@ -375,7 +400,7 @@ function TopPile({ books, perStack = 5 }) {
     <div class="hcs-toppile">
       {stacks.map((st, i) => (
         <div class="hcs-topstack" key={i} style={{ "--lean": `${(i % 2 ? 1.6 : -1.8)}deg` }}>
-          {st.map((p) => <TopSlab key={p} notePath={p} />)}
+          {st.map((p) => <TopSlab key={p} notePath={p} onPreview={onPreview} />)}
         </div>
       ))}
     </div>
@@ -386,7 +411,7 @@ function TopPile({ books, perStack = 5 }) {
 function Shelf({
   title, books, collapsed, wrap, pattern, webs, wear, dogears, spiderPath, motion,
   breathe, swing, bookends, lamp, beamMode, flat, draggable, drop, onDrop, walls,
-  spines, isFace, turning, onTurn, onHush,
+  spines, isFace, turning, onTurn, onHush, onPreview,
 }) {
   const empty = <EmptyShelf seed={title} sway={motion && breathe} swing={swing} />;
   const [open, setOpen] = dc.useState(false);
@@ -414,7 +439,7 @@ function Shelf({
         {flat ? (
           /* still a row, so it keeps a standing shelf's min-height and headroom */
           <div class="hcs-row is-flat">
-            {visible.length === 0 ? empty : <Piles books={visible} draggable={draggable} />}
+            {visible.length === 0 ? empty : <Piles books={visible} draggable={draggable} onPreview={onPreview} />}
           </div>
         ) : (
           <div
@@ -441,6 +466,7 @@ function Shelf({
                 turning={turning.has(p)}
                 onTurn={onTurn}
                 onHush={onHush}
+                onPreview={onPreview}
                 lean={showEnd && spines && !isFace(p)
                   ? (i === visible.length - 1 ? 1 : i === visible.length - 2 ? 2 : 0)
                   : 0}
@@ -457,7 +483,7 @@ function Shelf({
         {walls && <><i class="hcs-wall is-l" aria-hidden="true" /><i class="hcs-wall is-r" aria-hidden="true" /></>}
 
         <div class="hcs-plank" />
-        {overflow.length > 0 && <TopPile books={overflow} />}
+        {overflow.length > 0 && <TopPile books={overflow} onPreview={onPreview} />}
         {/* plate and button ride together at the near end, however wide the row */}
         <div class="hcs-label">
           <span class="hcs-plate">{title}<i>{books.length}</i></span>
@@ -567,6 +593,9 @@ function Shelves({
 
   const day = useDaylight(daylight);
   const [chainOn, setChainOn] = dc.useState(true);
+
+  /** The book whose preview is open, by path; null for none. */
+  const [previewing, setPreviewing] = dc.useState(null);
 
   // touch the book the spider is sitting on and it scuttles off for a while
   const [hushed, setHushed] = dc.useState(null);
@@ -740,6 +769,7 @@ function Shelves({
       <Styles />
       <CritterStyles />
       <BannerStyles />
+      <PreviewStyles />
       <div
         class={cls.join(" ")}
         style={metrics}
@@ -794,12 +824,17 @@ function Shelves({
                 draggable={draggable}
                 drop={s.drop}
                 onDrop={handleDrop}
+                onPreview={setPreviewing}
               />
             ))}
           </div>
           {daylight && <Daylight tint={day} />}
           {glass && <GlassDoors />}
         </div>
+        {/* every book here carries one of `tags`, so the preview leaves them out */}
+        {previewing && (
+          <BookPreview path={previewing} hide={tags} onClose={() => setPreviewing(null)} />
+        )}
       </div>
     </>
   );

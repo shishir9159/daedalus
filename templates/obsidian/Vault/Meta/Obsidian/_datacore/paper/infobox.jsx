@@ -169,6 +169,71 @@ function NoteLink({ link, sourcePath }) {
   );
 }
 
+// ── what you marked, and where ──────────────────────────────────────────────
+/**
+ * A paper's progress, as this box tells it: a paper is read out of order, so
+ * it is where you left ink rather than how far you got. The `top` busiest
+ * pages, back in page order so the strip reads left to right, each bar the
+ * colour of the pen that dominates it (click one for that page); under them,
+ * the counts. Nothing until there is a highlight.
+ *
+ * `data` is usePdfStats(file).data. The infobox's, and the paper views'
+ * preview's (ReadingPanel in paper/core.jsx), which re-points the inks
+ * (--pcx-ink, --pcx-muted, --pcx-faint) to the design's.
+ */
+function Marks({ file, data, notePath, top = 12 }) {
+  const strip = dc.useMemo(() => {
+    if (!data?.byPage) return null;
+    const marked = data.byPage.filter((p) => p.n > 0);
+    if (!marked.length) return null;
+    const busiest = marked.slice().sort((a, b) => b.n - a.n).slice(0, top);
+    const max = Math.max(...busiest.map((p) => p.n));
+    return busiest.sort((a, b) => a.page - b.page).map((p) => ({ ...p, dens: p.n / max }));
+  }, [data, top]);
+
+  // References marked "still to read" — the one colour whose count is a to-do
+  // rather than a description of what you already did.
+  const unexplored = dc.useMemo(
+    () => data?.byColor?.find((c) => c.color === "explore")?.n ?? 0,
+    [data]
+  );
+
+  if (!strip) return null;
+  return (
+    <>
+      <Styles />
+      <div class="pcx-marks">
+        <div class="pcx-pages">
+          {strip.map((p) => (
+            <span
+              key={p.page}
+              class="pcx-pg"
+              title={`p${p.page} · ${p.n} highlight${p.n === 1 ? "" : "s"}`}
+              onClick={(e) => openAt(file, p.page, notePath, e)}
+            >
+              <i style={{
+                height: `${6 + 16 * p.dens}px`,
+                background: swatchFor(p.top),
+              }} />
+              <b>{p.page}</b>
+            </span>
+          ))}
+        </div>
+
+        <div class="pcx-plabel">
+          <span><b>{data.total}</b> highlight{data.total === 1 ? "" : "s"}
+            {data.underlines ? <> · <b>{data.underlines}</b> underlined</> : null}
+          </span>
+          <span>
+            {Math.round(data.coverage * 100)}% of pages marked
+            {unexplored > 0 && <> · <b>{unexplored}</b> to explore</>}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function useNote(path) {
   const rev = dc.useIndexUpdates();
   return dc.useMemo(() => {
@@ -283,24 +348,6 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
     if ("highlight-legend" in note.fm) patch["highlight-legend"] = null;
     writeFields(notePath, patch).catch(() => { });
   }, [notePath, file?.path, file?.stat?.mtime, data?.total, autoStats]);
-
-  // ── the marked pages worth showing ───────────────────────────────────────
-  // The busiest `topPages`, back in page order so the strip reads left to right.
-  const strip = dc.useMemo(() => {
-    if (!data?.byPage) return null;
-    const marked = data.byPage.filter((p) => p.n > 0);
-    if (!marked.length) return null;
-    const top = marked.slice().sort((a, b) => b.n - a.n).slice(0, topPages);
-    const max = Math.max(...top.map((p) => p.n));
-    return top.sort((a, b) => a.page - b.page).map((p) => ({ ...p, dens: p.n / max }));
-  }, [data, topPages]);
-
-  // References marked "still to read" — the one colour whose count is a to-do
-  // rather than a description of what you already did.
-  const unexplored = dc.useMemo(
-    () => data?.byColor?.find((c) => c.color === "explore")?.n ?? 0,
-    [data]
-  );
 
   const copy = (text, tag) => async (e) => {
     e.stopPropagation();
@@ -421,36 +468,7 @@ function Infobox({ path, width = 600, maxHeight = 900, topPages = 12, autoStats 
         </div>
 
         {/* ── what you marked, and where ─────────────────────────────── */}
-        {strip && (
-          <div class="pcx-marks">
-            <div class="pcx-pages">
-              {strip.map((p) => (
-                <span
-                  key={p.page}
-                  class="pcx-pg"
-                  title={`p${p.page} · ${p.n} highlight${p.n === 1 ? "" : "s"}`}
-                  onClick={(e) => openAt(file, p.page, notePath, e)}
-                >
-                  <i style={{
-                    height: `${6 + 16 * p.dens}px`,
-                    background: swatchFor(p.top),
-                  }} />
-                  <b>{p.page}</b>
-                </span>
-              ))}
-            </div>
-
-            <div class="pcx-plabel">
-              <span><b>{data.total}</b> highlight{data.total === 1 ? "" : "s"}
-                {data.underlines ? <> · <b>{data.underlines}</b> underlined</> : null}
-              </span>
-              <span>
-                {Math.round(data.coverage * 100)}% of pages marked
-                {unexplored > 0 && <> · <b>{unexplored}</b> to explore</>}
-              </span>
-            </div>
-          </div>
-        )}
+        <Marks file={file} data={data} notePath={notePath} top={topPages} />
 
         {/* ── the body ───────────────────────────────────────────────── */}
         <div class="pcx-body">
@@ -598,7 +616,10 @@ const CSS = `
 .pcx-update.is-failed { color: var(--text-on-accent); background: var(--text-error); }
 
 /* ── what you marked ──────────────────────────────────────────────────── */
+/* Marks. Its inks are variables, in the theme's colours here; the views'
+   preview (paper/core.jsx) re-points them to the design's. */
 .pcx-marks {
+  --pcx-ink: var(--text-normal); --pcx-muted: var(--text-muted); --pcx-faint: var(--text-faint);
   padding: 11px 14px 9px; background: var(--background-primary);
   border-top: 1px solid var(--background-modifier-border);
 }
@@ -613,17 +634,17 @@ const CSS = `
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.16);
 }
 .pcx-pg b {
-  font-size: 9.5px; font-weight: 400; color: var(--text-faint);
+  font-size: 9.5px; font-weight: 400; color: var(--pcx-faint);
   font-variant-numeric: tabular-nums;
 }
 .pcx-pg:hover i { transform: scaleY(1.14); }
-.pcx-pg:hover b { color: var(--text-normal); }
+.pcx-pg:hover b { color: var(--pcx-ink); }
 
 .pcx-plabel {
   display: flex; justify-content: space-between; margin-top: 9px;
-  color: var(--text-muted); font-size: .9em; font-variant-numeric: tabular-nums;
+  color: var(--pcx-muted); font-size: .9em; font-variant-numeric: tabular-nums;
 }
-.pcx-plabel b { color: var(--text-normal); font-weight: var(--font-medium); }
+.pcx-plabel b { color: var(--pcx-ink); font-weight: var(--font-medium); }
 
 /* ── body ─────────────────────────────────────────────────────────────── */
 .pcx-body { padding: 12px 14px 14px; }
@@ -698,4 +719,4 @@ function Styles() {
   return null;
 }
 
-return { Infobox, Styles, TIER_COLOR, STATUS_COLOR, splitTitle, bibtex, yearsAgo };
+return { Infobox, Marks, Styles, TIER_COLOR, STATUS_COLOR, splitTitle, bibtex, yearsAgo };

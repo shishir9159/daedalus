@@ -16,7 +16,8 @@
 //    2. the title is split at its first ": " — "BERT: Pre-training of …" is
 //       `title: BERT` with the rest as `subtitle` — and a note still called
 //       "Untitled" is renamed after the title; the infobox reads its heading
-//       off the filename and the subtitle off `subtitle:`
+//       off the filename and the subtitle off `subtitle:`. A title with no
+//       subtitle takes the empty `subtitle:` key out of the note.
 //    3. the PDF becomes `<note>.pdf`. One already there — the one `paper:`
 //       links, or the only PDF in the note's own folder — is renamed;
 //       otherwise it is downloaded through pdf.jsx's fetchArxivPdf, the same
@@ -455,7 +456,9 @@ async function populatePaper(path, input, step = () => { }) {
     }
 
     step("writing properties");
-    const patch = await core.patchFrontmatter(file, values, { force });
+    // a title known to have no subtitle leaves no empty `subtitle:` behind
+    const drop = title && !subtitle ? ["subtitle"] : [];
+    const patch = await core.patchFrontmatter(file, values, { force, drop });
 
     const pdfMissing = CONFIG.paper.downloadPdf && core.isBlank(fm.paper) && !pdfRes?.file;
     const complete = !!meta.title && !pdfMissing;

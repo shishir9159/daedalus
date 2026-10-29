@@ -49,14 +49,20 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 const pdf = await dc.require("Meta/Obsidian/_datacore/pdf/pdf.jsx");
-// The layout hooks (useFitHeight, useEdgeScroll) are the shelf's, not copies.
+// The layout hooks (useFitHeight, useEdgeScroll) and the previews' behaviour
+// (useEscape, useWheelInto, openNote) are the shelf's, not copies.
 const shared = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
+// The preview's progress is the infobox's own strip of marks.
+const { Marks } = await dc.require("Meta/Obsidian/_datacore/paper/infobox.jsx");
 
 const {
-  resolvePdf, parseLink, usePageImage, useCitations, writeFields, openAt,
+  resolvePdf, parseLink, usePageImage, usePdfStats, useCitations, writeFields, openAt,
   getDoc, usePdfjsReady,
 } = pdf;
-const { clamp, hashOf, baseName, isIgnored, useFitHeight, useEdgeScroll } = shared;
+const {
+  clamp, hashOf, baseName, isIgnored, useFitHeight, useEdgeScroll, useEscape, useWheelInto,
+  openNote,
+} = shared;
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Designs
@@ -641,25 +647,27 @@ function Pip({ paper, size = 12 }) {
  *
  * pdf.js is a bonus, never a gate: Obsidian publishes it only once its own PDF
  * view is built, so in a fresh session the image appears once any PDF opens.
+ *
+ * A click opens the PDF at that page, unless `onOpen` says otherwise (the
+ * preview's page opens the note); `label` is then its tooltip.
  */
-function PageSheet({ paper, width = 420, page = null, className = "", fit = false }) {
+function PageSheet({ paper, width = 420, page = null, className = "", fit = false, onOpen = null, label = null }) {
   const file = dc.useMemo(
     () => resolvePdf(paper?.pdfLink, paper?.path),
     [paper?.path, paper?.pdfLink]
   );
   const at = page ?? paper?.figure ?? 1;
   const img = usePageImage(file, at, Math.round(width * 1.6));
+  const open = onOpen ?? (file ? (e) => openAt(file, at, paper.path, e) : null);
 
   return (
     <div
-      class={"pv-sheet " + className + (fit ? " is-fit" : "") + (file ? " is-openable" : "")}
-      role={file ? "button" : undefined}
-      tabIndex={file ? 0 : undefined}
-      title={file ? `${file.name} — page ${at}` : "no `paper:` link"}
-      onClick={file ? (e) => { e.stopPropagation(); openAt(file, at, paper.path, e); } : undefined}
-      onKeyDown={file
-        ? (e) => (e.key === "Enter" || e.key === " ") && openAt(file, at, paper.path, e)
-        : undefined}
+      class={"pv-sheet " + className + (fit ? " is-fit" : "") + (open ? " is-openable" : "")}
+      role={open ? "button" : undefined}
+      tabIndex={open ? 0 : undefined}
+      title={label ?? (file ? `${file.name} — page ${at}` : "no `paper:` link")}
+      onClick={open ? (e) => { e.stopPropagation(); open(e); } : undefined}
+      onKeyDown={open ? (e) => (e.key === "Enter" || e.key === " ") && open(e) : undefined}
     >
       {img.url
         ? <img src={img.url} alt="" draggable={false} decoding="async" />
@@ -667,17 +675,6 @@ function PageSheet({ paper, width = 420, page = null, className = "", fit = fals
     </div>
   );
 }
-
-/**
- * Open the note itself; Ctrl/Cmd for a new tab. These views open the PDF
- * instead; kept for views built on this module.
- */
-const openNote = (paper, evt) => {
-  if (!paper?.path) return;
-  evt?.preventDefault?.();
-  evt?.stopPropagation?.();
-  app.workspace.openLinkText(paper.path, paper.path, !!(evt && (evt.ctrlKey || evt.metaKey)));
-};
 
 /**
  * The rows in a reading panel's margin. No citation row (the heading already
@@ -941,6 +938,16 @@ const CSS = `
 .pv-read-title { margin: 0; font-size: 28px; line-height: 1.24; font-weight: 400; text-wrap: pretty; }
 .pv.medieval .pv-read-title { color: #22170d; }
 .pv.deco .pv-read-title { color: #f4eedd; }
+/* title and subtitle, one block keeping the margin's spacing between them;
+   with a PDF behind them they open it, and take the accent on hover */
+.pv-read-head { display: flex; flex-direction: column; gap: inherit; }
+.pv-read-head.is-openable { cursor: pointer; }
+.pv-read-head.is-openable .pv-read-title, .pv-read-head.is-openable .pv-read-affil {
+  transition: color .14s ease-out;
+}
+.pv .pv-read-head.is-openable:hover .pv-read-title,
+.pv .pv-read-head.is-openable:hover .pv-read-affil { color: var(--pv-accent); }
+.pv-read-head.is-openable:focus-visible { outline: 1px solid var(--pv-accent); outline-offset: 4px; }
 .pv-read-authors { font-size: 14px; line-height: 1.55; }
 .pv.medieval .pv-read-authors { font-style: italic; color: rgba(42,29,16,.68); }
 .pv.deco .pv-read-authors { color: rgba(240,233,216,.66); }
@@ -957,6 +964,19 @@ const CSS = `
 .pv.medieval .pv-caps { color: rgba(42,29,16,.5); }
 .pv.deco .pv-caps { color: rgba(227,194,74,.65); }
 .pv.medieval .pv-read-margin .pv-caps { color: rgba(42,29,16,.5); }
+
+/* Progress: the paper infobox's strip of marks (Marks, paper/infobox.jsx),
+   loosened into the margin and printed in the margin's inks. */
+.pv-read-margin .pcx-marks { padding: 0; background: none; border: 0; }
+.pv-read-margin .pcx-pages { margin-top: 2px; }
+.pv-read-margin .pcx-pg b, .pv-read-margin .pcx-plabel { font-family: var(--pv-mono); }
+.pv-read-margin .pcx-plabel { margin-top: 8px; font-size: 10.5px; letter-spacing: .04em; }
+.pv.medieval .pv-read-margin .pcx-marks {
+  --pcx-ink: #22170d; --pcx-muted: rgba(42,29,16,.64); --pcx-faint: rgba(42,29,16,.46);
+}
+.pv.deco .pv-read-margin .pcx-marks {
+  --pcx-ink: #f0e9d8; --pcx-muted: rgba(240,233,216,.62); --pcx-faint: rgba(240,233,216,.42);
+}
 
 .pv-abstract { display: flex; flex-direction: column; gap: 9px; }
 .pv-abstract p { margin: 0; font-size: 15px; line-height: 1.72; text-wrap: pretty; }
@@ -1081,13 +1101,20 @@ function Styles({ webfonts = true }) {
 //  The reading panel
 //
 //  One component for all four views, so a paper looks like itself however you
-//  arrived at it. 90% of the pane, two slabs with a gap between them:
+//  arrived at it: a click on a paper opens it in every view (a double-click in
+//  the drawers, where a click queues). 90% of the pane, two slabs with a gap
+//  between them:
 //
 //    LEFT   the page named by `figure:`, fitted to the full height, alone.
-//    RIGHT  venue, year and tier on one line; then the heading, the byline and
-//           the lab; then the abstract off the paper; then what to read next.
+//           Click it to open the paper's note.
+//    RIGHT  venue, year and tier on one line; then the heading — click the
+//           title or subtitle to open the PDF at your page — the byline and
+//           the lab; then your progress, as the paper infobox shows it (Marks
+//           in paper/infobox.jsx); then the abstract off the paper; then what
+//           to read next.
 //
-//  The wheel scrolls the right-hand column wherever the pointer is.
+//  The wheel scrolls the right-hand column wherever the pointer is. Closing
+//  and scrolling are shared with the book preview (book/core.jsx).
 // ════════════════════════════════════════════════════════════════════════════
 /* Guard and body are two components: the body calls hooks, so returning early
    in it when `paper` goes null would change the hook count and crash. */
@@ -1102,18 +1129,21 @@ function ReadingPanelBody({
 }) {
   const abstract = useAbstract(paper);
 
-  /**
-   * The wheel drives the right-hand column from anywhere over the panel; one
-   * already over the column is left to the browser.
-   */
-  const marginRef = dc.useRef(null);
-  const onWheel = (e) => {
-    const el = marginRef.current;
-    if (!el || el.contains(e.target)) return;
-    if (el.scrollHeight <= el.clientHeight) return;
-    el.scrollTop += e.deltaY;
-    e.preventDefault();
+  // what you marked, read off the PDF as the infobox reads it (cached by mtime)
+  const file = dc.useMemo(
+    () => resolvePdf(paper.pdfLink, paper.path),
+    [paper.path, paper.pdfLink]
+  );
+  const marks = usePdfStats(file);
+
+  /* The title opens the PDF where you left off, as a book's does. */
+  const openPdf = (e) => {
+    e.stopPropagation();
+    openAt(file, paper.progress > 0 ? paper.progress : 1, paper.path, e);
   };
+
+  /* The wheel drives the right-hand column from anywhere over the panel. */
+  const [marginRef, onWheel] = useWheelInto();
 
   /* Right-click shuts it, the same gesture that shuts a drawer. */
   const shut = (e) => { e.preventDefault(); e.stopPropagation(); onClose?.(); };
@@ -1123,7 +1153,13 @@ function ReadingPanelBody({
       <div class="pv-read" onClick={(e) => e.stopPropagation()}>
         {/* LEFT — the page named by `figure:`, and only the page. */}
         <div class="pv-read-face">
-          <PageSheet paper={paper} width={sheetWidth} fit />
+          <PageSheet
+            paper={paper}
+            width={sheetWidth}
+            fit
+            label="Open the note"
+            onOpen={(e) => openNote(paper, e)}
+          />
         </div>
 
         <div class="pv-read-margin" ref={marginRef}>
@@ -1136,10 +1172,27 @@ function ReadingPanelBody({
             <i class="pv-rule" />
             <span>{paper.tier ?? ""}</span>
           </div>
-          <h2 class="pv-read-title">{paper.title}</h2>
-          {paper.sub && <div class="pv-read-affil">{paper.sub}</div>}
+          {/* title and subtitle together are the way into the note */}
+          <div
+            class="pv-read-head is-openable"
+            role="button"
+            tabIndex={0}
+            title="Open the note"
+            onClick={(e) => openNote(paper, e)}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openNote(paper, e)}
+          >
+            <h2 class="pv-read-title">{paper.title}</h2>
+            {paper.sub && <div class="pv-read-affil">{paper.sub}</div>}
+          </div>
           {paper.authorsFull && <div class="pv-read-authors">{paper.authorsFull}</div>}
           {paper.affiliationLine && <div class="pv-read-affil">{paper.affiliationLine}</div>}
+
+          {marks.data?.total > 0 && (
+            <div class="pv-abstract">
+              <span class="pv-caps">Progress</span>
+              <Marks file={file} data={marks.data} notePath={paper.path} />
+            </div>
+          )}
 
           {abstract.text && (
             <div class="pv-abstract">
@@ -1191,17 +1244,6 @@ function ReadingPanelBody({
       </div>
     </div>
   );
-}
-
-/** Escape closes whatever is on top. Every view wants it; none should re-write it. */
-function useEscape(handler) {
-  const ref = dc.useRef(handler);
-  ref.current = handler;
-  dc.useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") ref.current?.(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 }
 
 // ════════════════════════════════════════════════════════════════════════════

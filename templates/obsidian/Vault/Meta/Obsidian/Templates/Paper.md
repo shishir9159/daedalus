@@ -10,7 +10,7 @@ venue-kind:
 year:
 published:
 paper:
-figure:
+figure: 1
 arxiv:
 arxiv-version:
 doi:

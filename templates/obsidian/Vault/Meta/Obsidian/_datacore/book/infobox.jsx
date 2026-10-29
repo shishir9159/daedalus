@@ -20,6 +20,10 @@
 //  Links, in this order, each only when set:
 //    site · code · solution · errata
 //  Any of them may be a URL or a PDF in the vault ("[[Solutions.pdf]]").
+//
+//  The fore-edge (ForeEdge), the links (linksOf, LinkOut) and the value
+//  helpers (valOf, joinedOf) are exported: the book preview the shelf opens
+//  (book/preview.jsx) is built from them, so the two always agree.
 // ════════════════════════════════════════════════════════════════════════════
 
 const core = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
@@ -46,11 +50,67 @@ function linkTarget(v) {
   return s ? { internal: s } : null;
 }
 
-function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field = "progress" }) {
-  const notePath = useNotePath(path);
-  const book = useBook(notePath);
+/** The links a book note carries, in order, each only when set: [label, target]. */
+const linksOf = (get) =>
+  [
+    ["Website", get("site")],
+    ["Source code", get("code")],
+    ["Solutions", get("solutions")],
+    ["Errata", get("errata")],
+  ].map(([label, v]) => [label, linkTarget(v)]).filter(([, t]) => !!t);
 
-  const [copied, setCopied] = dc.useState(false);
+/** One of them: the browser for a URL, Obsidian for the vault (Ctrl/Cmd for a new tab). */
+function LinkOut({ label, target, sourcePath }) {
+  return target.href
+    ? <a href={target.href} target="_blank" rel="noopener">{label}</a>
+    : (
+      <a
+        href="#"
+        title={target.internal}
+        onClick={(e) => {
+          e.preventDefault();
+          app.workspace.openLinkText(target.internal, sourcePath ?? "", e.ctrlKey || e.metaKey);
+        }}
+      >{label}</a>
+    );
+}
+
+/** A frontmatter value to show: a wikilink as a link, a blank as nothing. */
+const valOf = (v, sourcePath) =>
+  v == null || v === "" ? null
+    : parseLink(v) ? <NoteLink link={v} sourcePath={sourcePath} />
+      : String(v);
+
+/** A frontmatter list as "a · b · c", dropping blanks: an unfilled YAML list comes through as [""]. */
+function joinedOf(items, sourcePath, sep = " · ") {
+  const parts = [].concat(items ?? []).map((v) => valOf(v, sourcePath)).filter(Boolean);
+  return parts.length ? parts.flatMap((el, i) => (i ? [sep, el] : [el])) : null;
+}
+
+function Row({ label, children }) {
+  return children == null || children === "" ? null : (
+    <div class="hcx-row">
+      <span class="hcx-key">{label}</span>
+      <span class="hcx-val">{children}</span>
+    </div>
+  );
+}
+
+// ── the fore-edge ─────────────────────────────────────────────────────────────
+/**
+ * Reading progress as the book's page block seen edge-on: one tick per slice
+ * of the book, read ticks inked, and — with `heatmap` — thickened where you
+ * left marks in the PDF. Hover to aim, click to set your page.
+ *
+ * It also keeps `progress` current from the PDF's annotations (`autoProgress`,
+ * see useAnnotations in core.jsx): the label turns green when the furthest
+ * mark is what put it there.
+ *
+ * The infobox's, and the book preview's (book/preview.jsx), which passes more
+ * ticks for its wider column. Inks are the --hcx-* variables on .hcx-edge.
+ * Nothing without a page count.
+ */
+function ForeEdge({ book, ticks = 34, autoProgress = true, heatmap = true, field = "progress" }) {
   const [hoverPage, setHoverPage] = dc.useState(null);
   const [saving, setSaving] = dc.useState(false);
 
@@ -63,7 +123,6 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
     return max > 0 ? ann.heat.map((v) => v / max) : null;
   }, [ann.heat]);
 
-  // ── fore-edge interaction ──────────────────────────────────────────────
   const pageFromEvent = (e) => {
     if (!book.pages) return null;
     const r = e.currentTarget.getBoundingClientRect();
@@ -79,10 +138,70 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
     setSaving(false);
   };
 
+  // after every hook: useAnnotations writes back whether or not there is a page count
+  if (!(book.pages > 0)) return null;
+
   const shown = hoverPage ?? book.progress;
-  const shownPct = book.pages ? (shown / book.pages) * 100 : 0;
-  const readTicks = Math.round((book.progress / (book.pages || 1)) * ticks);
+  const shownPct = (shown / book.pages) * 100;
+  const readTicks = Math.round((book.progress / book.pages) * ticks);
   const cursorTicks = Math.round((shownPct / 100) * ticks);
+
+  return (
+    <div
+      class="hcx-edge"
+      title="Click to set your page"
+      onMouseMove={(e) => setHoverPage(pageFromEvent(e))}
+      onMouseLeave={() => setHoverPage(null)}
+      onClick={commit}
+    >
+      <div class="hcx-ticks">
+        {Array.from({ length: ticks }).map((_, i) => {
+          const read = i < readTicks;
+          const cursor = hoverPage != null && !read && i < cursorTicks;
+          // NB: never name a local `h` here — it is the JSX pragma
+          const dens = heat?.[i] ?? 0;
+          // the read region thickens where you left ink
+          const style = read
+            ? { height: `${8 + 6 * (dens || 0.34)}px`, opacity: 0.55 + 0.45 * (dens || 0.55) }
+            : dens > 0
+              ? { height: `${6 + 5 * dens}px`, opacity: 0.3 + 0.4 * dens }
+              : null;
+          return (
+            <div
+              key={i}
+              class={
+                "hcx-tick" +
+                (read ? " is-read" : "") +
+                (cursor ? " is-cursor" : "") +
+                (!read && dens > 0 ? " has-heat" : "")
+              }
+              style={style}
+            />
+          );
+        })}
+      </div>
+      <div class="hcx-plabel">
+        <span>
+          {hoverPage != null
+            ? <span class="hcx-ghost">set to page {hoverPage}</span>
+            : <><b>{book.progress}</b> of {book.pages}</>}
+        </span>
+        <span class={autoWon && hoverPage == null ? "hcx-auto" : ""}>
+          {hoverPage != null
+            ? `${((hoverPage / book.pages) * 100).toFixed(0)}%`
+            : `${book.pct.toFixed(0)}%`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── the infobox ───────────────────────────────────────────────────────────────
+function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field = "progress" }) {
+  const notePath = useNotePath(path);
+  const book = useBook(notePath);
+
+  const [copied, setCopied] = dc.useState(false);
 
   // ── frontmatter bits ───────────────────────────────────────────────────
   const get = book.get;
@@ -98,45 +217,10 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
     } catch { }
   };
 
-  const val = (v) =>
-    v == null || v === "" ? null
-      : parseLink(v) ? <NoteLink link={v} sourcePath={notePath} />
-        : String(v);
+  const val = (v) => valOf(v, notePath);
+  const joined = (items, sep) => joinedOf(items, notePath, sep);
 
-  // A frontmatter list as "a · b · c", dropping blanks: an unfilled YAML list comes through as [""].
-  const joined = (items, sep = " · ") => {
-    const parts = [].concat(items ?? []).map(val).filter(Boolean);
-    return parts.length ? parts.flatMap((el, i) => (i ? [sep, el] : [el])) : null;
-  };
-
-  const Row = ({ label, children }) =>
-    children == null || children === "" ? null : (
-      <div class="hcx-row">
-        <span class="hcx-key">{label}</span>
-        <span class="hcx-val">{children}</span>
-      </div>
-    );
-
-  const links = [
-    ["Website", get("site")],
-    ["Source code", get("code")],
-    ["Solutions", get("solutions")],
-    ["Errata", get("errata")],
-  ].map(([label, v]) => [label, linkTarget(v)]).filter(([, t]) => !!t);
-
-  const LinkOut = ({ label, target }) =>
-    target.href
-      ? <a href={target.href} target="_blank" rel="noopener">{label}</a>
-      : (
-        <a
-          href="#"
-          title={target.internal}
-          onClick={(e) => {
-            e.preventDefault();
-            app.workspace.openLinkText(target.internal, notePath ?? "", e.ctrlKey || e.metaKey);
-          }}
-        >{label}</a>
-      );
+  const links = linksOf(get);
 
   // ── rolling releases ─────────────────────────────────────────────────────
   // A living document (a draft posted as a PDF, a text reprinted every term)
@@ -173,54 +257,7 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
             540 is twice the drawn width, for HiDPI and the hover's scale. */}
         <PanelCover book={book} width={540} />
 
-        {book.pages > 0 && (
-          <div
-            class="hcx-edge"
-            title="Click to set your page"
-            onMouseMove={(e) => setHoverPage(pageFromEvent(e))}
-            onMouseLeave={() => setHoverPage(null)}
-            onClick={commit}
-          >
-            <div class="hcx-ticks">
-              {Array.from({ length: ticks }).map((_, i) => {
-                const read = i < readTicks;
-                const cursor = hoverPage != null && !read && i < cursorTicks;
-                // NB: never name a local `h` here — it is the JSX pragma
-                const dens = heat?.[i] ?? 0;
-                // the read region thickens where you left ink
-                const style = read
-                  ? { height: `${8 + 6 * (dens || 0.34)}px`, opacity: 0.55 + 0.45 * (dens || 0.55) }
-                  : dens > 0
-                    ? { height: `${6 + 5 * dens}px`, opacity: 0.3 + 0.4 * dens }
-                    : null;
-                return (
-                  <div
-                    key={i}
-                    class={
-                      "hcx-tick" +
-                      (read ? " is-read" : "") +
-                      (cursor ? " is-cursor" : "") +
-                      (!read && dens > 0 ? " has-heat" : "")
-                    }
-                    style={style}
-                  />
-                );
-              })}
-            </div>
-            <div class="hcx-plabel">
-              <span>
-                {hoverPage != null
-                  ? <span class="hcx-ghost">set to page {hoverPage}</span>
-                  : <><b>{book.progress}</b> of {book.pages}</>}
-              </span>
-              <span class={autoWon && hoverPage == null ? "hcx-auto" : ""}>
-                {hoverPage != null
-                  ? `${((hoverPage / book.pages) * 100).toFixed(0)}%`
-                  : `${book.pct.toFixed(0)}%`}
-              </span>
-            </div>
-          </div>
-        )}
+        <ForeEdge book={book} ticks={ticks} autoProgress={autoProgress} heatmap={heatmap} field={field} />
 
         <div class="hcx-body">
           <h3 class="hcx-title">{val(book.title) ?? book.name}</h3>
@@ -253,7 +290,7 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
 
           {(links.length > 0 || siteChanged) && (
             <div class="hcx-links">
-              {links.map(([label, target]) => <LinkOut key={label} label={label} target={target} />)}
+              {links.map(([label, target]) => <LinkOut key={label} label={label} target={target} sourcePath={notePath} />)}
               {siteChanged && (
                 <a
                   href="#"
@@ -272,4 +309,4 @@ function Infobox({ path, ticks = 34, autoProgress = true, heatmap = true, field 
   );
 }
 
-return { Infobox };
+return { Infobox, ForeEdge, LinkOut, linksOf, valOf, joinedOf };

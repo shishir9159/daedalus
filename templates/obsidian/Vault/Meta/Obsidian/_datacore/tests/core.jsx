@@ -80,6 +80,24 @@ return {
       t.ok((await t.read(note)).endsWith("body\n"), "the body is kept");
     },
 
+    "patchFrontmatter drops a key only while it is blank": async (t) => {
+      const note = await t.note("D.md", "---\ntitle:\nsubtitle:\nauthor:\n---\nbody\n");
+      const r = await core.patchFrontmatter(note, { title: "Attention", subtitle: null }, { drop: ["subtitle"] });
+      t.eq([r.applied, r.removed], [["title"], ["subtitle"]]);
+      const fm = await t.fm(note);
+      t.eq(fm.title, "Attention");
+      t.ok(!("subtitle" in fm), "the empty subtitle is gone");
+      t.ok("author" in fm, "keys not named stay, empty or not");
+      t.ok((await t.read(note)).startsWith("---\ntitle: Attention\nauthor:\n"), "the order is kept");
+
+      // typed in by hand, it stays; with nothing to drop, nothing is written
+      const kept = await t.note("E.md", "---\ntitle: T\nsubtitle: Mine\n---\n");
+      const before = await t.read(kept);
+      const r2 = await core.patchFrontmatter(kept, { title: "Other" }, { drop: ["subtitle"] });
+      t.eq([r2.applied, r2.removed], [[], []]);
+      t.eq(await t.read(kept), before, "untouched");
+    },
+
     "only an Untitled note is renamed, and never over another": async (t) => {
       const u = await t.note(`${t.unique("Untitled")}.md`, "");
       t.eq((await core.renameFromTitle(u, "BERT: Pre-training of Deep Bidirectional Transformers")).to,

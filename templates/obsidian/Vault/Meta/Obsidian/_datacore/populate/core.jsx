@@ -218,11 +218,18 @@ const frontmatterOf = (file) => app.metadataCache.getFileCache(file)?.frontmatte
  * an existing key keeps its place, which is why the templates ship every key
  * empty. `force` names keys that are written regardless (the id the run was
  * started from, a YAML-mangled isbn).
+ *
+ * `drop` names keys the run found have nothing to hold — a title with no
+ * subtitle — and takes them out of the note, but only while they are blank
+ * there: a key with anything typed in it stays. → { plan, applied, removed,
+ * skipped }.
  */
-async function patchFrontmatter(file, values, { force = [] } = {}) {
+async function patchFrontmatter(file, values, { force = [], drop = [] } = {}) {
   const current = frontmatterOf(file);
   const forced = new Set(force);
   const plan = {}, skipped = [];
+  const removed = drop.filter((k) =>
+    Object.prototype.hasOwnProperty.call(current, k) && isBlank(current[k]) && isBlank(values[k]));
 
   for (const [k, v] of Object.entries(values)) {
     if (v === undefined || isBlank(v)) continue;
@@ -234,12 +241,14 @@ async function patchFrontmatter(file, values, { force = [] } = {}) {
   }
 
   const keys = Object.keys(plan);
-  if (keys.length) {
+  if (keys.length || removed.length) {
     await app.fileManager.processFrontMatter(file, (fm) => {
       for (const k of keys) fm[k] = plan[k];
+      // re-checked inside the write: typed into between the read and now, it stays
+      for (const k of removed) if (isBlank(fm[k])) delete fm[k];
     });
   }
-  return { plan, applied: keys, skipped };
+  return { plan, applied: keys, removed, skipped };
 }
 
 // ── the block itself ────────────────────────────────────────────────────────

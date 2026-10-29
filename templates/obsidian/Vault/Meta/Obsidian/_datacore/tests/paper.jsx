@@ -63,7 +63,7 @@ return {
       t.eq([r.ok, r.complete], [true, true]);
       t.eq(note.path, t.path("Attention Is All You Need.md"));
       t.eq([fm.title, fm.arxiv, fm.doi], ["Attention Is All You Need", "1706.03762", "10.48550/arXiv.1706.03762"]);
-      t.ok(core.isBlank(fm.subtitle), "no colon, no subtitle");
+      t.ok(!("subtitle" in fm), "no colon, no subtitle: the empty key is gone");
       t.ok(fm.author?.includes("Ashish Vaswani"), "authors");
       t.ok(/^v\d+$/.test(fm["arxiv-version"]), `arxiv-version ${fm["arxiv-version"]}`);
       const file = pdf.resolvePdf(fm.paper, note.path);
