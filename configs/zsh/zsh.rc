@@ -41,10 +41,28 @@ update() {
   herdr update
 }
 
+disk_inspection() {
+  du -sh ~/.cache
+  du -h -d 1 ~/.cache | sort -h
+  du -h -d 1 ~ 2>/dev/null | sort -h
+  sudo du -sh /var/lib/systemd/coredump
+  sudo du -xhd1 /var 2>/dev/null | sort -h
+  du -hd1 ~/.cache 2>/dev/null | sort -h
+  sudo ncdu -x /
+  pacman -Qqd | pacman -Rsu --print -
+  du -sh ~/.cargo/registry ~/.cargo/git ~/.npm ~/.cache/pip ~/.gradle/caches 2>/dev/null
+}
+
 clean() {
-  sudo paccache -rk0
+  # sudo paccache -rk0
+  paru -Sccd
   paru -Rsn $(paru -Qdtq)
   rm -rf ~/.cache/paru
+  sudo journalctl --rotate --vacuum-time=1d --vacuum-size=50M
+  sudo systemd-tmpfiles --clean
+  uv cache prune
+  pip3 cache purge
+  rm -rf ~/.cargo/registry/cache ~/.cargo/git/db
   pnpm store prune --force
   npm cache clean --force
 }
