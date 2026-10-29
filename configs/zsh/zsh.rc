@@ -6,6 +6,10 @@
 [[ -r /usr/share/cachyos-zsh-config/cachyos-config.zsh ]] && source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 (( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
 
+# CachyOS sets ENABLE_CORRECTION="true" stupidly for zsh to second-guesses every argument
+# ('config' -> 'configs'). God awful people.
+unsetopt correct correct_all
+
 # All of the history. oh-my-zsh saves only 10000 lines, and zsh has no
 # unlimited (HISTSIZE above SAVEHIST leaves hist_expire_dups_first room).
 # oh-my-zsh's `history` alias lists from the first entry; plain zsh's `history`
