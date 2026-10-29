@@ -24,6 +24,12 @@ hyprland-multishell/install.sh
 rice-theme noctalia-config
 rice-theme include
 
+# Wallpaper Carousel isn't in Noctalia's catalogue: a plugin in its data dir
+# needs no source (and beats one), and is enabled with the rest below.
+# zsh.rc's `update` pulls it.
+carousel="${XDG_DATA_HOME:-$HOME/.local/share}/noctalia/plugins/wallpaperCarousel"
+[ -d "$carousel" ] || git clone --depth 1 https://github.com/motor-dev/wallpaperCarousel "$carousel"
+
 # Noctalia fetches a plugin when it is enabled through its IPC: the list in
 # config.toml alone leaves the plugin's widgets unknown. And its first render
 # of the colours puts hypr/noctalia.lua in place before Hyprland next starts

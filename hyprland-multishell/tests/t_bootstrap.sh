@@ -49,6 +49,7 @@ cp -r "$REPO" "$R/hyprland-multishell"
 printf '%s\n' '#!/usr/bin/env bash' 'echo bootstrap-packages >> "$CALLS"' > "$R/hyprland-multishell/bootstrap-packages.sh"
 stub dotter
 stub noctalia           # never the real shell's IPC
+stub git 'mkdir -p "${@: -1}"'   # nor the network: an empty clone
 stub pgrep 'exit 0'     # ...which is running
 stub pkill 'exit 1'     # and no signal ever reaches a real terminal
 rm -f "$HOME/.zshrc"
@@ -69,6 +70,7 @@ expect "deploys"                             called 'dotter deploy'
 expect "colours go through rice-theme"       has "$C/noctalia/templates.toml" "$RICE_ROOT/bin/rice-theme apply kitty"
 expect "...which the apps read"              has "$C/kitty/kitty.conf" "include $C/rice-theme/active/kitty.conf"
 expect "...after their own settings"         has "$C/kitty/kitty.conf" 'font_size 12'
+expect "clones the wallpaper carousel"       called "git clone --depth 1 https://github.com/motor-dev/wallpaperCarousel $HOME/.local/share/noctalia/plugins/wallpaperCarousel"
 expect "Noctalia fetches the listed plugins" called 'noctalia msg plugins enable a/one'
 expect "...each of them"                     called 'noctalia msg plugins enable b/two'
 refute "...and nothing from another table"   called 'not/a-plugin'
@@ -86,6 +88,7 @@ stub pgrep 'exit 1'     # from a tty this time: no shell to talk to
 : > "$CALLS"
 expect "runs"                                boot
 refute "without Noctalia, no IPC"            called 'noctalia msg'
+refute "...nor a second clone"               called 'git clone'
 expect "keeps local.toml"                    has_not "$R/.dotter/local.toml" 'starship'
 expect "leaves dotter's links"               test -L "$HOME/.zshrc"
 expect "...Hyprland's too"                   has "$C/hypr/hyprland.lua" mine

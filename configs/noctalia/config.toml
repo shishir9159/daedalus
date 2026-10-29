@@ -57,7 +57,7 @@ hyprland_lua_config = "~/.config/hypr/config/variables.lua"
 video_source = "focused"
 
 [plugins]
-enabled = [ "jamesfeeder/special-workspaces", "kenn/keybind-cheatsheet", "noctalia/screen_recorder" ]
+enabled = [ "jamesfeeder/special-workspaces", "kenn/keybind-cheatsheet", "noctalia/screen_recorder", "yngwe/wallpaperCarousel" ]
 
 [shell]
 clipboard_image_action_command = "swash --stdin --name \"swash-$(date +'%Y-%m-%d_%H:%M:%S').png\""

@@ -1,5 +1,3 @@
-# A whitelist: everything is ignored unless a line below lets it in, so a new
-# file stays untracked until it gets one.
 *
 !*/
 
@@ -32,6 +30,9 @@
 !/configs/nvim/pack/plugins/start/surround.nvim/pkg.json
 # :ThemeLock's freeze stays per machine; drop this line to share the lock
 /configs/nvim/colors/locked.lua
+
+!/templates/**/*.md
+!/templates/**/*.jsx
 
 !/configs/hypr/**/*.lua
 !/configs/hypr/xdph.conf

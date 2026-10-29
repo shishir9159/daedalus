@@ -48,7 +48,7 @@ sudo cachyos-rate-mirrors
 
 # mcfly
 
-sudo pacman -Syyu --needed --noconfirm anki base-devel bat dust eza ghostty gping halloy just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt vlc-nightly yazi zoxide
+sudo pacman -Syyu --needed --noconfirm anki base-devel bat duf dust eza ghostty gping halloy just keepassxc neovim obsidian qbittorrent radare2 wezterm wireshark-qt vlc-nightly yazi zoxide
 pac paru   # from CachyOS's repo
 
 # kernel
@@ -83,9 +83,11 @@ fnm install 22
 fnm default 22
 
 # Noctalia, which the edition ships, is the bar, launcher, notifications and
-# wallpaper. Two of the plugins configs/noctalia turns on need a tool each:
-# the scratchpad chips socat, the screen recorder gpu-screen-recorder.
-pac chromium qt5-wayland qt6-wayland socat gpu-screen-recorder
+# wallpaper. Three of the plugins configs/noctalia turns on need a tool each:
+# the scratchpad chips socat, the screen recorder gpu-screen-recorder, the
+# wallpaper carousel quickshell (its overlay is QML, which Noctalia 5 runs
+# through `qs`; bootstrap.sh clones the plugin itself).
+pac chromium qt5-wayland qt6-wayland socat gpu-screen-recorder quickshell
 
 ######### shells #########
 # nushell, and the starship prompt for bash (configs/starship, the dotter

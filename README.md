@@ -39,6 +39,7 @@ configs reload when a file in them is saved.
 | `Super+Alt+F` | maximize (it was `Super+D`) |
 | tap `Super` | launcher (`Super+Space` still does) |
 | `Super+Alt+R` | start or stop recording the focused screen, into `~/Videos/Recordings` |
+| `Super+Alt+W` | wallpaper carousel (`Super+Shift+W` is still Noctalia's picker) |
 | `Super+Return`, `Super+W` | Ghostty, Zen |
 
 A scratchpad is an app on its own special workspace, slid in over whatever is
@@ -49,13 +50,13 @@ name, key, which windows belong to it, the command.
 ### What else is changed
 
 - **Hyprland**: natural scrolling on the touchpad; caelestia's animation curves; rounder corners, shadows, and wider gaps around a window that is alone on its workspace; borders in the wallpaper's colours (Noctalia's `hyprland` template writes `configs/hypr/noctalia.lua`, untracked).
-- **Noctalia**: idle locks at 10 minutes, turns the screen off at 11 and suspends at 30 (the caffeine tile in the control centre holds that off); night light from 18:00 to 06:00; rounded screen corners; three plugins: `jamesfeeder/special-workspaces` (needs `socat`), `noctalia/screen_recorder` (needs `gpu-screen-recorder`) and `kenn/keybind-cheatsheet`.
+- **Noctalia**: idle locks at 10 minutes, turns the screen off at 11 and suspends at 30 (the caffeine tile in the control centre holds that off); night light from 18:00 to 06:00; rounded screen corners; four plugins: `jamesfeeder/special-workspaces` (needs `socat`), `noctalia/screen_recorder` (needs `gpu-screen-recorder`), `kenn/keybind-cheatsheet` and [`yngwe/wallpaperCarousel`](https://github.com/motor-dev/wallpaperCarousel) (needs `quickshell`).
 - What you change in Noctalia's settings window goes to `~/.local/state/noctalia/settings.toml` and wins over `config.toml`: move a setting you want to keep into the repo's file.
 
 Gotchas:
 
 - Hyprland ≥ 0.55 loads `hyprland.lua` and ignores `hyprland.conf`.
-- A new plugin in `config.toml` is fetched by `noctalia msg plugins enable <id>` (`bootstrap.sh` does it for the listed ones), and its bar widget, panel and service only start with Noctalia: restart it or log in again.
+- A new plugin in `config.toml` is fetched by `noctalia msg plugins enable <id>` (`bootstrap.sh` does it for the listed ones), and its bar widget, panel and service only start with Noctalia: restart it or log in again. Wallpaper Carousel isn't in Noctalia's catalogue: `bootstrap.sh` clones it into `~/.local/share/noctalia/plugins/wallpaperCarousel` and `update` pulls it.
 - A bind without a `description` shows in the cheatsheet as "Lua 42".
 
 ### Colour locks

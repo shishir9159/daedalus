@@ -39,30 +39,46 @@ update() {
   rustup update
   uv tool upgrade --all
   herdr update
+  git -C ${XDG_DATA_HOME:-~/.local/share}/noctalia/plugins/wallpaperCarousel pull --ff-only   # bootstrap.sh's clone
 }
 
+# What fills the disks, read-only, the biggest last in each part. / is this
+# filesystem alone: CachyOS's btrfs has /home, /var/cache and /var/log as
+# subvolumes of their own (each its own device to dust -x), so /var and home
+# get their own parts.
 disk_inspection() {
-  du -sh ~/.cache
-  du -h -d 1 ~/.cache | sort -h
-  du -h -d 1 ~ 2>/dev/null | sort -h
-  sudo du -sh /var/lib/systemd/coredump
-  sudo du -xhd1 /var 2>/dev/null | sort -h
-  du -hd1 ~/.cache 2>/dev/null | sort -h
-  sudo ncdu -x /
-  pacman -Qqd | pacman -Rsu --print -
-  du -sh ~/.cargo/registry ~/.cargo/git ~/.npm ~/.cache/pip ~/.gradle/caches 2>/dev/null
+  local -a cached zips; local mod
+  print -P '%B:: filesystems%b';            duf -only local
+  print -P '\n%B:: / (this filesystem)%b';  sudo dust -x -d 2 -n 20 /
+  print -P '\n%B:: /var%b';                 sudo dust -d 1 -n 10 /var
+  print -P '\n%B:: home%b';                 dust -d 1 -n 15 ~
+  print -P '\n%B:: ~/.cache%b';             dust -d 1 -n 15 ~/.cache
+  cached=( ~/.cache/{paru,pip,uv} ~/.cargo/{registry,git} ~/.npm ~/.local/share/pnpm/store
+           ~/.bun/install/cache ~/.gradle/caches /var/cache/pacman/pkg /var/log/journal /var/lib/systemd/coredump )
+  (( $+commands[go] )) && cached+=( ${(f)"$(go env GOCACHE GOMODCACHE)"} )
+  print -P '\n%B:: what clean empties%b';   sudo dust -p -d 0 ${(u)^cached}(N/)
+  if (( $+commands[go] )) && mod=$(go env GOMODCACHE) && [[ -d $mod ]]; then
+    zips=( $mod/cache/download/**/@v/*.zip(N) )
+    print -P "\n%B:: go modules: $#zips versions, by extracted size%b"
+    dust -d 3 -n 15 -X $mod/cache $mod
+  fi
+  print -P '\n%B:: biggest packages%b'
+  LC_ALL=C pacman -Qi | awk '/^Name/ { n = $3 } /^Installed Size/ { print $4 $5, n }' | sort -h | tail -15
+  print -P '\n%B:: packages nothing needs, cycles too (clean removes them)%b'
+  pacman -Qqd | pacman -Rsu --print --print-format '%s %n' - 2>/dev/null | numfmt --to=iec | sort -h
 }
 
 clean() {
-  # sudo paccache -rk0
-  paru -Sccd
-  paru -Rsn $(paru -Qdtq)
+  paru -Sccd   # pacman's whole cache, and paru's AUR clones
+  paru -cc     # orphans, AUR make deps too; -Rsn $(paru -Qdtq) failed when there were none
   rm -rf ~/.cache/paru
   sudo journalctl --rotate --vacuum-time=1d --vacuum-size=50M
   sudo systemd-tmpfiles --clean
   uv cache prune
-  pip3 cache purge
+  (( $+commands[pip3] )) && pip3 cache purge
   rm -rf ~/.cargo/registry/cache ~/.cargo/git/db
+  (( $+commands[go] )) && go clean -cache -modcache
+  bun pm cache rm
   pnpm store prune --force
   npm cache clean --force
 }

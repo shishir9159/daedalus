@@ -128,6 +128,7 @@ hl.bind(mainMod .. " + ALT + R", hl.dsp.exec_cmd(noctCall .. "plugin noctalia/sc
 
 -- Wallpaper, clipboard, notifications
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(noctCall .. "panel-toggle wallpaper"),                    { description = "Wallpaper picker" })
+hl.bind(mainMod .. " + ALT + W",   hl.dsp.exec_cmd(noctCall .. "plugin yngwe/wallpaperCarousel:service all toggle"), { description = "Wallpaper carousel" })
 hl.bind(mainMod .. " + V",         hl.dsp.exec_cmd(noctCall .. "panel-toggle clipboard"),                    { description = "Clipboard history" })
 hl.bind(mainMod .. " + A",         hl.dsp.exec_cmd(noctCall .. "panel-toggle control-center notifications"), { description = "Notifications" })
 
