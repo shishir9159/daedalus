@@ -349,55 +349,55 @@ function Hub(props) {
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div class="tk">
         <div class="tk-page">
-        <div class="tk-shell">
-          <report.Ornaments flags={flags} />
-          <div class="tk-inner">
+          <div class="tk-shell">
+            <report.Ornaments flags={flags} />
+            <div class="tk-inner">
 
-            <div class="tk-top">
-              {years.length > 1
-                ? <div class="tk-years">
-                  {years.map(function (y) {
-                    return <button key={y} class={"tk-btn" + (y === activeYear ? " on" : "")}
-                      onClick={function () { setYear(y); setSel(null); }}>{y}</button>;
-                  })}
-                </div>
-                : null}
-              <report.SkinPicker value={skin} onChange={setTheme} />
-            </div>
-
-            {months.map(function (m) {
-              return (
-                <div class="tk-month" key={m.name}>
-                  <h4>{m.name}<em>{activeYear}</em></h4>
-                  <div class="tk-weeks">
-                    {m.weeks.map(function (w) {
-                      const rg = weekRange(w);
-                      const isNow = w.year === nowIso.year && w.weekNum === nowIso.week;
-                      return <WeekCard key={w.path} week={w} range={rg} now={isNow}
-                        selected={sel === w.path}
-                        onClick={function () { setSel(sel === w.path ? null : w.path); }} />;
+              <div class="tk-top">
+                {years.length > 1
+                  ? <div class="tk-years">
+                    {years.map(function (y) {
+                      return <button key={y} class={"tk-btn" + (y === activeYear ? " on" : "")}
+                        onClick={function () { setYear(y); setSel(null); }}>{y}</button>;
                     })}
                   </div>
-                </div>
-              );
-            })}
+                  : null}
+                <report.SkinPicker value={skin} onChange={setTheme} />
+              </div>
 
-            {!months.length
-              ? <div class="tk-empty">{"No week folders under " + root}</div>
-              : null}
+              {months.map(function (m) {
+                return (
+                  <div class="tk-month" key={m.name}>
+                    <h4>{m.name}<em>{activeYear}</em></h4>
+                    <div class="tk-weeks">
+                      {m.weeks.map(function (w) {
+                        const rg = weekRange(w);
+                        const isNow = w.year === nowIso.year && w.weekNum === nowIso.week;
+                        return <WeekCard key={w.path} week={w} range={rg} now={isNow}
+                          selected={sel === w.path}
+                          onClick={function () { setSel(sel === w.path ? null : w.path); }} />;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
 
-            {selected
-              ? <Panel2 color={pal[1]}
-                title={selected.name + (function () {
-                  const rg = weekRange(selected);
-                  return rg ? ("  ·  " + core.shortDate(rg.from) + " – " + core.shortDate(rg.to) + " " + rg.to.getFullYear()) : "";
-                })()}>
-                <WeekDetail week={selected} palette={pal} rev={rev}
-                  onDone={function () { setRev(function (r) { return r + 1; }); }} />
-              </Panel2>
-              : null}
+              {!months.length
+                ? <div class="tk-empty">{"No week folders under " + root}</div>
+                : null}
+
+              {selected
+                ? <Panel2 color={pal[1]}
+                  title={selected.name + (function () {
+                    const rg = weekRange(selected);
+                    return rg ? ("  ·  " + core.shortDate(rg.from) + " – " + core.shortDate(rg.to) + " " + rg.to.getFullYear()) : "";
+                  })()}>
+                  <WeekDetail week={selected} palette={pal} rev={rev}
+                    onDone={function () { setRev(function (r) { return r + 1; }); }} />
+                </Panel2>
+                : null}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

@@ -20,34 +20,26 @@
 //    return function View() {
 //      return <Constellation
 //        design="art deco"
-//        tag={["paper"]}
+//        tag={["transformer"]}
 //      />;
 //    };
 //    ```
 //
 //  REQUIRED       design "medieval" | "art deco"
-//  ALL THREE      tag "paper" (or a list) · folder · full · webfonts · height
+//  ALL THREE      tag (one or a list, all required) · folder · full · webfonts · height
 //  CONSTELLATION  edges "all" | "links"
 //  PINBOARD       perRow 6 · spread
 //  CONTACT SHEET  columns 10 · thumbs true
 //
-//  `design` is mandatory, exactly as in drawers.jsx, and for the same reason.
-//  `tag` takes one tag or a list, exactly as <Shelves> does — see usePapers in
-//  core.jsx for what collecting on a subject rather than on #paper does to the
-//  topic colours.
+//  `design` is mandatory, as in drawers.jsx. #paper is always collected; `tag`
+//  adds one tag or a list, and a paper must carry every one (AND, unlike
+//  <Shelves>). Leave it out for every paper. See usePapers in core.jsx for
+//  what collecting on a subject does to the topic colours.
 //
-//  ── ON THE PINBOARD ───────────────────────────────────────────────────────
-//  There is no card/thread switch. The study had one — a mode that shrank every
-//  card to a coloured strip so the string between them showed better — and it
-//  turned the board into a diagram of a board. A pinboard whose cards you
-//  cannot read is a graph, and the graph is <Constellation/>, which does it
-//  properly. Cards, always; the string stays.
+//  The pinboard always shows readable cards; for the graph, use <Constellation/>.
 //
-//  ── ON THE CONTACT SHEET ──────────────────────────────────────────────────
-//  These are real first pages, rasterised out of the PDFs, not a drawing of
-//  one. That is worth a hundred pages of paper but not a hundred renders on
-//  mount, so a frame only asks for its picture once it has scrolled into
-//  view — see useInView.
+//  The contact sheet's frames are real first pages, rasterised out of the
+//  PDFs, each only once it scrolls into view (useInView).
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
@@ -55,15 +47,14 @@
 const core = await dc.require("Meta/Obsidian/_datacore/paper/core.jsx");
 
 const {
-  designClass, DesignError, usePapers, indexBy, relatedTo, edgesOf,
+  designClass, DesignError, usePapers, paperTags, indexBy, relatedTo, edgesOf,
   Pip, PageSheet, ReadingPanel, Styles, useFitHeight, useEscape,
   footOf, fieldsOf, clamp, hashOf,
 } = core;
 
 // ── topic colours ───────────────────────────────────────────────────────────
-/* Seven per design, assigned by position in the sorted topic list rather than
-   by hash: a hash gives you two near-identical greens next to each other about
-   as often as not, and the whole point of the colour is telling clusters apart. */
+/* Seven per design, assigned by position in the sorted topic list, not by
+   hash, so neighbouring clusters never get near-identical colours. */
 const PALETTE = {
   medieval: ["#c98a2f", "#5f9e5a", "#8d6bb0", "#4f93b8", "#b8674f", "#5e8fa8", "#a8894f"],
   deco: ["#e3c24a", "#4f9e86", "#cd5f45", "#5a72b5", "#9268b8", "#3f9aa8", "#c76f8e"],
@@ -87,13 +78,9 @@ function useTopics(papers, skin) {
 }
 
 /**
- * Where every node sits, in graph units.
- *
- * Topics get a cell each on a grid; the papers in a topic sit on a ring inside
- * their cell, offset by the topic's index so two adjacent clusters do not line
- * their papers up in the same direction. Deterministic, so the picture is the
- * same every time you open the note — a graph that reshuffles on each render
- * is one you can never learn.
+ * Where every node sits, in graph units: a grid cell per topic, its papers on
+ * a ring inside, offset by the topic's index so neighbours do not line up.
+ * Deterministic, so the picture is the same every time.
  */
 function layoutNodes(papers, topics) {
   const n = Math.max(1, topics.names.length);
@@ -131,7 +118,7 @@ function Constellation(props) {
 }
 
 function ConstellationBody({
-  skin, tag = "paper", folder = null, edges = "all",
+  skin, tag = [], folder = null, edges = "all",
   full = true, height = 620, webfonts = true,
 }) {
   const papers = usePapers({ tag, folder });
@@ -245,7 +232,7 @@ function ConstellationBody({
                   </span>
                 ))}
               </div>
-              {papers.length === 0 && <div class="pv-empty">nothing tagged #{[].concat(tag).join(" / #")}</div>}
+              {papers.length === 0 && <div class="pv-empty">nothing tagged {paperTags(tag).map((t) => "#" + t).join(" and ")}</div>}
             </div>
 
             <div class="pvv-side">
@@ -256,9 +243,7 @@ function ConstellationBody({
                     <span>SELECTED</span>
                     <i class="pv-rule" />
                   </div>
-                  {/* The title opens the reading panel; the page opens the PDF.
-                      Two targets, two destinations, neither of them a filename
-                      pretending to be a button. */}
+                  {/* The title opens the reading panel; the page opens the PDF. */}
                   <span
                     class="pvv-side-title"
                     title="read"
@@ -322,7 +307,7 @@ function Pinboard(props) {
 }
 
 function PinboardBody({
-  skin, tag = "paper", folder = null, perRow = 6, spread = 1,
+  skin, tag = [], folder = null, perRow = 6, spread = 1,
   full = true, height = 680, webfonts = true,
 }) {
   const papers = usePapers({ tag, folder });
@@ -330,12 +315,8 @@ function PinboardBody({
   const topics = useTopics(papers, skin);
 
   /**
-   * Where the cards start.
-   *
-   * A grid with a deterministic jitter on it, so the board looks pinned by hand
-   * rather than laid out by a spreadsheet, and looks the same every time. The
-   * board itself grows with the pile — a fixed 2400x1600 is a lot of empty cork
-   * under nine papers and not nearly enough under two hundred.
+   * Where the cards start: a grid with a deterministic jitter, so the board
+   * looks pinned by hand and the same every time. The board grows with the pile.
    */
   const start = dc.useMemo(() => {
     const gapX = Math.round((CARD_W + 176) * spread);
@@ -367,11 +348,8 @@ function PinboardBody({
   const at = (id) => moved.get(id) ?? start.pos[id];
 
   /**
-   * Drag, measured against the board rather than the window.
-   *
-   * The offset is taken from the board's own box, so a card you pick up after
-   * scrolling the board sideways does not jump by the scroll distance the
-   * moment you move the mouse.
+   * Drag, measured against the board's own box, so a card picked up after
+   * scrolling sideways does not jump by the scroll distance.
    */
   const onDown = (p) => (e) => {
     if (e.button !== 0) return;
@@ -406,13 +384,9 @@ function PinboardBody({
   };
 
   /**
-   * The string.
-   *
-   * A run through each topic in date order, plus every other card in the topic
-   * you have picked up. Not every pair: a topic of sixty papers is one thousand
-   * seven hundred and seventy curves, which is both a solid wall of colour and
-   * a repaint on every mouse move. The chain says the same thing — these belong
-   * together, in this order — and it stays readable at any size.
+   * The string: a run through each topic in date order, plus every other card in
+   * the topic you have picked up — not every pair, which would be a wall of
+   * colour and a repaint on every mouse move.
    */
   const threads = dc.useMemo(() => {
     const bins = new Map();
@@ -439,9 +413,8 @@ function PinboardBody({
 
     for (const [topic, list] of bins) {
       const run = list.slice().sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
-      // the picked-up card's strands go down first: `curve` refuses a pair it
-      // has already drawn, so whichever version is laid first is the one that
-      // survives, and the lit one has to win
+      // the picked-up card's strands go first: `curve` refuses a pair already drawn,
+      // and the lit one has to win
       const here = sel ? run.find((p) => p.id === sel) : null;
       if (here) for (const p of run) if (p.id !== sel) curve(here, p, topic, true);
       for (let i = 1; i < run.length; i++) curve(run[i - 1], run[i], topic, false);
@@ -540,7 +513,7 @@ function PinboardBody({
                   </div>
                 );
               })}
-              {papers.length === 0 && <div class="pv-empty">nothing tagged #{[].concat(tag).join(" / #")}</div>}
+              {papers.length === 0 && <div class="pv-empty">nothing tagged {paperTags(tag).map((t) => "#" + t).join(" and ")}</div>}
             </div>
           </div>
 
@@ -562,12 +535,8 @@ function PinboardBody({
 //  Contact sheet
 // ════════════════════════════════════════════════════════════════════════════
 /**
- * Has this frame been seen yet?
- *
- * A contact sheet of two hundred papers is two hundred PDF rasters, and doing
- * them all on mount locks the pane for as long as that takes. The observer
- * fires once per frame and then disconnects — a page that has been rendered
- * stays rendered, and pdf.jsx caches the image anyway.
+ * Has this frame been seen yet? Rasterising every PDF on mount locks the pane,
+ * so the observer fires once per frame and disconnects.
  */
 function useInView(rootMargin = "300px") {
   const ref = dc.useRef(null);
@@ -615,7 +584,7 @@ function ContactSheet(props) {
 }
 
 function ContactSheetBody({
-  skin, tag = "paper", folder = null, columns = 10, thumbs = true,
+  skin, tag = [], folder = null, columns = 10, thumbs = true,
   sort = "year", full = true, height = 640, webfonts = true,
 }) {
   const papers = usePapers({ tag, folder });
@@ -668,7 +637,7 @@ function ContactSheetBody({
                 onOpen={() => setReading(p.id)}
               />
             ))}
-            {sheets.length === 0 && <div class="pv-empty">nothing tagged #{[].concat(tag).join(" / #")}</div>}
+            {sheets.length === 0 && <div class="pv-empty">nothing tagged {paperTags(tag).map((t) => "#" + t).join(" and ")}</div>}
           </div>
 
           {current && (

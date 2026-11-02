@@ -22,50 +22,47 @@
 //  what a book with no cover looks like. "medieval" is the library this began
 //  as; "art deco" is the cinema foyer.
 //
-//  `wood` is the material, and every material works under either design. Each
-//  design simply reaches for a different one when you say nothing: oak for the
-//  library, ebony for deco. Deco's board stays brass whatever you pick — that
-//  is the signature of it — so the timber shows in the carcass and the sides,
-//  which is what veneer-and-brass furniture actually looks like.
+//  `wood` is the material; every material works under either design. Unset,
+//  it is oak for the library and ebony for deco. Deco's board stays brass
+//  whatever you pick, so the timber shows in the carcass and the sides.
 //
 //  `rack` is the layout. true (the default) is separate boards with air
-//  between them. false is one carcass with the compartments stacked straight
-//  onto each other, each board the ceiling of the shelf below — a bookcase.
+//  between them; false is one carcass, each board the ceiling of the shelf
+//  below — a bookcase.
 //
-//  Signs are independent of all of it: banner="deco sunburst" over
-//  shelf="medieval" is a perfectly legal thing to ask for.
-//
-//  Three things are worth knowing before changing anything:
-//
-//  Size is not an argument. It comes from the page count, floored at FACE_MIN
-//  because below that Obsidian's own downscaling stops resolving the type on
-//  the cover. Everything else — shelf height, headroom, gaps, cone width, the
-//  spider and its thread — is a fraction of the books, so moving FACE_MIN
-//  moves the whole piece of furniture rather than cramming bigger books into
-//  the old one. See sizeOf and the metrics memo.
-//
-//  A full-bleed library is as tall as its pane and scrolls inside itself, both
-//  ways. Not a style choice: a note that grows to a few thousand pixels
-//  defeats Obsidian's section recycling and the scroll snaps back to the top.
-//  useFitHeight in core.jsx has the details.
+//  Signs are independent of the design: banner="deco sunburst" over
+//  shelf="medieval" is fine.
 //
 //  lamp="rail" hangs a fixture over every book. progress="spotlight" colours
 //  those same lamps by how far you have read; with both on, the lamps sit
 //  neutral until you hover. With rail and any other progress pattern, hovering
 //  lights one book and the rest fall dark.
 //
+//  `motion` keeps the spider, the webs, the beams and the signs moving even
+//  under reduced motion; motion={false} stops them.
+//
+//  Size is not an argument: it comes from the page count (sizeOf), floored at
+//  FACE_MIN. Shelf height, headroom, gaps, cones, the spider and its thread
+//  are all fractions of the books (the metrics memo), so moving FACE_MIN
+//  rescales the whole case.
+//
+//  `full` gives the library the pane's whole width and hides the rest of the
+//  note. It scrolls up and down with the note; a row longer than the window
+//  pans sideways under the pointer at either end (`edgeScroll`), Shift+wheel or
+//  a trackpad.
+//
 //  Notes under Meta/Obsidian/Templates/ are never collected (IGNORE_PATHS).
 //  Never declare a local named h here — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
 
 const core = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
-const pat  = await dc.require("Meta/Obsidian/_datacore/book/patterns.jsx");
-const bug  = await dc.require("Meta/Obsidian/_datacore/book/critters.jsx");
-const sgn  = await dc.require("Meta/Obsidian/_datacore/book/banner.jsx");
+const pat = await dc.require("Meta/Obsidian/_datacore/book/patterns.jsx");
+const bug = await dc.require("Meta/Obsidian/_datacore/book/critters.jsx");
+const sgn = await dc.require("Meta/Obsidian/_datacore/book/banner.jsx");
 
 const {
   Styles, ShelfCover, useBook, useCoverColor, useCoverSrc, useSpineImage,
-  useFitHeight, useEdgeScroll, styleClass, woodFor, tiltFor, hashOf, clamp,
+  useEdgeScroll, styleClass, woodFor, tiltFor, hashOf, clamp,
   baseName, openBook, writeFields, markDragEnd, isIgnored,
   READING, UPCOMING, DONE, TIER_RANK,
 } = core;
@@ -81,32 +78,20 @@ const DRAG_MIME = "application/x-obsidian-book";
 // ════════════════════════════════════════════════════════════════════════════
 //  Dimensions
 //
-//  270px is a hard floor, not a preference. Obsidian 1.13.7 scales a cover down
-//  with a plain bilinear filter, and below about 270px of rendered width the
-//  type set on the artwork stops resolving — you get the shape of a title
-//  rather than a title.
-//
-//  The ceiling is deliberately close to it. The page count should say "this is
-//  a fatter book", not "this book gets its own screen": a 36px spread over the
-//  whole library reads as variety, and the 78px spread it replaces read as
-//  three books to a window.
+//  FACE_MIN is a hard floor: Obsidian scales covers down bilinearly, and below
+//  about 270px the type on the artwork stops resolving. FACE_MAX stays close
+//  to it, so the page count reads as a fatter book, not a bigger one.
 // ════════════════════════════════════════════════════════════════════════════
 const FACE_MIN = 270;
 const FACE_MAX = 306;
-/* A hardcover is a 2:3 board — the same ratio the blank cover placeholder uses,
-   so a book with artwork and a book without stand the same height. */
+/* A 2:3 board, like the blank-cover placeholder, so books with and without
+   artwork stand the same height. */
 const TALL_RATIO = 1.5;
-/* Wider than the book-to-book pitch, on purpose. A row of picture lights DOES
-   overlap; at 1.42 each cone was narrower than its own book plus the gap, so
-   the shelf read as stripes of light with dark bands between them.
-   1.82 is the study's own: 250px of cone over a 141px cover. The pitch here is
-   the cover plus 11% of it, so a cone this wide still covers its own book and
-   washes a good part of each neighbour — but it no longer flattens the row the
-   way 2.05 did, where every point on the board was inside three cones. */
+/* Cone width per cover. Wider than the pitch (cover + 11%) so each cone covers
+   its own book and washes part of each neighbour, without flattening the row. */
 const CONE_RATIO = 1.82;
-/* The shade, as a fraction of the cover. Also the study's: a 40px shade over a
-   141px cover. Every part of the fixture, and the height the cone starts at,
-   is a fraction of this — see --lamp-w in core.jsx. */
+/* The shade, as a fraction of the cover; every part of the fixture and the top
+   of the cone scale from it (--lamp-w in core.jsx). */
 const LAMP_RATIO = 0.28;
 /* The 300-page book is the reference volume: what an empty case is sized for. */
 const REF_TALL = Math.round((FACE_MIN + 12) * TALL_RATIO);
@@ -124,29 +109,23 @@ function sizeOf(pages) {
       Math.round(face * 0.24),
     ),
     cone: Math.round(face * CONE_RATIO),                  // 491 .. 557
-    // The spider is furniture of the book it hangs beside. At scale 1 it is
-    // roughly 68px across, which next to a 270px cover is a tarantula; a
-    // little under two thirds of that is an animal you notice rather than one
-    // that owns the shelf.
+    // at 1 the spider is ~68px across, a tarantula beside a 270px cover
     spiderScale: +clamp(0.42, face / 440, 0.78).toFixed(3),
-    // how far below the compartment ceiling it comes to rest, so it ends up
-    // over the top corner of the cover whatever the case is scaled to
+    // how far below the compartment ceiling it rests: over the cover's top corner
     drop: Math.round(tall * 0.11),
   };
 }
 
 /**
- * Everything a lamp, a spider or a thread needs to hang from the top of the
- * compartment rather than from the top of the book. `--head-h` is set on the
- * case by `metrics`; the slot sits below it, so reaching up into it is a
- * negative offset of exactly that much.
+ * Hangs a spider or thread from the compartment ceiling, not the book's top:
+ * the slot sits `--head-h` (set by `metrics`) below it.
  */
 const HANG_TOP = "calc(-1 * var(--head-h) + 8px)";
 const hangThread = (drop) => `calc(var(--head-h) + ${drop}px)`;
 
 // ── one book, face out ─────────────────────────────────────────────────────
 function FaceBook({
-  notePath, pattern, webs, wear, dogears, spider, beamMode,
+  notePath, pattern, webs, wear, dogears, spider, motion, beamMode,
   draggable, leaning, spine, onTurn, onHush, lean,
 }) {
   const book = useBook(notePath);
@@ -156,14 +135,7 @@ function FaceBook({
   const spineArt = useSpineImage(book, !!spine);
   const open = book.status === "reading" && !book.finished;
 
-  /**
-   * What the cursor carries during a drag.
-   *
-   * Without this the browser snapshots the whole slot — which since the lamps
-   * moved into it means the fixture, the cone and the pool travel with the
-   * book, and dragging one title drags a shaft of light across the case. The
-   * book itself is the payload, so the book itself is the ghost.
-   */
+  // The drag ghost is the book alone; by default it is the whole slot, lamp and cone included.
   const bodyRef = dc.useRef(null);
   const beginDrag = (e) => {
     e.dataTransfer.setData(DRAG_MIME, book.path);
@@ -214,19 +186,14 @@ function FaceBook({
               </div>
             </>
           )}
-          {/* The spine's real box, not a multiple of its thickness. Cobweb
-              works its own reach out from the two — a web on a 36x430 spine is
-              not a web on a 36x36 one, and passing a single pre-multiplied
-              number is what left the webs a knot in the corner once the case
-              was rescaled. */}
+          {/* the spine's real box: Cobweb works its reach out from both sides */}
           {webs && neglect > 0 && (
-            <Cobweb level={neglect} seed={book.path} width={dim.spine} height={dim.tall} />
+            <Cobweb level={neglect} seed={book.path} width={dim.spine} height={dim.tall} sway={motion} />
           )}
           {open && <div class="hcs-sp-ribbon" />}
         </div>
-        {/* Just off the fore-edge: clear of the title, short of the gap, and
-            hung from the compartment ceiling like the face-out one. A spine is
-            narrow, so the spider is sized against the spine's own thickness. */}
+        {/* Just off the fore-edge, hung from the ceiling like the face-out one
+            and sized against the spine's thickness. */}
         {spider && (
           <Spider
             style={{ left: "calc(100% + 4px)", top: HANG_TOP }}
@@ -253,24 +220,19 @@ function FaceBook({
       {beamMode && <Beam />}
       {wear && <ShelfWear level={neglect} />}
       <div class="hcs-art" ref={bodyRef}>
-        {/* ShelfCover is BookCover with effects="lit": the hardcover board, and
-            the lamps are allowed to grade the artwork. The infobox uses
-            FlatCover, which paints nothing over the image at all. The raster is
-            2.2x the display width so the cover still has pixels to spare on a
-            HiDPI screen. */}
+        {/* BookCover with effects="lit": the board, graded by the lamps. The
+            raster is 2.2x the display width, for HiDPI. */}
         <ShelfCover book={book} width={Math.round(dim.face * 2.2)} />
         {beamMode && <Tint />}
         {webs && neglect > 0 && (
-          <Cobweb level={neglect} seed={book.path} width={dim.face} height={dim.tall} />
+          <Cobweb level={neglect} seed={book.path} width={dim.face} height={dim.tall} sway={motion} />
         )}
         {dogears && <Dogear book={book} />}
         {open && <div class="hcs-open-ribbon" />}
         <Progress book={book} pattern={pattern} layer="art" />
       </div>
-      {/* Hung from the top of the compartment, not of the book (from there it
-          sits on the cover instead of dangling in front of it). Drop and scale
-          come out of sizeOf, so the spider keeps its size and reach relative to
-          the book however the case is scaled. */}
+      {/* Hung from the compartment ceiling, so it dangles in front of the
+          cover; drop and scale come from sizeOf. */}
       {spider && (
         <Spider
           style={{ left: "calc(100% - 12px)", top: HANG_TOP }}
@@ -285,10 +247,8 @@ function FaceBook({
 
 // ── a finished book, lying flat in a pile ─────────────────────────────────
 /**
- * A book lying flat shows you its spine, so that is what this draws: a
- * horizontal band of cloth with the title running along it, a gilt rule at the
- * head and the page block at the tail. Draggable like any other book, so a
- * finished title can go back on a working shelf.
+ * A book lying flat, spine out: a band of cloth with the title along it.
+ * Draggable, so a finished title can go back on a working shelf.
  */
 function Slab({ notePath, draggable }) {
   const book = useBook(notePath);
@@ -313,9 +273,8 @@ function Slab({ notePath, draggable }) {
         e.dataTransfer.setData(DRAG_MIME, book.path);
         e.dataTransfer.setData("text/plain", book.path);
         e.dataTransfer.effectAllowed = "move";
-        // the slab is clipped and skew-free, so the default ghost can come out
-        // empty; naming it explicitly guarantees the book follows the cursor
-        try { e.dataTransfer.setDragImage(e.currentTarget, 24, 12); } catch {}
+        // a clipped slab's default ghost can come out empty
+        try { e.dataTransfer.setDragImage(e.currentTarget, 24, 12); } catch { }
         setDragging(true);
       }}
       onDragEnd={() => { setDragging(false); markDragEnd(); }}
@@ -359,7 +318,7 @@ function TopSlab({ notePath }) {
       onClick={(e) => openBook(book, e)}
     >
       {src ? <img src={src} alt="" draggable={false} decoding="async" />
-           : <div class="hcs-topslab-blank" />}
+        : <div class="hcs-topslab-blank" />}
     </div>
   );
 }
@@ -381,7 +340,7 @@ function TopPile({ books, perStack = 5 }) {
 
 // ── one shelf ──────────────────────────────────────────────────────────────
 function Shelf({
-  title, books, collapsed, wrap, pattern, webs, wear, dogears, spiderPath,
+  title, books, collapsed, wrap, pattern, webs, wear, dogears, spiderPath, motion,
   bookends, lamp, beamMode, flat, draggable, drop, onDrop, walls,
   spines, isFace, onTurn, onHush,
 }) {
@@ -391,8 +350,7 @@ function Shelf({
   const visible = open || !overflowing ? books : books.slice(0, collapsed);
   const overflow = open || !overflowing ? [] : books.slice(collapsed);
   const canDrop = draggable && !!drop;
-  // a bookend only makes sense when the row has slack after the last book
-  // even a single book wants something to lean on
+  // only with slack after the last book; even a single book gets one
   const showEnd = bookends && !flat && visible.length >= 1 && !wrap && !open;
 
   return (
@@ -409,10 +367,9 @@ function Shelf({
         } : undefined}
       >
         {flat ? (
-          /* still a row, so the min-height and headroom that govern a standing
-             shelf govern this one too — no shelf is ever shorter */
+          /* still a row, so it keeps a standing shelf's min-height and headroom */
           <div class="hcs-row is-flat">
-            {visible.length === 0 ? <EmptyShelf seed={title} /> : <Piles books={visible} draggable={draggable} />}
+            {visible.length === 0 ? <EmptyShelf seed={title} sway={motion} /> : <Piles books={visible} draggable={draggable} />}
           </div>
         ) : (
           <div
@@ -429,6 +386,7 @@ function Shelf({
                 wear={wear}
                 dogears={dogears}
                 spider={p === spiderPath}
+                motion={motion}
                 beamMode={beamMode}
                 draggable={draggable}
                 leaning={showEnd && i === visible.length - 1}
@@ -441,22 +399,18 @@ function Shelf({
               />
             ))}
             {showEnd && <div class="hcs-bookend" />}
-            {visible.length === 0 && <EmptyShelf seed={title} />}
+            {visible.length === 0 && <EmptyShelf seed={title} sway={motion} />}
             {lamp === "pointer" && <Lamp />}
           </div>
         )}
 
-        {/* The ends of the run. .hcs-shelf spans the whole row, however long
-            it is, so these sit at the true ends of the shelf rather than at
-            the edges of the window — scroll to one and you have found the end
-            of it, which is what the study's side panels say. */}
+        {/* .hcs-shelf spans the whole row, so the walls sit at the shelf's
+            true ends, not the window's edges. */}
         {walls && <><i class="hcs-wall is-l" aria-hidden="true" /><i class="hcs-wall is-r" aria-hidden="true" /></>}
 
         <div class="hcs-plank" />
         {overflow.length > 0 && <TopPile books={overflow} />}
-        {/* Plate and button ride together at the near end of the board. A row
-            can now be several times wider than the case, and the button used
-            to be pinned to the far end of it. */}
+        {/* plate and button ride together at the near end, however wide the row */}
         <div class="hcs-label">
           <span class="hcs-plate">{title}<i>{books.length}</i></span>
           {overflowing && (
@@ -511,15 +465,10 @@ function Shelves({
   const rev = dc.useIndexUpdates();
 
   /**
-   * Where a dropped book has been *told* to go, before the vault agrees.
-   *
-   * A drop writes frontmatter, Obsidian reparses the file, the metadata cache
-   * updates, Datacore reindexes and only then does the query re-run — several
-   * hundred milliseconds during which the book sits on its old shelf looking
-   * like the drag failed. Holding the patch here and laying it over the cached
-   * frontmatter moves the book on the same frame you let go of it. The entry
-   * is dropped again as soon as the real cache reports the same values, so
-   * this can never disagree with the file for longer than the round trip.
+   * Where a dropped book has been told to go, before the vault agrees. The
+   * frontmatter write takes several hundred ms to reach the query; laid over
+   * the cached frontmatter, the patch moves the book on the drop. An entry
+   * goes once the cache reports the same values.
    */
   const [pending, setPending] = dc.useState(() => new Map());
 
@@ -551,14 +500,12 @@ function Shelves({
         const pages = Number(fm.pages) || 0;
         const prog = Number(fm.progress) || 0;
         const status = String(fm.status ?? "").toLowerCase().trim();
-        // `completed` is your word on it and wins both ways. Without the
-        // false branch, dragging a finished book onto another shelf writes
-        // completed:false but progress is still at the last page — so it is
-        // inferred done again and snaps back, which looks like drag not working.
+        // `completed` wins both ways: without the false branch, a finished book
+        // dragged to another shelf is inferred done from its progress and snaps back.
         const done =
           fm.completed === true ? true
-          : fm.completed === false ? false
-          : (DONE.includes(status) || (pages > 0 && prog >= pages));
+            : fm.completed === false ? false
+              : (DONE.includes(status) || (pages > 0 && prog >= pages));
         return {
           path: p, status, done, progress: prog, pages,
           pct: pages ? prog / pages : 0,
@@ -577,9 +524,8 @@ function Shelves({
   dc.useEffect(() => () => window.clearTimeout(hushTimer.current), []);
 
   /**
-   * Which way each book is facing. The map holds only the ones you have
-   * actually turned; everything else falls back to the default, so the
-   * last-read book starts face-out but can still be shelved again.
+   * Which way each book you have turned is facing. The rest fall back to the
+   * default, so the last-read book starts face-out but can be shelved again.
    */
   const [faced, setFaced] = dc.useState(() => new Map());
 
@@ -638,9 +584,8 @@ function Shelves({
   }, [rows, sections, flatFinished]);
 
   // ── drop → rewrite frontmatter ────────────────────────────────────────
-  // The book moves first and the file catches up. `pending` is set before the
-  // await, so the re-render that puts the book on its new shelf happens in the
-  // same tick as the drop rather than after the vault round trip.
+  // `pending` is set before the await, so the book moves on the drop and the
+  // file catches up.
   const handleDrop = async (notePath, fields) => {
     if (!notePath || !fields) return;
     const { __fillProgress, ...rest } = fields;
@@ -655,7 +600,7 @@ function Shelves({
     try {
       await writeFields(notePath, patch);
     } catch {
-      // the write failed, so the optimistic move was a lie — take it back
+      // the write failed: undo the optimistic move
       setPending((prev) => { const n = new Map(prev); n.delete(notePath); return n; });
     }
   };
@@ -663,41 +608,25 @@ function Shelves({
   const spotlight = progress === "spotlight";
   const rail = lamp === "rail";
   const beamMode =
-      spotlight && rail ? "reveal"     // neutral until you reach for a book
-    : spotlight         ? "progress"   // reading colour on show
-    : rail              ? "solo"       // idle, and one book at a time
-    : null;
+    spotlight && rail ? "reveal"     // neutral until you reach for a book
+      : spotlight ? "progress"   // reading colour on show
+        : rail ? "solo"       // idle, and one book at a time
+          : null;
 
   /**
-   * The case, scaled to whatever is standing in it.
+   * The case, scaled to what stands in it: every shelf is the tallest book
+   * plus headroom, and every number is a fraction of the books.
    *
-   * Every shelf is the same height, and that height is the tallest book in the
-   * library plus headroom — not a constant a 270px floor would overflow.
-   *
-   * Every number below is a FRACTION of the books, not a constant scaled by a
-   * ratio, which is the difference between a bigger shelf and the same shelf
-   * with bigger books crammed into it:
-   *
-   *   --shelf-gap  from the COVER, because it is the book-to-book pitch and the
-   *                pitch is what decides how far a cone spills onto its
-   *                neighbours. Deriving it from the height instead made the
-   *                gaps grow faster than the books and thinned the light out.
-   *   --head-h     clear air above the books, and the frame every hanging
-   *                thing measures from. With rail lamps this is 0.20 of the
-   *                tallest book — the ratio the study uses, where a 39px
-   *                fixture fills 43px of air over a 214px book. It was 0.17,
-   *                which left a fixture floating in a third of the headroom
-   *                and reading as a light on a different shelf. Without lamps
-   *                only a spider hangs here, so it stays shallow.
-   *   --lamp-w     the shade, 0.28 of the cover — again the study's ratio, and
-   *                the number every part of the fixture and the top of the
-   *                cone are a fraction of. It replaces a hardcoded 34px that
-   *                stayed put while the books went from 168px to 270px wide.
-   *   --shelf-h    the books plus that headroom, and nothing else. Obsidian
-   *                sets box-sizing: border-box everywhere, so the headroom is
-   *                padding INSIDE this number — leave it out and a row with
-   *                books grows past its stated height while an empty one does
-   *                not, which is uneven shelves by another route.
+   *   --shelf-gap  from the cover: it is the book-to-book pitch, which decides
+   *                how far a cone spills onto its neighbours.
+   *   --head-h     clear air above the books, the frame every hanging thing
+   *                measures from: 0.20 of the tallest book with rail lamps, so
+   *                the fixture fills it; 0.10 when only a spider hangs there.
+   *   --lamp-w     the shade, LAMP_RATIO of the cover; every part of the
+   *                fixture and the top of the cone scale from it.
+   *   --shelf-h    the books plus the headroom. Obsidian's border-box makes the
+   *                headroom padding inside this number, so leaving it out
+   *                makes full rows taller than empty ones.
    */
   const metrics = dc.useMemo(() => {
     const dims = rows.length ? rows.map((r) => sizeOf(r.pages)) : [sizeOf(0)];
@@ -713,9 +642,7 @@ function Shelves({
     };
   }, [rows, beamMode]);
 
-  // one screen tall, scrolling inside itself — see useFitHeight in core.jsx
-  const [fitRef, fitH] = useFitHeight(full);
-  // and hovering either end of it walks the shelf sideways — see useEdgeScroll
+  // hovering either end of the case walks the shelf sideways — see useEdgeScroll
   const stacksRef = useEdgeScroll(edgeScroll);
 
   const cls = ["hcs", styleClass(shelf), `mode-${woodFor(shelf, wood)}`];
@@ -736,8 +663,7 @@ function Shelves({
       <BannerStyles />
       <div
         class={cls.join(" ")}
-        ref={fitRef}
-        style={fitH ? { ...metrics, "--hcs-vh": `${fitH}px` } : metrics}
+        style={metrics}
       >
         {banner && (
           <Banner
@@ -750,13 +676,11 @@ function Shelves({
           />
         )}
         <div class="hcs-case">
-          {/* The stepped corners. They belong to the case, which does not
-              scroll, so they stay at the corners of the furniture. Hidden
-              unless shelf="art deco". */}
+          {/* stepped corners, shown only for shelf="art deco" */}
           <i class="hcs-corner is-l" aria-hidden="true" />
           <i class="hcs-corner is-r" aria-hidden="true" />
-          {/* The shelves scroll; the case does not. Cornice, plinth, glass and
-              daylight are painted on the case, so they stay put. */}
+          {/* The shelves scroll; the case, with its cornice, plinth, glass and
+              daylight, does not. */}
           <div class="hcs-stacks" ref={stacksRef}>
             {shelves.map((s) => (
               <Shelf
@@ -770,6 +694,7 @@ function Shelves({
                 wear={wear}
                 dogears={dogears}
                 spiderPath={hushed && hushed === spiderPath ? null : spiderPath}
+                motion={motion}
                 spines={spines}
                 isFace={(p) => faced.has(p) ? faced.get(p) : p === lastRead}
                 onTurn={(p) => setFaced((prev) => {

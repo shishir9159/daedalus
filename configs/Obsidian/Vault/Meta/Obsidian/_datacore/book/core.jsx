@@ -6,11 +6,9 @@
 //  module. Exports are the object returned at the bottom — `export` / `import`
 //  are a syntax error here.
 //
-//  NOTE 2: all book data is read from `app.metadataCache`, not from Datacore's
-//  page objects. Inside a required module `dc.useCurrentFile()` resolves to the
-//  module, not to the note being rendered, which is why every field came back
-//  empty. Reading the cache directly also means edits show up immediately
-//  instead of waiting for a reindex.
+//  NOTE 2: book data is read from `app.metadataCache`, not Datacore's page
+//  objects: inside a required module `dc.useCurrentFile()` resolves to the
+//  module, not the note. The cache also shows edits without a reindex.
 // ════════════════════════════════════════════════════════════════════════════
 
 // ── config ──────────────────────────────────────────────────────────────────
@@ -31,15 +29,13 @@ const STATUS_COLOR = {
 };
 
 /**
- * The two things `shelf` and `wood` pick, kept apart because they answer
- * different questions.
+ * What `shelf` and `wood` pick:
  *
- *   shelf  WHAT THE FURNITURE IS. A whole design: case, board, plate, bookend,
- *          end walls, lamp, the blank cover, the spine. "medieval" is the
- *          library this started as; "art deco" is the gold-on-black cinema
- *          foyer. Everything else in the view composes with either.
- *   wood   WHICH BOARD, inside the medieval design only — art deco has no
- *          timber to choose.
+ *   shelf  the furniture, a whole design: case, board, plate, bookend, end
+ *          walls, lamp, the blank cover, the spine. "medieval" is the library;
+ *          "art deco" is the gold-on-black cinema foyer. Everything else in
+ *          the view composes with either.
+ *   wood   the material, under either design.
  */
 const SHELF_STYLES = ["medieval", "art deco"];
 const SHELF_MODES = ["oak", "walnut", "concrete", "board", "ebony", "macassar"];
@@ -47,22 +43,11 @@ const SHELF_MODES = ["oak", "walnut", "concrete", "board", "ebony", "macassar"];
 /** The class the style goes on. Unknown values fall back to medieval. */
 const styleClass = (s) => (String(s ?? "").toLowerCase() === "art deco" ? "deco" : "medieval");
 
-/**
- * The board a design defaults to when `wood` is not given.
- *
- * Deco is a veneer-and-brass idiom, so its natural default is ebony rather
- * than oak — but the choice stays open either way. Every material works under
- * either design; ebony and macassar simply belong to deco the way oak belongs
- * to the library.
- */
+/** The board a design defaults to when `wood` is not given. */
 const DEFAULT_WOOD = { deco: "ebony", medieval: "oak" };
 const woodFor = (style, wood) => wood ?? DEFAULT_WOOD[styleClass(style)] ?? "oak";
 
-/**
- * Folders never collected into a shelf, however they are tagged. Template notes
- * carry the same `#book` tag by design, so they would otherwise show up as
- * ghost books on every shelf.
- */
+/** Folders never collected, however tagged: templates carry `#book` too. */
 const IGNORE_PATHS = ["Meta/Obsidian/Templates/"];
 
 const isIgnored = (p) => IGNORE_PATHS.some((d) => String(p ?? "").startsWith(d));
@@ -199,13 +184,12 @@ function useBook(notePath) {
   const status = String(get("status") ?? "").toLowerCase().trim();
   const tier = get("tier");
 
-  // `completed: true` (or a finished status) is a deliberate statement by you.
-  // Reaching the last page is only an inference — you may be re-reading.
-  // `completed` is explicit and wins both ways; everything else is inference.
+  // `completed` is explicit and wins both ways; a finished status or the last
+  // page is only inference — you may be re-reading.
   const markedDone =
     get("completed") === true ? true
-    : get("completed") === false ? false
-    : DONE.includes(status);
+      : get("completed") === false ? false
+        : DONE.includes(status);
   const finished =
     get("completed") === false ? false : (markedDone || (pages > 0 && progress >= pages));
 
@@ -229,11 +213,7 @@ function useBook(notePath) {
 let lastDragEnd = 0;
 const markDragEnd = () => { lastDragEnd = Date.now(); };
 
-/**
- * Open the book's PDF at the page you're on.
- * Obsidian's PDF view honours a `#page=N` subpath, so `progress` is a real
- * bookmark: click a cover anywhere and you land where you left off.
- */
+/** Open the book's PDF at `progress`, through Obsidian's `#page=N` subpath. */
 const openBook = (book, evt, { atPage, force } = {}) => {
   if (!force && Date.now() - lastDragEnd < 250) return;   // a drag isn't a click
   const target = parseLink(book.title)?.path ?? parseLink(book.cover)?.path;
@@ -247,14 +227,12 @@ const openBook = (book, evt, { atPage, force } = {}) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-//  PDF work lives in one place now
+//  PDF work lives in pdf/pdf.jsx
 //
 //  Loading pdf.js, caching documents, reading annotations, rasterising pages
-//  AND writing frontmatter are all shared with the paper infobox, so they live
-//  in Meta/Obsidian/_datacore/pdf/pdf.jsx rather than being duplicated here.
-//
-//  `writeFields` compares before writing and reports whether it wrote: writing
-//  a value a view has just read would reindex, re-render and write again.
+//  and writing frontmatter are shared with the paper infobox. `writeFields`
+//  compares before writing, so writing back a value just read cannot loop
+//  through a reindex.
 // ════════════════════════════════════════════════════════════════════════════
 const pdf = await dc.require("Meta/Obsidian/_datacore/pdf/pdf.jsx");
 const {
@@ -266,16 +244,13 @@ const writeProgress = (notePath, value, key = "progress") =>
 
 /**
  * Auto-advance `progress` from the furthest annotation, and keep the underline
- * count current. Underlines are the "I do not follow this" mark; the number is
- * written to frontmatter so it is queryable across the vault, but the infobox
- * deliberately does not show it — a book's fore-edge is about how far you got,
- * not about how confused you were.
+ * count (the "I do not follow this" mark) current in frontmatter, where it is
+ * queryable; the infobox does not show it.
  *
- * Guards on progress, in order:
- *   • `completed: true` or a finished status → never touch. You may be
- *     re-reading from the beginning, and the old highlights are still in there.
- *   • detected <= stored → never touch. Your manual value wins ties.
- *   • detected beyond the page count → never touch.
+ * Progress is never touched when, in order:
+ *   • `completed: true` or a finished status — you may be re-reading
+ *   • detected <= stored — your manual value wins ties
+ *   • detected is beyond the page count
  */
 function useAnnotations(book, { enabled = true, heatmap = false, buckets = 34, field = "progress" } = {}) {
   const [data, setData] = dc.useState({ last: null, heat: null, total: 0, underlines: 0, explore: 0 });
@@ -315,10 +290,9 @@ function useAnnotations(book, { enabled = true, heatmap = false, buckets = 34, f
 // ════════════════════════════════════════════════════════════════════════════
 //  Artwork lookup
 //
-//  One place that answers "where is this book's picture", so the cover, the
-//  dominant-colour sampler and the heaps on top of the case cannot drift apart.
-//  A PDF is not artwork — it is rasterised separately — so it is filtered out
-//  here rather than in three different callers.
+//  One answer to "where is this book's picture" for the cover, the colour
+//  sampler and the heaps on the case. PDFs are rasterised separately, so they
+//  are filtered out here.
 // ════════════════════════════════════════════════════════════════════════════
 const coverSrc = (book) => {
   const tf = resolveFile(book.cover, book.path);
@@ -456,45 +430,30 @@ function useCoverColor(book) {
 // ════════════════════════════════════════════════════════════════════════════
 //  <BookCover /> — image → PDF first page → typeset placeholder
 //
-//  ONE component draws the artwork everywhere. What is allowed to touch it is
-//  an argument, so a caller opts into an effect rather than inheriting whatever
-//  the last stylesheet happened to say.
+//  One component draws the artwork everywhere; `effects` says what may touch it.
 //
 //    effects="none"     bare image. No board, no shadow.
-//    effects="plain"    image + the drop shadow it casts. NOTHING is painted
-//                       over the artwork: no spine gradient, no corner sheen,
-//                       no tint, no filter. The pixels you supplied are the
-//                       pixels on screen. ← the infobox
+//    effects="plain"    image + the drop shadow it casts. Nothing is painted
+//                       over the artwork: no spine gradient, corner sheen,
+//                       tint or filter. ← the infobox
 //    effects="board"    + the hardcover treatment: spine gradient, corner
 //                       sheen and hairline edge, in an overlay ABOVE the image.
 //    effects="lit"      board, and the shelf's lamps may grade the artwork
 //                       (a brightness/saturation ramp tied to --beam-i). ← the
-//                       shelf, where the lighting is the whole point.
+//                       shelf
 //
-//  Two named wrappers below spell out the two real uses, so neither caller has
-//  to remember which string means what.
+//  The two named wrappers below are the two real uses.
 //
-//  On sharpness. Nothing here sets a scale transform or a compositing hint on
-//  the image: a cover drawn at 260px and then scaled to 267.8px is resampled,
-//  and a promoted layer rasterises once at the layer's own scale and stays
-//  soft. Both read as "the cover went blurry". Callers should also ask for a
-//  raster comfortably wider than the box it lands in, and — since Obsidian
-//  1.13.7 downsamples with a plain bilinear filter — keep that box at or above
-//  FACE_MIN, or the type set on the artwork stops resolving.
+//  Nothing here scales or promotes the image: both resample it soft. Callers
+//  should ask for a raster wider than its box and keep the box at or above
+//  FACE_MIN, below which the type on the artwork stops resolving.
 // ════════════════════════════════════════════════════════════════════════════
 const COVER_FX = new Set(["none", "plain", "board", "lit"]);
 
 /**
- * A book with no artwork, drawn as a book rather than as a placeholder.
- *
- * This is the study's front view: cloth in a colour the path picks, the dark
- * roll of the spine down the left, the page block along the fore-edge, and the
- * title and author set between two rules in the middle. Gilt or silver, again
- * by path, so a shelf of coverless books looks like a shelf rather than a row
- * of the same swatch.
- *
- * Nothing here needs a file to exist; a flat gradient with the filename on it
- * would read as a missing image.
+ * A book with no artwork, drawn as a book: cloth in a colour the path picks,
+ * the spine's roll down the left, the page block along the fore-edge, and the
+ * title and author between two rules — gilt or silver, again by path.
  */
 function BlankCover({ book }) {
   const key = hashOf(book.path);
@@ -566,25 +525,10 @@ const FlatCover = (props) => <BookCover {...props} effects="plain" />;
 // ════════════════════════════════════════════════════════════════════════════
 //  Fitting a full-bleed view to the pane
 //
-//  Why this exists — the scroll bug.
-//
-//  Obsidian's reading view does not keep the whole note laid out. It measures
-//  each top-level section, caches the height, and swaps sections in and out as
-//  they approach the viewport. A ```datacorejsx``` block that renders a case
-//  several thousand pixels tall breaks that bookkeeping: scroll far enough and
-//  the block is recycled, the sizer collapses to the cached (much smaller)
-//  height, scrollTop is clamped against the new scrollHeight — and you are back
-//  at the top. Which is exactly what "scrolling doesn't stop at the bottom, it
-//  jumps back up" is.
-//
-//  The fix is to stop growing. A full-bleed library is given the pane's own
-//  height and scrolls INSIDE itself, so the note is one screen tall, always,
-//  and Obsidian's measurement is trivially right. The browser then handles the
-//  scrolling natively — it stops at the bottom, because scroll containers do.
-//
-//  The height is measured off whichever scroller the view is actually sitting
-//  in, not off vh, so a split pane, a sidebar leaf and a popout window all get
-//  the right number.
+//  A full-bleed paper view takes the pane's height and scrolls inside itself
+//  (the shelf grows and scrolls with the note instead). The height comes from
+//  the scroller the view sits in, not vh, so split panes, sidebars and popouts
+//  all get the right number.
 // ════════════════════════════════════════════════════════════════════════════
 const SCROLLERS = ".markdown-preview-view, .cm-scroller, .view-content";
 
@@ -617,15 +561,9 @@ function useFitHeight(enabled, { min = 380, inset = 18 } = {}) {
 // ════════════════════════════════════════════════════════════════════════════
 //  Looking along a shelf
 //
-//  A row is often several times wider than the case, and the scrollbar is
-//  hidden — so reaching the far end meant a trackpad gesture over a surface
-//  that gives no sign it can be scrolled. Put the pointer near either end of
-//  the case and the shelf travels that way, faster the closer to the edge you
-//  get, the way a map pans.
-//
-//  Deliberately not a re-render: the whole thing runs on scrollLeft inside one
-//  rAF loop, and the loop stops the moment the surface stops moving — so at
-//  either end of a shelf, holding the pointer in the corner costs nothing.
+//  The pointer near either end of the case pans the shelf that way, faster
+//  nearer the edge. It runs on scrollLeft in one rAF loop, never a re-render,
+//  and the loop stops as soon as the surface does.
 // ════════════════════════════════════════════════════════════════════════════
 function useEdgeScroll(enabled = true, { zone = 96, speed = 24 } = {}) {
   const ref = dc.useRef(null);
@@ -708,11 +646,9 @@ const CSS = `
   border-radius: var(--hc-radius);
   background: var(--background-secondary);
 }
-/* The artwork is left alone. No filter, no blend mode, no transform and no
-   compositing hint live on this element — those belong to the board overlay,
-   which paints ON TOP of the image rather than through it. image-rendering
-   auto restates the global rule you set for note images, so nothing in here
-   can quietly switch a cover to a crisper, aliased resampler. */
+/* The artwork is left alone: no filter, blend mode, transform or compositing
+   hint — the board overlay paints on top instead. image-rendering: auto
+   restates the global rule for note images. */
 .hc-cover img {
   display: block; width: 100%; border-radius: inherit;
   image-rendering: auto;
@@ -723,11 +659,8 @@ const CSS = `
    except "none" gets one and the artwork is untouched either way. */
 .hc-fx-plain, .hc-fx-board, .hc-fx-lit { box-shadow: var(--hc-drop); }
 
-/* The hardcover treatment, and the only thing in this file that puts anything
-   over the artwork. Board and lit ask for it; plain and none do not, which is
-   why the infobox now shows the cover you supplied rather than the cover you
-   supplied under a 36% radial darkening. It sits ABOVE the lamp tint at
-   z-index 4 — the soft-light wash was washing the spine gradient out. */
+/* The hardcover treatment, the only thing painted over the artwork (board and
+   lit only). z-index 4 keeps it above the lamp tint, which washes it out. */
 .hc-fx-board::before, .hc-fx-lit::before {
   content: ""; position: absolute; inset: 0; z-index: 4;
   border-radius: inherit; pointer-events: none;
@@ -738,10 +671,8 @@ const CSS = `
 }
 
 /* ── a book with no artwork, drawn front-on ───────────────────────────── */
-/* The study's front view rather than a placeholder: cloth, the dark roll of the
-   spine down the left, the page block along the fore-edge, and the title set
-   between two rules. Nothing here needs an image to exist, so a coverless book
-   stands on the shelf looking like the books either side of it. */
+/* A coverless book's front: cloth, the spine's roll down the left, the page
+   block along the fore-edge, and the title between two rules. */
 .hc-cover.is-blank { aspect-ratio: 2 / 3; }
 .hc-blank {
   position: relative; height: 100%; border-radius: inherit; overflow: hidden;
@@ -781,12 +712,9 @@ const CSS = `
 
 /* ═══ INFOBOX ═════════════════════════════════════════════════════════ */
 .hcx {
-  /* 270px, the same hard floor the shelf uses. Obsidian 1.13.7 downsamples a
-     cover with a plain bilinear filter, and below roughly 270px of rendered
-     width the type set on the artwork stops resolving — you get the shape of a
-     title rather than a title. The box is the cover plus its gutters, so the
-     cover lands on 270 exactly rather than on a percentage that rounds to a
-     fractional pixel and resamples. */
+  /* 270px, the shelf's floor, below which the type on the artwork stops
+     resolving. The box is the cover plus its gutters, so the cover lands on
+     270 exactly rather than on a fractional pixel. */
   --hcx-cover: 270px;
   float: right; width: 298px;
   margin: .2em 0 1.2em 1.6em;
@@ -795,9 +723,8 @@ const CSS = `
   line-height: var(--line-height-tight);
   color: var(--text-normal);
 }
-/* Never squeezed below the floor: at narrow widths it stops floating and takes
-   the full column instead. A percentage max-width would have quietly resampled
-   the cover on a narrow note, which is the blur this whole rule exists to stop. */
+/* Never squeezed below the floor: at narrow widths it takes the full column
+   instead (a percentage max-width would resample the cover). */
 @media (max-width: 760px) {
   .hcx { float: none; width: 100%; margin: 0 0 1.2em 0; }
 }
@@ -806,11 +733,9 @@ const CSS = `
   width: var(--hcx-cover, 270px); max-width: 100%; margin: 0 auto;
   transition: translate .1s ease-out, box-shadow .1s ease-out;
 }
-/* The lift is a whole-pixel translate, not translateY + scale(1.03). Scaling
-   redraws 270px of artwork into 278.1px, and that resample is what turned the
-   cover soft on hover — the deeper shadow already carries the lift. Using the
-   independent translate property also leaves the transform property free, so
-   nothing here fights a theme that sets one. */
+/* The lift is a whole-pixel translate, not a scale, which would resample the
+   cover soft; the deeper shadow carries it. The translate property leaves
+   transform free for themes. */
 .hcx .hc-cover:hover {
   translate: 0 -4px;
   box-shadow: var(--hc-drop-hover);
@@ -888,8 +813,7 @@ const CSS = `
   transition: color .1s ease-out, border-color .1s ease-out;
 }
 .hcx-links a:hover { color: var(--text-accent) !important; border-bottom-color: var(--text-accent); }
-/* rolling release: the one red thing in the box, so it reads as "look at me"
-   rather than as another link. --text-error follows the theme. */
+/* rolling release: the one red thing in the box; --text-error follows the theme. */
 .hcx-links a.hcx-rolling {
   color: var(--text-error) !important;
   border-bottom-color: var(--text-error);
@@ -908,20 +832,16 @@ const CSS = `
 
 /* ═══ SHELF ═══════════════════════════════════════════════════════════ */
 /*
- * Four numbers describe the whole case, and shelf.jsx computes all four from
- * the books actually standing in it — see the metrics memo there. Nothing
- * below is a constant that a bigger book would overflow.
- *
- * (No backticks anywhere in this string: it is a template literal, and one
- * would close it. That is worth remembering before adding a comment here.)
+ * These describe the whole case; the metrics memo in shelf.jsx computes them
+ * from the books standing in it. (No backticks anywhere in this string: it is
+ * a template literal.)
  *
  *   --book-w    the reference cover width (never below FACE_MIN)
  *   --shelf-gap book-to-book pitch, a fraction of the cover
  *   --head-h    clear air above the books: where lamps hang and spiders drop
  *   --shelf-h   total row height, headroom included
- *   --lamp-w    the picture light's shade, a fraction of the cover. Every part
- *               of the fixture and the top of the cone are fractions of THIS,
- *               so the light scales as one object with the books.
+ *   --lamp-w    the picture light's shade, a fraction of the cover; every part
+ *               of the fixture and the top of the cone scale from it.
  */
 .hcs {
   --shelf-plank: var(--background-secondary);
@@ -942,46 +862,38 @@ const CSS = `
   max-width: none !important; width: 100% !important;
   padding-left: 24px !important; padding-right: 24px !important;
 }
+/* Collapsed to nothing, not display: none. The reading view measures a section
+   as the distance to the next one's offsetTop, which is 0 for a display: none
+   sibling: the shelf measured negative, was recycled once the scroll passed
+   it, and the note snapped back to the top. */
 .markdown-preview-sizer:has(.hcs.is-full) > *:not(:has(.hcs.is-full)):not(.markdown-preview-pusher),
-.cm-sizer:has(.hcs.is-full) > *:not(:has(.hcs.is-full)) { display: none !important; }
-
-/* The note stays exactly one screen tall and the library scrolls inside itself.
-   This is the fix for "scrolling jumps back to the top": Obsidian recycles
-   sections of a long note and re-measures them, and a case several thousand
-   pixels tall makes that measurement wrong, so scrollTop gets clamped back to
-   zero. A view that never grows can never be re-measured wrongly, and the
-   browser's own scroll container stops at the bottom the way one should.
-   --hcs-vh is measured off the real pane by useFitHeight; the vh is a fallback
-   for the frame before that lands. */
-.hcs.is-full {
-  padding-top: 8px;
-  display: flex; flex-direction: column;
-  height: var(--hcs-vh, 82vh);
+.cm-sizer:has(.hcs.is-full) > *:not(:has(.hcs.is-full)) {
+  height: 0 !important; min-height: 0 !important; margin: 0 !important;
+  padding: 0 !important; border: 0 !important; overflow: hidden !important;
 }
-/* the case takes the slack; the banner above it keeps its own height */
-.hcs.is-full > * { flex: 0 0 auto; }
-.hcs.is-full .hcs-case { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 
-/* The scrolling surface. Everything that must stay put — the cornice, the
-   plinth, the glass, the daylight tint — is painted on .hcs-case, which does
-   not move; only the shelves inside it do.
-   Both axes scroll on purpose: a row of 270px books is wider than most
-   windows, and looking along a shelf is a sideways gesture. */
+.hcs.is-full { padding-top: 8px; }
+
+/* The shelves scroll sideways only — a row of 270px books is wider than most
+   windows — and the note's own scroll moves the case up and down. No
+   scrollbar: the edges pan the shelf (useEdgeScroll), as do Shift+wheel and a
+   trackpad. The cornice, plinth, glass and daylight are painted on .hcs-case,
+   which does not scroll sideways. */
 .hcs-stacks {
-  position: relative; flex: 1 1 auto; min-height: 0;
-  overflow: auto; overscroll-behavior: contain;
+  position: relative;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scrollbar-width: none;
   /* clearance for the heaps above the first shelf and the label plate that
      hangs 4px below the last board — a scroll container clips both otherwise */
   padding: 20px 0 12px;
-  /* ONE COLUMN, and every shelf is that column wide.
-     A grid column sizes to the widest item and stretches the rest to it, so a
-     short shelf under a long one still runs the full length (max-content per
-     shelf would end the furniture early). minmax(100%, max-content) also keeps
-     a nearly empty case filling the pane. */
+  /* One column, as wide as the widest shelf, with every shelf stretched to it,
+     so the end of a long shelf never looks past the end of a short one.
+     minmax(100%, max-content) keeps a sparse case filling the pane. */
   display: grid;
   grid-auto-flow: row;
   grid-template-columns: minmax(100%, max-content);
 }
+.hcs-stacks::-webkit-scrollbar { display: none; }
 .hcs-stacks > .hcs-section { width: auto; min-width: 0; }
 
 /* ── the case: the whole view is one piece of furniture ───────────────── */
@@ -1031,14 +943,12 @@ const CSS = `
 
 /* ── rack, or bookcase ────────────────────────────────────────────────── */
 /*
- * rack=true (the default) is what this has always been: separate boards with
- * air between them, each one its own piece of shelving.
+ * rack=true (the default): separate boards with air between them.
  *
- * rack=false is the study's case — one carcass, compartments stacked straight
- * onto each other, each board doubling as the ceiling of the shelf below it.
- * That is what a bookshelf actually is, and it is a layout change only: the
- * gap goes, the board becomes the divider, the corners square off and the side
- * panels run unbroken past every board instead of stopping short of each one.
+ * rack=false: one carcass, compartments stacked straight onto each other, each
+ * board the ceiling of the shelf below. Layout only: the gap goes, the board
+ * becomes the divider, the corners square off and the side panels run
+ * unbroken past every board.
  */
 .hcs.no-rack .hcs-section { margin-bottom: 0; }
 .hcs.no-rack .hcs-section:last-child { margin-bottom: 4px; }
@@ -1052,8 +962,7 @@ const CSS = `
 .hcs.no-rack .hcs-label { bottom: -1px; }
 
 /* ── the label plate, screwed to the front edge of the board ──────────── */
-/* Plate and button travel together at the near end of the board: at opposite
-   ends, "Full shelf" ends up a screen and a half away on a long row. */
+/* Plate and button travel together at the near end of the board. */
 .hcs-label {
   position: absolute; z-index: 12; left: 24px; bottom: -4px;
   display: flex; align-items: center; gap: 14px;
@@ -1095,13 +1004,9 @@ const CSS = `
 .hcs-more:hover { color: rgba(255,236,205,.95); }
 
 /* ── the end walls ────────────────────────────────────────────────────── */
-/* The study's case has a side to it, and a shelf that just runs off the edge of
-   the screen never tells you where it stops. A row here can be several times
-   the width of the case, so the walls belong to the SHELF, not to the case:
-   .hcs-shelf spans the whole run, so these land at the true ends of it and
-   scroll into view when you reach them.
-   z-index 7 puts them in front of a book standing at rest and behind one you
-   have picked up (8 with beams, so the lifted book passes in front). */
+/* End walls belong to the shelf, not the case: .hcs-shelf spans the whole run,
+   so they land at its true ends and scroll into view. z-index 7 puts them in
+   front of a book at rest and behind a lifted one (8 with beams). */
 .hcs-wall {
   position: absolute; z-index: 7; top: 0; bottom: 16px; pointer-events: none;
   width: calc(var(--book-w) * .052); min-width: 11px;
@@ -1128,11 +1033,9 @@ const CSS = `
 .hcs-shelf.is-drop { background: rgba(var(--color-accent-rgb), .07); }
 .hcs-shelf.is-drop .hcs-plank { box-shadow: 0 0 0 1px var(--text-accent), 0 12px 20px -10px rgba(0,0,0,.45); }
 
-/* The headroom is padding on the row and the row's min-height includes it —
-   Obsidian sets box-sizing: border-box everywhere, so a row with books and an
-   empty row come out the same height, which is what keeps the boards level.
-   Every slot is stretched to that full height, so the top of a slot is the top
-   of the compartment: lamps and spiders hang from there, not from the book. */
+/* The headroom is padding inside the row's min-height (border-box), so full
+   and empty rows match and the boards stay level. Slots stretch to the full
+   height, so lamps and spiders hang from the compartment top, not the book. */
 .hcs-row {
   position: relative; z-index: 1;
   display: flex; align-items: stretch; gap: var(--shelf-gap);
@@ -1185,21 +1088,15 @@ const CSS = `
 .hcs-slot.is-dragging { opacity: .35; }
 .hcs-slot[draggable="true"] { -webkit-user-drag: element; }
 
-/* The artwork wrapper is the thing that lifts and rocks — the cover, the web
-   and the ribbon are all inside it, so they travel together. The crack and the
-   hairline bar stay outside, because they belong to the board, not the book. */
-/* flex: 0 0 auto so a book taller than its compartment overhangs the board
-   rather than being quietly squashed to fit it — a squashed cover is a
-   resampled cover, which is the blur again. */
+/* The artwork wrapper lifts and rocks, carrying the cover, the web and the
+   ribbon; the crack and the bar stay on the board. flex: 0 0 auto lets a tall
+   book overhang the board rather than be squashed (resampled). */
 .hcs-art {
   position: relative; z-index: 1; flex: 0 0 auto; width: 100%;
   transform-origin: 50% 100%;
   rotate: var(--tilt, 0deg); translate: 0 0;
-  /* No translateZ(0) and no backface-visibility here. Both force the book onto
-     its own composited layer, which rasterises the cover once at the layer's
-     scale and leaves it soft for the rest of the animation — the blur you saw
-     on the shelf. The rotate/translate transitions below promote the element
-     for exactly as long as they run, which is all the promotion it needs. */
+  /* No translateZ(0) or backface-visibility: a promoted layer rasterises the
+     cover once and leaves it soft. The transitions promote it while they run. */
   transition:
     rotate .5s cubic-bezier(.22,1,.36,1),
     translate .2s cubic-bezier(.22,1,.36,1),
@@ -1218,14 +1115,10 @@ const CSS = `
   position: relative; width: 100%;
   transition: box-shadow .2s ease-out, filter .25s ease-out;
 }
-/* will-change is deliberately absent here: promoting the row on hover pinned
-   every cover to a stale raster for as long as the pointer stayed in the row,
-   which is the "hovering makes the book blurry" you reported. */
+/* No will-change: promoting the row on hover pinned every cover to a stale, blurry raster. */
 
 .hcs-slot:hover { z-index: 5; }
-/* Lift and straighten — no oscillation. The rest tilt eases out to zero on
-   the existing rotate transition, which is the settled look the leaning book
-   already had. */
+/* Lift and straighten, no oscillation: the rest tilt eases to zero. */
 .hcs-slot:hover .hcs-art {
   translate: 0 -9px;
   rotate: 0deg;
@@ -1254,9 +1147,7 @@ const CSS = `
 /* A painted board has no timber to show, so its end walls take the case's own
    grey rather than the wood fallbacks the base rule carries. */
 .hcs.mode-board  { --case-wood: #2f3237; --wood-face: #5c6068; --wood-lip: #34383e; }
-/* Two deco veneers. They are ordinary materials — nothing stops oak under art
-   deco, or ebony under the library — but these are the two that design
-   actually used, so they are the ones it reaches for by default. */
+/* Two deco veneers: ordinary materials, but the ones art deco reaches for by default. */
 .hcs.mode-ebony    { --wood-face: #2b3036; --wood-lip: #14171a; --wood-grain: 255,255,255; --case-wood: #14171a; }
 .hcs.mode-macassar { --wood-face: #6b4a2c; --wood-lip: #33200f; --wood-grain: 0,0,0; --case-wood: #2a1a0e; }
 .hcs.mode-board .hcs-case::before,
@@ -1426,8 +1317,7 @@ const CSS = `
 
 /* ═══ BOOKEND ═════════════════════════════════════════════════════════ */
 /* Aged brass rather than chrome — brushed, warm, and it belongs next to wood. */
-/* A third of the way up the board, the way a real one is (not sized off
-   --book-w, which gives a 270px-wide book a 259px bookend). */
+/* A third of the way up the board, like a real one. */
 .hcs-bookend {
   position: relative; flex: 0 0 auto; align-self: flex-end;
   width: 9px; height: calc(var(--book-w) * .3);
@@ -1508,10 +1398,9 @@ const CSS = `
 }
 
 /* ═══ POINTER LAMP ════════════════════════════════════════════════════ */
-/* One warm light for the whole row, tracking the pointer. Two overlays sit
-   above the books: the shade layer multiplies, so distance darkens and cools
-   the artwork; the glow layer screens, so the near side picks up tungsten
-   warmth. That is what makes the light fall ON the books. */
+/* One warm light for the whole row, tracking the pointer. The shade layer
+   multiplies, darkening and cooling with distance; the glow layer screens
+   tungsten warmth onto the near side. */
 .hcs.has-lamp .hcs-shelf { isolation: isolate; }
 .hcs.has-lamp .hcs-row { --lamp-x: 50%; --lamp-on: 0; }
 
@@ -1555,20 +1444,16 @@ const CSS = `
 .hcs.is-unlit .hcs-case { filter: brightness(.55) saturate(.8); }
 
 /* ═══ DEPTH OF FIELD ══════════════════════════════════════════════════ */
-/* Graded by sibling proximity rather than by measuring pointer distance — no
-   JS, no layout reads. A brightness falloff rather than a blur: the eye reads
-   it as depth just as well, and nothing becomes unreadable. */
+/* Graded by sibling proximity, not pointer distance (no JS, no layout reads),
+   and by brightness rather than blur, so nothing becomes unreadable. */
 .hcs.has-dof .hcs-slot { transition: filter .25s ease-out; }
-/* Excluded with :not(:hover) rather than un-blurred by a later rule. :has()
-   carries its argument's specificity, so a plain hover rule setting filter to
-   none LOSES to the blur selector, and the book you point at stays soft.
-   Never selecting it means there is no specificity race to lose. */
+/* Excluded with :not(:hover) rather than reset by a later rule: :has() carries
+   its argument's specificity, so a plain hover rule would lose. */
 .hcs.has-dof .hcs-row:has(.hcs-slot:hover) .hcs-slot:not(:hover) { filter: brightness(.74) saturate(.84); }
 .hcs.has-dof .hcs-row .hcs-slot:not(:hover):hover + .hcs-slot,
 .hcs.has-dof .hcs-row .hcs-slot:not(:hover):has(+ .hcs-slot:hover) { filter: brightness(.9) saturate(.94); }
 
-/* The doors are a sheen on the front of the case, nothing more. Blurring the
-   books behind them cost more legibility than the effect was worth. */
+/* The doors are only a sheen; blurring the books behind them cost too much legibility. */
 
 /* ═══ GLASS DOORS ═════════════════════════════════════════════════════ */
 /* Two glazed doors meeting on a central stile. One sheen layer over the whole
@@ -1609,8 +1494,7 @@ const CSS = `
 }
 
 /* ═══ BEAM TINT ═══════════════════════════════════════════════════════ */
-/* The lamp colour ON the artwork. soft-light keeps the cover's own values and
-   shifts only its temperature, which is what makes a cold book look unlit. */
+/* The lamp colour on the artwork: soft-light shifts only its temperature. */
 .hcs-tint {
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   border-radius: inherit;
@@ -1621,10 +1505,9 @@ const CSS = `
 }
 
 /* ═══ SPINES ════════════════════════════════════════════════════════ */
-/* A real spine photograph if the folder has one (see findSpineImage), and
-   otherwise the cloth spine from the study: a capped head, the title set
-   vertically, two rules and a printer's mark at the foot. Colour is sampled
-   from the cover art, so a turned book and its spine belong to each other. */
+/* A real spine photograph if there is one (findSpineImage), else the cloth
+   spine: a capped head, the title set vertically, two rules and a printer's
+   mark at the foot, in a colour sampled from the cover art. */
 .hcs-sp {
   position: relative; flex: 0 0 auto; width: 100%; height: var(--sp-h, 190px);
   display: flex; flex-direction: column; overflow: hidden;
@@ -1676,9 +1559,8 @@ const CSS = `
   border: 1px solid rgba(240,232,212,.5);
 }
 /* a red ribbon marks whatever is open right now */
-/* Inside .hcs-sp, so it hangs from the spine's own head however tall the slot
-   is stretched, and set over toward the fore-edge so it never crosses the
-   title running down the middle. */
+/* Inside .hcs-sp, so it hangs from the spine's own head, set toward the
+   fore-edge clear of the title. */
 .hcs-sp-ribbon, .hcs-art .hcs-open-ribbon {
   position: absolute; top: -7px; width: 7px; height: 62px; z-index: 6;
   background: linear-gradient(180deg, #b5273a, #7d1523);
@@ -1708,8 +1590,7 @@ const CSS = `
 .hcs-slot { transition: width .4s cubic-bezier(.2,.8,.2,1); }
 
 /* ═══ THE PILE ON TOP ═════════════════════════════════════════════════ */
-/* Overflow is a fact about the shelf, not a UI affordance — the books that do
-   not fit lie in a heap on the top of the case. */
+/* Books that do not fit lie in a heap on top of the case. */
 .hcs-toppile {
   position: absolute; left: 0; right: 0; top: -14px; height: 0;
   display: flex; align-items: flex-end; justify-content: flex-end;
@@ -1740,17 +1621,12 @@ const CSS = `
 .hcs.beams .hcs-slot { z-index: 4; }
 .hcs.beams .hcs-slot:hover { z-index: 8; }
 
-/* One lamp per book, every head hanging from a single rail at one height —
-   the fixture, cone and drifting motes are the study's spotlight, but there
-   is no fixed point on the shelf: each book has its own. Slots are stretched
-   to the row height by the base rule, so every head hangs level. */
+/* One lamp per book, every head hanging level from one rail (slots stretch to
+   the row height). */
 .hcs.beams .hcs-row { position: relative; }
 
-/* Behind the lamps. At z-index 5 it out-stacked every slot that was not
-   hovered — the hovered book jumped to 5 and cleared it, and the rest of the
-   row had their heads painted over by the bar they hang from. */
-/* Across the stems, wherever the headroom puts them: a fixed offset would sit
-   low in a shallow compartment and high in a deep one. */
+/* Behind the lamps (above 5 it paints over unhovered heads), across the stems
+   wherever the headroom puts them. */
 .hcs-rail {
   position: absolute; z-index: 3; pointer-events: none;
   left: 8px; right: 8px; top: calc(var(--head-h) * .12); height: 5px; border-radius: 3px;
@@ -1758,9 +1634,8 @@ const CSS = `
   box-shadow: 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.16);
 }
 
-/* One anchor for the whole fixture. The head and the cone are both centred on
-   this zero-width column, so the lamp is always exactly where its beam
-   begins — they are positioned against the same box, not against the slot. */
+/* One anchor for the whole fixture: head and cone centre on this zero-width
+   column, so the lamp sits exactly where its beam begins. */
 .hcs-lampunit {
   position: absolute; z-index: 6; pointer-events: none;
   left: 50%; top: 0; width: 0; height: 100%;
@@ -1768,19 +1643,11 @@ const CSS = `
 
 /* ── the fixture: stem, shade, and an LED that takes the reading colour ─────
  *
- * SIZE AND PLACEMENT, both taken from the study rather than from constants.
- *
- * The study hangs a 40px shade over a 141px cover in a compartment with 43px
- * of air above a 214px book. Those are RATIOS, and they are what got copied
- * here — not the pixels, which belong to a case less than half this one's size:
+ * Sized by ratios to the books, not pixels:
  *
  *   shade width   0.28 x the cover      -> --lamp-w, set by the metrics memo
  *   fixture drop  0.93 x the shade      -> stem + shade + bulb
- *   head air      0.20 x the tallest book, so the fixture fills it the way the
- *                 study's does instead of floating in a third of it
- *
- * A 34px shade over a 270px cover was the old number kept while the furniture
- * grew around it: a reading light the size of a doorbell.
+ *   head air      0.20 x the tallest book, so the fixture fills it
  *
  * Everything below is a fraction of --lamp-w, so the whole fixture scales as
  * one object and the bulb always sits where the cone begins.
@@ -1796,22 +1663,11 @@ const CSS = `
   width: calc(var(--lamp-w, 56px) * .40); height: calc(var(--lamp-w, 56px) * .30);
   background: linear-gradient(90deg, #585d63, #a9afb5 45%, #4f545a);
 }
-/* THE SHADE'S CURVE, and why it needs the slash.
- *
- * The study's shade is 40x22 with border-radius: 3px 3px 11px 11px — square
- * corners, so the same radius each way. Restated as a single list of
- * percentages that is no longer true: a percentage radius resolves against the
- * WIDTH horizontally and against the HEIGHT vertically, and this box is roughly
- * 76x42, so one number per corner gives two different radii and the scoop along
- * the bottom comes out barely bent. 28% of 42px is 12px where the study wants
- * 21px, which is the flat-bottomed shade.
- *
- * The two-axis form is the fix: horizontal radii before the slash, vertical
- * after. 3/40 and 3/22, 11/40 and 11/22 — the study's own proportions, and now
- * they hold at any --lamp-w.
- *
- * (Art deco never showed this because it throws the radius away entirely and
- * cuts its shade with a clip-path polygon instead.)
+/* The shade's curve needs the slash: a percentage radius resolves against the
+ * width horizontally and the height vertically, so one number per corner
+ * flattens the scoop. Horizontal radii before the slash, vertical after — 3/40
+ * and 3/22, 11/40 and 11/22 of a 40x22 shade — hold at any --lamp-w.
+ * (Art deco cuts its shade with a clip-path instead.)
  */
 .hcs-lamphead b {
   display: block; width: 100%; height: calc(var(--lamp-w, 56px) * .55);
@@ -1833,17 +1689,10 @@ const CSS = `
 .hcs-slot:hover .hcs-lamphead { --br: var(--beam-rgb-h); --bi: var(--beam-i-h); }
 
 /* ── the cone ─────────────────────────────────────────────────────────── */
-/* Width comes from the book: --cone-w is CONE_RATIO x the cover, so a fat
-   volume gets a proportionally wider pool and the spread stays believable at
-   any book size. It is now wider than the book-to-book pitch, so each lamp
-   spills onto its neighbours — a row of picture lights does overlap, and the
-   alternative was a stripe of light down each book with dark bands between.
-   The apex is narrow (6% of the cone) because that is the bulb; the old 10%
-   read as a slab of light leaving the fixture rather than a point source. */
-/* Starts at the bulb, --fix-h (the fixture's own height) down from the
-   compartment ceiling, so it meets big and small shades alike.
-   The apex is the study's 14% rather than 6%: a point source under a shade
-   this size read as a laser, and a picture light does throw from a slot. */
+/* Width comes from the book (--cone-w is CONE_RATIO x the cover), wider than
+   the pitch so each lamp spills onto its neighbours. It starts at the bulb,
+   --fix-h (the fixture's height) below the compartment ceiling. The apex is
+   14% of the cone: a picture light throws from a slot, not a point. */
 .hcs-beam {
   --fix-h: calc(var(--lamp-w, 56px) * .93);
   position: absolute; left: 0; translate: -50% 0;
@@ -1882,8 +1731,7 @@ const CSS = `
 }
 
 /* the pool the lamp casts on the board */
-/* 0.84 of the cone, the way the study's 210px pool sits under its 250px cone —
-   the pool is where the light LANDS, so it is narrower than the cone is wide. */
+/* 0.84 of the cone: the pool, where the light lands, is narrower than the cone. */
 .hcs-pool {
   position: absolute; z-index: 2; pointer-events: none;
   left: 50%; translate: -50% 0; bottom: -2px;
@@ -1910,9 +1758,8 @@ const CSS = `
 .hcs.spot-solo .hcs-plank { transition: filter .3s ease-out; }
 
 /* ── what the light does to the artwork ───────────────────────────────── */
-/* Scoped to hc-fx-lit, which only the shelf asks for. The infobox draws the
-   same component with effects="plain" and is therefore untouched by every
-   rule below, however the shelf is configured. */
+/* Scoped to hc-fx-lit, which only the shelf asks for; the infobox's
+   effects="plain" is untouched by every rule below. */
 .hcs.beams .hc-fx-lit img {
   /* capped at 1.0: a white cover pushed past white clips to paper and the
      title disappears. The lamp is carried by the cone, not by the artwork. */
@@ -1923,10 +1770,8 @@ const CSS = `
 }
 /* Hovered, the cover is shown exactly as it is — same fidelity as the
    infobox. No tint, no grade, no blur. */
-/* Hover lifts the book a little, the way the study does — but with a
-   soft-light wash rather than a brightness filter. brightness() drives white
-   past white and eats the title; soft-light raises midtones and leaves
-   highlights almost untouched, so a pale cover stays readable. */
+/* Hover brightens the book with a soft-light wash, not brightness(), which
+   drives white past white and eats the title on a pale cover. */
 .hcs.beams .hcs-slot:hover .hc-fx-lit img { filter: saturate(1.05); }
 .hcs .hcs-slot:hover .hcs-tint {
   background: rgb(255, 244, 224);
@@ -1935,18 +1780,13 @@ const CSS = `
 
 /* ═══ ART DECO ════════════════════════════════════════════════════════ */
 /*
- * shelf="art deco". A whole design rather than a palette swap: gold on near
- * black, stepped rules instead of mouldings, chamfered corners in place of
- * rounded ones, and the sunburst fan as the case's own mark.
+ * shelf="art deco": gold on near black, stepped rules instead of mouldings,
+ * chamfered corners instead of rounded ones, and the sunburst fan as the
+ * case's mark. Last in the sheet on purpose: the wood modes are also one class
+ * deep on .hcs, so source order lets deco win however wood is set.
  *
- * It comes last in the sheet on purpose. The wood modes and this are both one
- * class deep on .hcs, so they tie on specificity and source order decides —
- * which is what lets shelf="art deco" quietly win however wood is set.
- *
- * The sheen is one gradient reused everywhere metal appears, so every gilt
- * edge in the case catches the light from the same direction. Two SVGs carry
- * the geometry: the fan, and the stepped corner (one file, mirrored for the
- * right-hand side).
+ * One sheen gradient serves all the metal. Two SVGs carry the geometry: the
+ * fan, and the stepped corner (mirrored for the right).
  */
 .hcs.deco {
   --deco-gold: #e3c24a;
@@ -1954,10 +1794,8 @@ const CSS = `
   --deco-ink: #14171a;
   --gold-sheen: linear-gradient(150deg, #e3c24a 0%, #e8c953 26%, #eedc8f 45%, #f7efc9 51%, #e5c65b 80%);
   --gold-sheen-deep: linear-gradient(150deg, #8f7326, #e3c24a 50%, #8f7326);
-  /* The board stays brass whatever the timber — it is the signature of the
-     design, not a material choice. Everything else in the carcass takes
-     --case-wood / --wood-face from the mode-* block above, so the wood
-     argument is real here too: deco is veneer AND brass, not brass alone.
+  /* The board stays brass whatever the timber; the rest of the carcass takes
+     --case-wood / --wood-face from the mode-* block above.
      (No backticks in this string — it is a template literal.) */
   --shelf-plank: #c8a63a;
   --deco-fan: url("data:image/svg+xml,%3Csvg width='13.533353mm' height='13.665177mm' viewBox='0 0 13.533353 13.665177' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CclipPath clipPathUnits='userSpaceOnUse' id='c'%3E%3Crect style='fill:%23ffffff;stroke:none' width='13.533353' height='13.665177' x='86.292633' y='113.41824' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg transform='translate(-86.292633,-113.41824)'%3E%3Cg clip-path='url(%23c)' style='fill:none;stroke:%23000000;stroke-width:0.264999'%3E%3Cpath d='m 93.059653,127.08343 a 6.766336,6.766336 0 0 1 6.766336,-6.76634' /%3E%3Cpath d='m 86.293106,120.31709 a 6.766336,6.766336 0 0 1 6.766336,6.76634' /%3E%3Cpath d='m 86.29772,120.31709 a 6.766336,6.766336 0 0 1 6.766336,-6.76633 6.766336,6.766336 0 0 1 6.766336,6.76633' /%3E%3Cpath d='m 93.059874,127.1504 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 93.059133,127.15011 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 93.059678,127.12677 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='m 93.05944,127.14092 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 93.060181,127.14063 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 93.059636,127.11729 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 93.059651,127.08342 V 113.55076' /%3E%3Cpath d='m 86.292873,120.39394 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 86.292132,120.39365 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 86.292677,120.37031 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='M 86.29265,120.32696 V 106.7943' /%3E%3Cpath d='m 99.82532,120.38446 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 99.826061,120.38417 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 99.825516,120.36083 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 99.825531,120.32696 V 106.7943' /%3E%3Cpath d='m 86.293329,133.91673 c -0.01,-1.5182 0.319616,-3.03719 0.987396,-4.44032 1.087733,-2.28553 2.979917,-4.06856 5.289083,-5.02655' /%3E%3Cpath d='m 86.292588,133.91644 c -0.01822,-4.33881 1.731996,-8.53918 4.893523,-11.58816' /%3E%3Cpath d='m 86.293133,133.8931 c -0.0045,-4.49797 0.69305,-8.97012 2.068264,-13.25456' /%3E%3Cpath d='M 86.293106,133.84975 V 120.31709' /%3E%3Cpath d='m 99.825778,133.90725 c 0.01,-1.5182 -0.319616,-3.03719 -0.987396,-4.44032 -1.087733,-2.28553 -2.979917,-4.06856 -5.289083,-5.02655' /%3E%3Cpath d='m 99.826519,133.90696 c 0.01822,-4.33881 -1.731996,-8.53918 -4.893523,-11.58816' /%3E%3Cpath d='m 99.825974,133.88362 c 0.0045,-4.49797 -0.69305,-8.97012 -2.068264,-13.25456' /%3E%3Cpath d='M 99.825989,133.84975 V 120.31709' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
@@ -1989,8 +1827,7 @@ const CSS = `
   height: 14px; border-radius: 0; background: var(--gold-sheen-deep);
   box-shadow: 0 -4px 12px -3px rgba(0,0,0,.6);
 }
-/* the stepped corners, one drawing mirrored. Painted on the case, which does
-   not scroll, so they stay at the corners of the furniture. */
+/* the stepped corners, one drawing mirrored, on the case, which does not scroll */
 .hcs-corner {
   position: absolute; z-index: 14; top: 13px; width: 40px; height: 40px;
   display: none; pointer-events: none;

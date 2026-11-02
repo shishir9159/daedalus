@@ -2,113 +2,24 @@
 //  critters.jsx  —  cobwebs and the spider
 //  Location: Meta/Obsidian/_datacore/book/critters.jsx
 //
-//  Ported from the "Long unread" design study. Two things matter about the
-//  technique, and both fix the stretching the old SVG version had:
-//
-//    · a web is built from absolutely-positioned divs anchored at a 0x0 point
-//      and measured in px — spokes are 1px-tall gradient bars rotated about
-//      their left edge, ring segments are `border-bottom` on a 50%-rounded box
-//      so the thread sags. Nothing scales, so nothing distorts.
-//    · the whole web sits inside an `overflow: hidden` frame, so it is clipped
-//      to the cover or the shelf rather than squashed to fit it.
+//  Webs are smooth canvases from cobweb.jsx, sized to the cover or spine they
+//  hang on and clipped to it, so they are cut off, never squashed.
 //
 //  The spider hangs on a one-pixel thread and sways. Its legs are the top and
-//  right borders of a box with a 100% corner radius, rotated — which gives a
-//  tapering curve no border-radius alone would.
+//  right borders of a box with a 100% corner radius, rotated — a tapering
+//  curve no border-radius alone gives.
 //
 //  NOTE: never declare a local named `h` in this file — it is the JSX pragma.
 // ════════════════════════════════════════════════════════════════════════════
 
 const core = await dc.require("Meta/Obsidian/_datacore/book/core.jsx");
-const { hashOf, clamp } = core;
+const cw = await dc.require("Meta/Obsidian/_datacore/book/cobweb.jsx");
+const { clamp } = core;
+const { Cobweb: WebCanvas, CORNERS, resolve } = cw;
 
 const WEB_COLOR = "#e9e3d5";
-
-// ── deterministic noise (mulberry32) ───────────────────────────────────────
-const rng = (seed) => {
-  let a = seed >>> 0;
-  return () => {
-    a += 0x6D2B79F5;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-};
-
-const rgba = (hex, a) => {
-  const raw = String(hex || WEB_COLOR).replace("#", "");
-  const n = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
-  const r = parseInt(n.slice(0, 2), 16);
-  const g = parseInt(n.slice(2, 4), 16);
-  const b = parseInt(n.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${clamp(0, a, 1).toFixed(3)})`;
-};
-
-/**
- * A corner web. Spokes radiate from the anchor across the arc a0..a1; ring
- * segments hang between adjacent spokes, sagging back toward the anchor.
- * Returns ready-to-spread style objects.
- */
-function buildWeb({
-  seed, radius, a0, a1, spokes: n, rings,
-  color = WEB_COLOR, opacity = 0.62, torn = true,
-}) {
-  const R = rng(seed);
-  const spread = (a1 - a0) / (n - 1);
-  const th = [], len = [];
-
-  for (let i = 0; i < n; i++) {
-    const jit = (i === 0 || i === n - 1) ? 0 : (R() - 0.5) * spread * 0.55;
-    th.push(a0 + spread * i + jit);
-    len.push(radius * (0.84 + R() * 0.32));
-  }
-
-  const parts = [];
-
-  for (let i = 0; i < n; i++) {
-    const a = opacity * (0.72 + R() * 0.34);
-    parts.push({
-      position: "absolute", left: 0, top: 0, height: "1px",
-      width: `${len[i].toFixed(1)}px`,
-      transformOrigin: "0 50%",
-      transform: `rotate(${th[i].toFixed(2)}deg)`,
-      background: `linear-gradient(90deg, ${rgba(color, a)} 0%, ${rgba(color, a * 0.7)} 62%, ${rgba(color, 0)} 100%)`,
-    });
-  }
-
-  for (let k = 0; k < rings; k++) {
-    const base = (k + 1) / (rings + 0.55);
-    for (let i = 0; i < n - 1; i++) {
-      if (torn && R() < 0.08) continue;                    // a strand has gone
-      const r1 = len[i] * base * (0.9 + R() * 0.2);
-      const r2 = len[i + 1] * base * (0.9 + R() * 0.2);
-      const t1 = th[i] * Math.PI / 180, t2 = th[i + 1] * Math.PI / 180;
-      const x1 = r1 * Math.cos(t1), y1 = r1 * Math.sin(t1);
-      const dx = r2 * Math.cos(t2) - x1, dy = r2 * Math.sin(t2) - y1;
-      const L = Math.hypot(dx, dy);
-      const ang = Math.atan2(dy, dx) * 180 / Math.PI;
-      const sag = Math.max(3, L * (0.13 + R() * 0.13)) * 2;
-      const a = opacity * (0.34 + R() * 0.5) * (1 - base * 0.2);
-      parts.push({
-        position: "absolute", boxSizing: "border-box",
-        left: `${x1.toFixed(1)}px`, top: `${y1.toFixed(1)}px`,
-        width: `${L.toFixed(1)}px`, height: `${sag.toFixed(1)}px`,
-        marginTop: `${(-sag / 2).toFixed(1)}px`,
-        transformOrigin: "0 50%", transform: `rotate(${ang.toFixed(2)}deg)`,
-        borderBottom: `1px solid ${rgba(color, a)}`, borderRadius: "50%",
-      });
-    }
-  }
-
-  return parts;
-}
-
-const Strands = ({ parts, left, top }) => (
-  <div class="hcs-web-anchor" style={{ left, top }}>
-    {parts.map((s, i) => <div key={i} style={s} />)}
-  </div>
-);
+// seconds per breath of a web: the spider's sway
+const WEB_BREATH = 9;
 
 // ── neglect ────────────────────────────────────────────────────────────────
 const WEB_STEPS = [21, 60, 120, 240];   // days at which each level begins
@@ -133,56 +44,45 @@ function useNeglect(path, enabled = true) {
 }
 
 // ── the web on a cover ─────────────────────────────────────────────────────
-// spokes / rings / reach, as a fraction of the cover width, per level
-const WEB_DENSITY = [
-  null,
-  { spokes: 4, rings: 2, reach: 0.46 },
-  { spokes: 5, rings: 3, reach: 0.66 },
-  { spokes: 7, rings: 4, reach: 0.88 },
-  { spokes: 9, rings: 5, reach: 1.10 },
-];
+// reach per level, as a fraction of webReach
+const WEB_REACH = [0, 0.46, 0.66, 0.88, 1.1];
 
 /**
- * `width` and `height` are the box the web is hanging in, not the web's own
- * size — it works out its reach from them.
- *
- * Both matter: a web sized off one number stays a knot in the corner when the
- * case is rescaled and the box grows. A corner web reaches across the narrow
- * side and about half way down the long one.
+ * How far a corner web reaches in a `width` × `height` box: across the narrow
+ * side and about half way down the long one. Both sides matter — a web sized
+ * off one stays a knot in the corner when the box grows.
  */
 const webReach = (width, height) =>
   Math.max(width, Math.min(height * 0.5, width * 3));
 
-function Cobweb({ level, seed, width = 135, height = width * 1.5, color = WEB_COLOR, opacity = 0.6 }) {
-  const lvl = clamp(1, level | 0, 4);
-  const d = WEB_DENSITY[lvl];
-  const key = hashOf(seed);
-  const span = webReach(width, height);
-
-  const head = dc.useMemo(() => buildWeb({
-    seed: key + 1207, radius: span * d.reach, a0: 2, a1: 88,
-    spokes: d.spokes, rings: d.rings, color, opacity,
-  }), [key, lvl, span, color, opacity]);
-
-  // once it is properly abandoned, a second web takes the opposite corner
-  const foot = dc.useMemo(() => buildWeb({
-    seed: key + 5501, radius: span * d.reach * 0.5, a0: 184, a1: 266,
-    spokes: Math.max(4, d.spokes - 2), rings: Math.max(2, d.rings - 1),
-    color, opacity: opacity * 0.85,
-  }), [key, lvl, span, color, opacity]);
-
+/**
+ * The web on a book, grown by `level` (0..4, from useNeglect; 0 draws nothing).
+ * `width` and `height` are the box it hangs in, in CSS px, not the web's own
+ * size. `seed` gives each book a web of its own; from level 3 a second, smaller
+ * web takes the opposite corner. `color` and `opacity` are the strands'.
+ * `sway` makes it breathe, once every WEB_BREATH seconds, even under reduced
+ * motion — as <Shelves motion> does for the spider.
+ */
+function Cobweb({ level, seed, width = 135, height = width * 1.5, color = WEB_COLOR, opacity = 0.6, sway = false }) {
   if (!level) return null;
-
-  // The anchor sits just outside the corner so the strands come from beyond the
-  // edge rather than starting on it — as a fraction of the reach, so it stays
-  // in proportion on a spine and on a cover alike.
-  const off = Math.round(span * 0.045);
+  const lvl = clamp(1, level | 0, 4);
+  const reach = (WEB_REACH[lvl] * webReach(width, height)) / Math.min(width, height);
+  const corner = resolve({ seed }).corner;
+  const web = {
+    fill: true, pixelated: false, scale: 1, backdrop: false, color,
+    animate: sway && "always", period: WEB_BREATH,
+    width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)),
+  };
 
   return (
     <div class="hcs-webs" aria-hidden="true">
-      <Strands parts={head} left={`${-off}px`} top={`${-off - 2}px`} />
+      <WebCanvas {...web} seed={seed} reach={reach} webOpacity={opacity} />
       {lvl >= 3 && (
-        <Strands parts={foot} left={`calc(100% + ${off}px)`} top={`calc(100% + ${off + 2}px)`} />
+        // CORNERS lists each corner's opposite at the mirrored index
+        <WebCanvas
+          {...web} seed={`${seed}:foot`} corner={CORNERS[3 - CORNERS.indexOf(corner)]}
+          reach={reach * 0.5} webOpacity={opacity * 0.85}
+        />
       )}
     </div>
   );
@@ -196,14 +96,16 @@ function ShelfWear({ level }) {
 
 // ── the spider ─────────────────────────────────────────────────────────────
 /**
- * `thread` is a length, and it takes a string as readily as a number, because
- * the shelf needs to express the drop against the compartment it is hanging in
- * — `calc(var(--head-h) + 45px)` — rather than as a constant that stops
- * reaching the book the moment the case is scaled.
+ * `thread` is the drop: px as a number, or any CSS length, so the shelf can
+ * hang it against the compartment — `calc(var(--head-h) + 45px)` — and it still
+ * reaches the book when the case is scaled.
  *
- * `scale` is likewise relative: the spider is furniture of the book beside it,
- * so at 1 it is roughly 68px across and callers divide the book's own width
- * down to whatever fraction of that looks like an animal rather than a pet.
+ * `scale` is relative to the book beside it: at 1 the spider is roughly 68px
+ * across, and callers scale it down from the book's own width until it looks
+ * like an animal rather than a pet.
+ *
+ * `sway` swings it on its thread once every `period` seconds; `style`
+ * positions it.
  */
 function Spider({ thread = 88, sway = true, scale = 1, period = 9, style }) {
   const drop = typeof thread === "number" ? `${thread}px` : String(thread);
@@ -250,17 +152,17 @@ function DustHeaps() {
 }
 
 // ── an empty shelf is simply an abandoned one ──────────────────────────────
-function EmptyShelf({ seed = "empty", spider = true }) {
-  const key = hashOf(seed);
-  const web = dc.useMemo(() => buildWeb({
-    seed: key + 9134, radius: 152, a0: 6, a1: 84,
-    spokes: 5, rings: 3, opacity: 0.5,
-  }), [key]);
-
+/** `seed` picks the web (the shelf's title, say), `spider` hangs one, `sway` as for Cobweb. */
+function EmptyShelf({ seed = "empty", spider = true, sway = false }) {
   return (
     <div class="hcs-empty">
-      <div class="hcs-webs">
-        <Strands parts={web} left="12px" top="14px" />
+      <div class="hcs-webs" aria-hidden="true">
+        <WebCanvas
+          seed={seed} corner="top-left" backdrop={false} color={WEB_COLOR} webOpacity={0.5}
+          pixelated={false} width={192} height={192} scale={1}
+          animate={sway && "always"} period={WEB_BREATH}
+          style={{ position: "absolute", left: "12px", top: "14px" }}
+        />
       </div>
       <DueCard />
       <DustHeaps />
@@ -276,28 +178,22 @@ const CRITTER_STYLE_ID = "book-datacore-critter-styles";
 
 const CRITTER_CSS = `
 /* Clipped to whatever it is laid over, so a web is cut off rather than
-   squashed. z-index 5, not 4: the hardcover board overlay (hc-fx-lit::before)
-   also asks for 4, and a tie is decided by document order — which the web won,
-   but only by accident of where it sits in the markup. One above it is the
-   thing that is actually meant.
-   The drop shadow is what keeps a pale thread readable on a pale cover under a
-   lamp; without it the web is #e9e3d5 on near-white and simply is not there. */
+   squashed. z-index 5 sits above the hardcover board overlay
+   (hc-fx-lit::before, at 4). The drop shadow keeps a pale web readable on a
+   pale cover under a lamp. */
 .hcs-webs {
   position: absolute; inset: 0; z-index: 5;
   overflow: hidden; pointer-events: none; border-radius: inherit;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
 }
-.hcs-web-anchor { position: absolute; width: 0; height: 0; }
 
 /* ── spider ───────────────────────────────────────────────────────────── */
 .hcs-spider {
   position: absolute; z-index: 9; width: 0; height: 0;
   transform-origin: 0 0; pointer-events: none;
 }
-/* Longhand on purpose. Writing the animation shorthand with a var() for the
-   duration is invalid at computed-value time until that variable resolves,
-   and an invalid shorthand is thrown away whole — which left the spider
-   hanging dead still. The longhands degrade one property at a time. */
+/* Longhands on purpose: a shorthand with an unresolved var() is dropped whole,
+   which froze the spider. Longhands degrade one property at a time. */
 .hcs-spider.is-sway {
   animation-name: hcs-sway;
   animation-duration: 9s;
@@ -306,16 +202,13 @@ const CRITTER_CSS = `
   animation-iteration-count: infinite;
   will-change: transform;
 }
-/* Rest at zero, swing symmetrically either side. If anything ever freezes the
-   animation the spider hangs straight down rather than stuck at an angle. */
+/* Rests at zero, so a frozen animation leaves it hanging straight down. */
 @keyframes hcs-sway {
   0%, 100% { transform: rotate(0deg); }
   25%      { transform: rotate(-3.2deg); }
   75%      { transform: rotate(3.2deg); }
 }
-/* Reduced motion only wins if the view has not explicitly asked for the
-   animation. The swaying spider and the flap board ARE the design, so
-   <Shelves motion> keeps them running; motion={false} stops everything. */
+/* Reduced motion stops the sway unless <Shelves motion> asks for it. */
 @media (prefers-reduced-motion: reduce) {
   .hcs:not(.has-motion) .hcs-spider.is-sway { animation: none; }
 }
@@ -365,17 +258,15 @@ const CRITTER_CSS = `
 .hcs-eye.is-b { left:  2px; top: -1px; background: rgba(233,227,213,.4); }
 
 /* ── empty shelf ──────────────────────────────────────────────────────── */
-/* Stretched to the compartment rather than given --shelf-h of its own: the row
-   already carries that height, and asking for it again INSIDE the row's
-   headroom padding made an empty shelf taller than a full one. */
+/* Stretched to the compartment, not given --shelf-h: the row already has that
+   height, and asking again inside its headroom padding made an empty shelf
+   taller than a full one. */
 .hcs-empty {
   position: relative; flex: 1 1 auto; align-self: stretch; overflow: visible;
   min-height: 0; margin: 6px 0 4px;
 }
 .hcs-row.is-flat .hcs-empty { min-height: 120px; }
-/* ── the empty run ────────────────────────────────────────────────────── */
-/* A date-due card and heaps of settled dust. Fixed quantities: an abandoned
-   shelf is abandoned, it is not a dial. */
+/* ── the empty run: a date-due card and heaps of settled dust ─────────── */
 .hcs-duecard {
   position: absolute; left: 12%; bottom: 2px; z-index: 3;
   width: 132px; height: 88px; padding: 9px 10px 0;
@@ -463,7 +354,7 @@ function CritterStyles() {
 }
 
 return {
-  WEB_STEPS, WEB_DENSITY, WEB_COLOR,
-  rng, rgba, buildWeb, webReach, webLevel, mtimeOf, useNeglect,
+  WEB_STEPS, WEB_REACH, WEB_COLOR, WEB_BREATH,
+  webReach, webLevel, mtimeOf, useNeglect,
   Cobweb, Spider, ShelfWear, DueCard, DustHeaps, EmptyShelf, CritterStyles,
 };
